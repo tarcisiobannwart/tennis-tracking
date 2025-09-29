@@ -1,0 +1,99 @@
+# Tennis Analytics - Configurações Principais
+# Configurações gerais do sistema de análise de tênis
+
+# Configurações de vídeo
+video:
+  default_fps: 30
+  input_resolution:
+    width: 1920
+    height: 1080
+  processing_resolution:
+    width: 640
+    height: 360
+  output_formats: ["mp4", "avi", "mov"]
+
+# Configurações de modelos de AI
+models:
+  tracknet:
+    input_width: 640
+    input_height: 360
+    n_classes: 256
+    weights_path: "WeightsTracknet/model.1"
+
+  yolo:
+    config_path: "Yolov3/yolov3.cfg"
+    weights_path: "Yolov3/yolov3.weights"
+    classes_path: "Yolov3/yolov3.txt"
+    confidence_threshold: 0.5
+    nms_threshold: 0.4
+
+# Configurações de detecção
+detection:
+  ball:
+    heatmap_threshold: 127
+    min_radius: 2
+    max_radius: 7
+    trajectory_length: 8
+
+  court:
+    colour_threshold: 200
+    dist_tau: 3
+    intensity_threshold: 40
+    line_detection:
+      min_line_length: 100
+      max_line_gap: 20
+
+  players:
+    max_players: 2
+    tracking_distance: 50
+    confidence_threshold: 0.6
+
+# Configurações de análise
+analytics:
+  real_time: true
+  save_trajectory: true
+  generate_heatmaps: true
+  calculate_statistics: true
+
+  performance:
+    shot_detection: true
+    speed_calculation: true
+    movement_analysis: true
+    fatigue_detection: false
+
+# Configurações de interface
+interface:
+  scoreboard_style: "modern"  # traditional, modern, broadcast, mobile
+  show_statistics: true
+  show_trajectory: true
+  trajectory_color: [0, 255, 255]  # BGR format
+
+# Configurações de exportação
+export:
+  formats: ["json", "csv", "xml"]
+  include_trajectory: true
+  include_statistics: true
+  include_events: true
+  compression: false
+
+# Configurações de logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file_path: "logs/tennis_analytics.log"
+  max_file_size: "10MB"
+  backup_count: 5
+
+# Configurações de performance
+performance:
+  use_gpu: true
+  gpu_memory_fraction: 0.8
+  parallel_processing: true
+  max_workers: 4
+  cache_size: 1000
+
+# Configurações de rede (para funcionalidades futuras)
+network:
+  api_port: 8000
+  websocket_port: 8001
+  enable_cors: true
+  max_connections: 100

@@ -1,0 +1,250 @@
+{
+  "common": {
+    "appName": "Tennis Tracking",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "download": "Download",
+    "upload": "Upload",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "matches": "Matches",
+    "analysis": "Analysis",
+    "library": "Library",
+    "statistics": "Statistics",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign Up",
+      "invalidCredentials": "Invalid email or password",
+      "loginSuccess": "Login successful!"
+    },
+    "register": {
+      "title": "Create an account",
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "terms": "I accept the terms and conditions",
+      "submit": "Register",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "passwordMismatch": "Passwords do not match",
+      "registerSuccess": "Registration successful!"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}!",
+    "overview": "Overview",
+    "recentMatches": "Recent Matches",
+    "liveMatches": "Live Matches",
+    "statistics": {
+      "totalMatches": "Total Matches",
+      "winRate": "Win Rate",
+      "averageDuration": "Average Duration",
+      "totalHours": "Total Hours"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "uploadVideo": "Upload Video",
+      "newAnalysis": "New Analysis",
+      "viewReports": "View Reports"
+    }
+  },
+  "matches": {
+    "title": "Matches",
+    "list": "Match List",
+    "details": "Match Details",
+    "create": "New Match",
+    "edit": "Edit Match",
+    "delete": "Delete Match",
+    "status": {
+      "scheduled": "Scheduled",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "fields": {
+      "player1": "Player 1",
+      "player2": "Player 2",
+      "date": "Date",
+      "time": "Time",
+      "court": "Court",
+      "tournament": "Tournament",
+      "score": "Score",
+      "duration": "Duration",
+      "status": "Status"
+    },
+    "actions": {
+      "viewAnalysis": "View Analysis",
+      "downloadVideo": "Download Video",
+      "shareMatch": "Share Match"
+    }
+  },
+  "analysis": {
+    "title": "Video Analysis",
+    "upload": {
+      "title": "Upload Video for Analysis",
+      "selectFile": "Select File",
+      "dragDrop": "Drag and drop a video here",
+      "or": "or",
+      "browse": "Browse files",
+      "uploading": "Uploading...",
+      "processing": "Processing...",
+      "complete": "Analysis Complete",
+      "error": "Error processing video",
+      "supportedFormats": "Supported formats: MP4, AVI, MOV",
+      "maxSize": "Maximum size: 500MB"
+    },
+    "results": {
+      "title": "Analysis Results",
+      "ballTracking": "Ball Tracking",
+      "playerDetection": "Player Detection",
+      "courtMapping": "Court Mapping",
+      "keyMoments": "Key Moments",
+      "statistics": "Statistics"
+    },
+    "metrics": {
+      "ballSpeed": "Ball Speed",
+      "rallyLength": "Rally Length",
+      "playerMovement": "Player Movement",
+      "shotType": "Shot Type",
+      "accuracy": "Accuracy"
+    }
+  },
+  "statistics": {
+    "title": "Statistics",
+    "overview": "Overview",
+    "performance": "Performance",
+    "comparison": "Comparison",
+    "trends": "Trends",
+    "filters": {
+      "period": "Period",
+      "player": "Player",
+      "tournament": "Tournament",
+      "surface": "Surface"
+    },
+    "metrics": {
+      "serves": {
+        "title": "Serves",
+        "aces": "Aces",
+        "doubleFaults": "Double Faults",
+        "firstServePercentage": "First Serve %",
+        "winPercentage": "Win %"
+      },
+      "returns": {
+        "title": "Returns",
+        "breakPoints": "Break Points",
+        "returnWinPercentage": "Return Win %"
+      },
+      "rallies": {
+        "title": "Rallies",
+        "winners": "Winners",
+        "unforcedErrors": "Unforced Errors",
+        "netPoints": "Net Points"
+      }
+    }
+  },
+  "video": {
+    "player": {
+      "play": "Play",
+      "pause": "Pause",
+      "stop": "Stop",
+      "fullscreen": "Fullscreen",
+      "speed": "Speed",
+      "quality": "Quality",
+      "volume": "Volume",
+      "mute": "Mute",
+      "unmute": "Unmute"
+    },
+    "annotations": {
+      "title": "Annotations",
+      "add": "Add Annotation",
+      "edit": "Edit Annotation",
+      "delete": "Delete Annotation",
+      "types": {
+        "ace": "Ace",
+        "winner": "Winner",
+        "error": "Error",
+        "rally": "Rally"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "account": {
+      "title": "Account",
+      "profile": "Profile",
+      "email": "Email",
+      "password": "Password",
+      "language": "Language",
+      "timezone": "Timezone",
+      "notifications": "Notifications"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "theme": "Theme",
+      "videoQuality": "Video Quality",
+      "autoAnalysis": "Auto Analysis",
+      "dataRetention": "Data Retention"
+    },
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
+  "notifications": {
+    "uploadSuccess": "Video uploaded successfully",
+    "uploadError": "Error uploading video",
+    "analysisComplete": "Analysis complete",
+    "analysisError": "Analysis error",
+    "matchCreated": "Match created successfully",
+    "matchUpdated": "Match updated",
+    "matchDeleted": "Match deleted",
+    "settingsSaved": "Settings saved"
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Connection error. Check your internet.",
+    "unauthorized": "You don't have permission to access this resource.",
+    "notFound": "Resource not found.",
+    "serverError": "Server error. Please try again later.",
+    "validationError": "Please check the information provided."
+  },
+  "footer": {
+    "copyright": "© 2024 Tennis Tracking. All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms of Service",
+    "contact": "Contact",
+    "about": "About"
+  }
+}

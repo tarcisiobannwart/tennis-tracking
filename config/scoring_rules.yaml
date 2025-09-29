@@ -1,0 +1,190 @@
+# Tennis Scoring Rules - Regras Oficiais de Pontuação
+# Configurações baseadas nas regras ATP/WTA/ITF
+
+# Pontuação básica
+scoring:
+  point_values: [0, 15, 30, 40]
+  deuce_threshold: 40
+  advantage_required: true
+
+# Formatos de partida
+match_formats:
+  best_of_3:
+    sets_to_win: 2
+    max_sets: 3
+    final_set_tiebreak: true
+
+  best_of_5:
+    sets_to_win: 3
+    max_sets: 5
+    final_set_tiebreak: true
+
+# Regras de set
+set_rules:
+  games_to_win: 6
+  minimum_margin: 2
+  max_games_before_tiebreak: 6
+
+  # Regras especiais para o set final
+  final_set:
+    use_tiebreak: true  # ATP/WTA atual
+    tiebreak_at: [6, 6]  # Tiebreak quando 6-6
+    super_tiebreak: false  # Usar tiebreak normal
+
+# Regras de tiebreak
+tiebreak:
+  standard:
+    points_to_win: 7
+    minimum_margin: 2
+    first_server_points: 1  # Primeiro sacador serve 1 ponto
+    server_change_interval: 2  # Trocar sacador a cada 2 pontos
+    side_change_points: 6  # Trocar lado a cada 6 pontos
+
+  super_tiebreak:
+    points_to_win: 10
+    minimum_margin: 2
+    first_server_points: 1
+    server_change_interval: 2
+    side_change_points: 6
+
+  # Tiebreak especial para sets finais (algumas competições)
+  final_set_tiebreak:
+    points_to_win: 10
+    minimum_margin: 2
+    activated_at: [6, 6]
+
+# Regras de saque
+service:
+  attempts_per_point: 2  # Primeiro e segundo saque
+  fault_types:
+    - "foot_fault"
+    - "net_fault"
+    - "out_fault"
+    - "double_fault"
+
+  serve_order:
+    - "player1"
+    - "player2"
+    alternate_each_game: true
+
+  # Regras especiais no tiebreak
+  tiebreak_serve_order:
+    first_server: "game_winner"  # Quem ganhou o último game
+    points_before_change: 2
+
+# Regras de tempo
+timing:
+  between_points: 25  # segundos
+  between_games: 90   # segundos
+  set_break: 120     # segundos
+  changeover: 90     # segundos
+
+  # Serve clock (se aplicável)
+  serve_clock:
+    enabled: false
+    time_limit: 25  # segundos
+
+# Regras específicas por superfície
+surface_rules:
+  clay:
+    allow_ball_marks: true
+    challenge_system: false
+
+  hard:
+    allow_ball_marks: false
+    challenge_system: true
+
+  grass:
+    allow_ball_marks: false
+    challenge_system: true
+
+# Sistema de desafios (Hawk-Eye)
+challenge_system:
+  enabled: true
+  challenges_per_set: 3
+  reset_after_tiebreak: true
+  unlimited_in_final_set: false
+
+# Códigos de violação
+violations:
+  time_violation:
+    warning_threshold: 1
+    point_penalty_threshold: 2
+    game_penalty_threshold: 3
+
+  unsportsmanlike_conduct:
+    warning: "first_offense"
+    point_penalty: "second_offense"
+    game_penalty: "third_offense"
+
+# Interrupções
+interruptions:
+  rain_delay:
+    max_duration: 180  # minutos
+    restart_conditions: ["court_dry", "safe_conditions"]
+
+  injury_timeout:
+    max_duration: 3    # minutos
+    per_match_limit: 1
+
+  medical_timeout:
+    max_duration: 3    # minutos
+    conditions: ["injury", "illness"]
+
+# Regras para diferentes categorias
+categories:
+  mens_singles:
+    match_format: "best_of_3"  # Pode ser best_of_5 em Grand Slams
+    final_set_tiebreak: true
+
+  womens_singles:
+    match_format: "best_of_3"
+    final_set_tiebreak: true
+
+  mens_doubles:
+    match_format: "best_of_3"
+    final_set_tiebreak: true
+    no_ad_scoring: false  # Algumas competições usam no-ad
+
+  womens_doubles:
+    match_format: "best_of_3"
+    final_set_tiebreak: true
+    no_ad_scoring: false
+
+  mixed_doubles:
+    match_format: "best_of_3"
+    final_set_tiebreak: true
+    no_ad_scoring: true  # Comum em mixed doubles
+
+# Configurações especiais para torneios
+tournament_variations:
+  grand_slam_mens:
+    match_format: "best_of_5"
+    final_set_tiebreak: true  # Mudança recente
+
+  next_gen_finals:
+    match_format: "best_of_5"
+    sets_to_4_games: true     # Primeiro a 4 games
+    no_ad_scoring: true
+    final_set_tiebreak: true
+
+  davis_cup:
+    match_format: "best_of_3"  # Mudança recente do best_of_5
+    final_set_tiebreak: true
+
+# Estatísticas oficiais
+official_statistics:
+  required:
+    - "aces"
+    - "double_faults"
+    - "first_serve_percentage"
+    - "winners"
+    - "unforced_errors"
+    - "break_points_converted"
+
+  optional:
+    - "fastest_serve"
+    - "average_serve_speed"
+    - "net_points_won"
+    - "distance_covered"
+    - "rally_length"

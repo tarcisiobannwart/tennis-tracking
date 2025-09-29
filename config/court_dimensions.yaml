@@ -1,0 +1,191 @@
+# Tennis Court Dimensions - Dimensões Oficiais da Quadra
+# Baseado nas especificações ITF (International Tennis Federation)
+
+# Dimensões principais (em metros)
+court_dimensions:
+  # Dimensões totais
+  total_length: 23.77  # 78 pés
+  total_width_singles: 8.23   # 27 pés
+  total_width_doubles: 10.97  # 36 pés
+
+  # Linhas de base
+  baseline_width: 0.10  # 10 cm
+
+  # Linhas laterais
+  sideline_width: 0.10  # 10 cm
+
+  # Área de saque
+  service_box_length: 6.40    # 21 pés
+  service_box_width: 4.115    # 13.5 pés
+  service_line_width: 0.05    # 5 cm
+
+  # Linha central de saque
+  center_service_line_width: 0.05  # 5 cm
+  center_service_line_length: 12.80  # Comprimento da linha central
+
+  # Rede
+  net_height_center: 0.914    # 3 pés
+  net_height_posts: 1.07      # 3 pés 6 polegadas
+  net_width: 12.80           # Largura da rede
+  net_post_diameter: 0.15     # Diâmetro dos postes
+
+  # Distâncias importantes
+  baseline_to_service_line: 5.485  # 18 pés
+  service_line_to_net: 6.40        # 21 pés
+
+# Margens mínimas obrigatórias
+court_margins:
+  back_space: 6.40    # 21 pés atrás da linha de base
+  side_space: 3.66    # 12 pés dos lados
+
+  # Margens recomendadas para competições profissionais
+  recommended:
+    back_space: 8.23   # 27 pés
+    side_space: 4.57   # 15 pés
+
+# Zonas da quadra para análise
+court_zones:
+  # Áreas de saque
+  service_box_deuce_top:
+    x_min: 4.115
+    x_max: 8.23
+    y_min: 5.485
+    y_max: 11.885
+
+  service_box_ad_top:
+    x_min: 0
+    x_max: 4.115
+    y_min: 5.485
+    y_max: 11.885
+
+  service_box_deuce_bottom:
+    x_min: 4.115
+    x_max: 8.23
+    y_min: 11.885
+    y_max: 18.285
+
+  service_box_ad_bottom:
+    x_min: 0
+    x_max: 4.115
+    y_min: 11.885
+    y_max: 18.285
+
+  # Áreas de fundo
+  backcourt_top:
+    x_min: 0
+    x_max: 8.23
+    y_min: 0
+    y_max: 5.485
+
+  backcourt_bottom:
+    x_min: 0
+    x_max: 8.23
+    y_min: 18.285
+    y_max: 23.77
+
+  # Área da rede
+  net_area:
+    x_min: 0
+    x_max: 8.23
+    y_min: 10.885
+    y_max: 12.885
+
+# Configurações para diferentes tipos de quadra
+surface_types:
+  hard_court:
+    color_rgb: [120, 150, 180]  # Azul típico
+    line_color_rgb: [255, 255, 255]  # Branco
+    bounce_coefficient: 0.75
+
+  clay_court:
+    color_rgb: [180, 120, 80]   # Marrom/laranja
+    line_color_rgb: [255, 255, 255]  # Branco
+    bounce_coefficient: 0.70
+
+  grass_court:
+    color_rgb: [80, 150, 80]    # Verde
+    line_color_rgb: [255, 255, 255]  # Branco
+    bounce_coefficient: 0.80
+
+  carpet_court:
+    color_rgb: [100, 100, 120]  # Cinza azulado
+    line_color_rgb: [255, 255, 255]  # Branco
+    bounce_coefficient: 0.85
+
+# Pontos de referência para calibração
+reference_points:
+  # Cantos da quadra (para simples)
+  corners_singles:
+    top_left: [0, 0]
+    top_right: [8.23, 0]
+    bottom_left: [0, 23.77]
+    bottom_right: [8.23, 23.77]
+
+  # Cantos da quadra (para duplas)
+  corners_doubles:
+    top_left: [0, 0]
+    top_right: [10.97, 0]
+    bottom_left: [0, 23.77]
+    bottom_right: [10.97, 23.77]
+
+  # Intersecções importantes
+  service_intersections:
+    # Intersecção linha de saque com linha central
+    top_center_service: [4.115, 5.485]
+    bottom_center_service: [4.115, 18.285]
+
+    # Intersecção linha de saque com laterais
+    top_left_service: [0, 5.485]
+    top_right_service: [8.23, 5.485]
+    bottom_left_service: [0, 18.285]
+    bottom_right_service: [8.23, 18.285]
+
+  # Pontos da rede
+  net_points:
+    left_post: [0, 11.885]
+    right_post: [8.23, 11.885]  # Para simples
+    center: [4.115, 11.885]
+
+# Configurações para detecção automática
+detection_config:
+  # Cores para detecção de linhas
+  line_detection:
+    white_threshold: 200  # Valor mínimo para pixels brancos
+    line_thickness_min: 2  # Espessura mínima da linha em pixels
+    line_thickness_max: 10 # Espessura máxima da linha em pixels
+
+  # Configurações de homografia
+  homography:
+    min_points: 4  # Mínimo de pontos para calcular homografia
+    max_reprojection_error: 5.0  # Erro máximo de reprojeção
+
+# Transformações de coordenadas
+coordinate_systems:
+  # Sistema de coordenadas da quadra (metros)
+  court_meters:
+    origin: "bottom_left"  # Origem no canto inferior esquerdo
+    x_axis: "width"       # Eixo X ao longo da largura
+    y_axis: "length"      # Eixo Y ao longo do comprimento
+
+  # Sistema de coordenadas de imagem (pixels)
+  image_pixels:
+    origin: "top_left"    # Origem no canto superior esquerdo
+    x_axis: "horizontal"  # Eixo X horizontal
+    y_axis: "vertical"    # Eixo Y vertical (invertido)
+
+# Validações
+validation:
+  # Tolerâncias para validação de dimensões
+  dimension_tolerance: 0.05  # 5 cm de tolerância
+  angle_tolerance: 2.0       # 2 graus de tolerância para ângulos
+
+  # Verificações obrigatórias
+  required_lines:
+    - "baseline_top"
+    - "baseline_bottom"
+    - "sideline_left"
+    - "sideline_right"
+    - "service_line_top"
+    - "service_line_bottom"
+    - "center_service_line"
+    - "net_line"

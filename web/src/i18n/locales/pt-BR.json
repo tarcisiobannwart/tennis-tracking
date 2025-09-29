@@ -1,0 +1,312 @@
+{
+  "common": {
+    "appName": "Tennis Tracking",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "close": "Fechar",
+    "search": "Pesquisar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "download": "Baixar",
+    "upload": "Enviar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "yes": "Sim",
+    "no": "Não"
+  },
+  "navigation": {
+    "dashboard": "Painel",
+    "matches": "Partidas",
+    "analysis": "Análises",
+    "library": "Biblioteca",
+    "statistics": "Estatísticas",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "logout": "Sair",
+    "login": "Entrar"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar na sua conta",
+      "email": "E-mail",
+      "password": "Senha",
+      "rememberMe": "Lembrar de mim",
+      "forgotPassword": "Esqueceu a senha?",
+      "submit": "Entrar",
+      "noAccount": "Não tem uma conta?",
+      "signUp": "Cadastre-se",
+      "invalidCredentials": "E-mail ou senha inválidos",
+      "loginSuccess": "Login realizado com sucesso!"
+    },
+    "register": {
+      "title": "Criar uma conta",
+      "name": "Nome completo",
+      "email": "E-mail",
+      "password": "Senha",
+      "confirmPassword": "Confirmar senha",
+      "terms": "Eu aceito os termos e condições",
+      "submit": "Cadastrar",
+      "haveAccount": "Já tem uma conta?",
+      "signIn": "Entrar",
+      "passwordMismatch": "As senhas não coincidem",
+      "registerSuccess": "Cadastro realizado com sucesso!"
+    }
+  },
+  "dashboard": {
+    "title": "Painel de Controle",
+    "welcome": "Bem-vindo de volta, {{name}}!",
+    "overview": "Visão Geral",
+    "recentMatches": "Partidas Recentes",
+    "liveMatches": "Partidas ao Vivo",
+    "statistics": {
+      "totalMatches": "Total de Partidas",
+      "winRate": "Taxa de Vitória",
+      "averageDuration": "Duração Média",
+      "totalHours": "Horas Totais"
+    },
+    "quickActions": {
+      "title": "Ações Rápidas",
+      "uploadVideo": "Enviar Vídeo",
+      "newAnalysis": "Nova Análise",
+      "viewReports": "Ver Relatórios"
+    }
+  },
+  "matches": {
+    "title": "Partidas",
+    "list": "Lista de Partidas",
+    "details": "Detalhes da Partida",
+    "create": "Nova Partida",
+    "edit": "Editar Partida",
+    "delete": "Excluir Partida",
+    "status": {
+      "scheduled": "Agendada",
+      "inProgress": "Em Andamento",
+      "completed": "Concluída",
+      "cancelled": "Cancelada"
+    },
+    "fields": {
+      "player1": "Jogador 1",
+      "player2": "Jogador 2",
+      "date": "Data",
+      "time": "Horário",
+      "court": "Quadra",
+      "tournament": "Torneio",
+      "score": "Placar",
+      "duration": "Duração",
+      "status": "Status"
+    },
+    "actions": {
+      "viewAnalysis": "Ver Análise",
+      "downloadVideo": "Baixar Vídeo",
+      "shareMatch": "Compartilhar Partida"
+    }
+  },
+  "analysis": {
+    "title": "Análise de Vídeo",
+    "upload": {
+      "title": "Enviar Vídeo para Análise",
+      "selectFile": "Selecionar Arquivo",
+      "dragDrop": "Arraste e solte um vídeo aqui",
+      "or": "ou",
+      "browse": "Procurar arquivo",
+      "uploading": "Enviando...",
+      "processing": "Processando...",
+      "complete": "Análise Completa",
+      "error": "Erro ao processar vídeo",
+      "supportedFormats": "Formatos suportados: MP4, AVI, MOV",
+      "maxSize": "Tamanho máximo: 500MB"
+    },
+    "results": {
+      "title": "Resultados da Análise",
+      "ballTracking": "Rastreamento da Bola",
+      "playerDetection": "Detecção de Jogadores",
+      "courtMapping": "Mapeamento da Quadra",
+      "keyMoments": "Momentos Principais",
+      "statistics": "Estatísticas"
+    },
+    "metrics": {
+      "ballSpeed": "Velocidade da Bola",
+      "rallyLength": "Duração do Rally",
+      "playerMovement": "Movimento do Jogador",
+      "shotType": "Tipo de Golpe",
+      "accuracy": "Precisão"
+    }
+  },
+  "statistics": {
+    "title": "Estatísticas",
+    "overview": "Visão Geral",
+    "performance": "Desempenho",
+    "comparison": "Comparação",
+    "trends": "Tendências",
+    "filters": {
+      "period": "Período",
+      "player": "Jogador",
+      "tournament": "Torneio",
+      "surface": "Superfície"
+    },
+    "metrics": {
+      "serves": {
+        "title": "Saques",
+        "aces": "Aces",
+        "doubleFaults": "Duplas Faltas",
+        "firstServePercentage": "% Primeiro Saque",
+        "winPercentage": "% Pontos Ganhos"
+      },
+      "returns": {
+        "title": "Devoluções",
+        "breakPoints": "Break Points",
+        "returnWinPercentage": "% Devoluções Vencedoras"
+      },
+      "rallies": {
+        "title": "Rallies",
+        "winners": "Winners",
+        "unforcedErrors": "Erros Não Forçados",
+        "netPoints": "Pontos na Rede"
+      }
+    }
+  },
+  "video": {
+    "player": {
+      "play": "Reproduzir",
+      "pause": "Pausar",
+      "stop": "Parar",
+      "fullscreen": "Tela Cheia",
+      "speed": "Velocidade",
+      "quality": "Qualidade",
+      "volume": "Volume",
+      "mute": "Silenciar",
+      "unmute": "Ativar Som"
+    },
+    "annotations": {
+      "title": "Anotações",
+      "add": "Adicionar Anotação",
+      "edit": "Editar Anotação",
+      "delete": "Excluir Anotação",
+      "types": {
+        "ace": "Ace",
+        "winner": "Winner",
+        "error": "Erro",
+        "rally": "Rally"
+      }
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "account": {
+      "title": "Conta",
+      "profile": "Perfil",
+      "email": "E-mail",
+      "password": "Senha",
+      "language": "Idioma",
+      "timezone": "Fuso Horário",
+      "notifications": "Notificações"
+    },
+    "preferences": {
+      "title": "Preferências",
+      "theme": "Tema",
+      "videoQuality": "Qualidade de Vídeo",
+      "autoAnalysis": "Análise Automática",
+      "dataRetention": "Retenção de Dados"
+    },
+    "themes": {
+      "light": "Claro",
+      "dark": "Escuro",
+      "system": "Sistema"
+    }
+  },
+  "notifications": {
+    "uploadSuccess": "Vídeo enviado com sucesso",
+    "uploadError": "Erro ao enviar vídeo",
+    "analysisComplete": "Análise concluída",
+    "analysisError": "Erro na análise",
+    "matchCreated": "Partida criada com sucesso",
+    "matchUpdated": "Partida atualizada",
+    "matchDeleted": "Partida excluída",
+    "settingsSaved": "Configurações salvas"
+  },
+  "errors": {
+    "generic": "Ocorreu um erro. Tente novamente.",
+    "network": "Erro de conexão. Verifique sua internet.",
+    "unauthorized": "Você não tem permissão para acessar este recurso.",
+    "notFound": "Recurso não encontrado.",
+    "serverError": "Erro no servidor. Tente novamente mais tarde.",
+    "validationError": "Por favor, verifique os dados informados."
+  },
+  "liveAnalysis": {
+    "title": "Análise ao Vivo",
+    "status": {
+      "connected": "Conectado",
+      "disconnected": "Desconectado",
+      "connecting": "Conectando...",
+      "error": "Erro de Conexão"
+    },
+    "controls": {
+      "settings": "Configurações",
+      "fullscreen": "Tela Cheia",
+      "exitFullscreen": "Sair da Tela Cheia",
+      "startRecording": "Iniciar Gravação",
+      "stopRecording": "Parar Gravação",
+      "selectCamera": "Selecionar Câmera",
+      "uploadVideo": "Enviar Vídeo"
+    },
+    "recording": {
+      "recording": "Gravando",
+      "duration": "Duração",
+      "stopped": "Gravação Parada"
+    },
+    "analysis": {
+      "analyzing": "Analisando",
+      "ballTracking": "Rastreamento da Bola",
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "courtView": "Vista da Quadra",
+      "noVideoSource": "Nenhuma Fonte de Vídeo",
+      "selectSourceMessage": "Selecione uma câmera ou envie um vídeo para iniciar a análise"
+    },
+    "statistics": {
+      "title": "Estatísticas",
+      "ballSpeed": "Velocidade da Bola",
+      "rallyCount": "Contagem de Rallies",
+      "playerPosition": "Posição dos Jogadores",
+      "shotAccuracy": "Precisão dos Golpes"
+    },
+    "camera": {
+      "selectDevice": "Selecionar Dispositivo",
+      "noDevicesFound": "Nenhum dispositivo de câmera encontrado",
+      "permissionDenied": "Permissão de câmera negada",
+      "notSupported": "Câmera não suportada pelo navegador"
+    },
+    "upload": {
+      "selectFile": "Selecionar Arquivo de Vídeo",
+      "dragDrop": "Arraste e solte um vídeo aqui",
+      "supportedFormats": "Formatos suportados: MP4, AVI, MOV, MKV, WEBM",
+      "maxSize": "Tamanho máximo: 500MB"
+    },
+    "connection": {
+      "retryConnection": "Tentar Reconectar",
+      "connectionLost": "Conexão Perdida",
+      "reconnecting": "Reconectando..."
+    },
+    "buttons": {
+      "startAnalysis": "Iniciar Análise",
+      "stopAnalysis": "Parar Análise",
+      "reset": "Reiniciar",
+      "useCamera": "Usar Câmera"
+    }
+  },
+  "footer": {
+    "copyright": "© 2024 Tennis Tracking. Todos os direitos reservados.",
+    "privacy": "Privacidade",
+    "terms": "Termos de Uso",
+    "contact": "Contato",
+    "about": "Sobre"
+  }
+}
