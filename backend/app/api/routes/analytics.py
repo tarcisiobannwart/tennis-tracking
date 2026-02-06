@@ -406,3 +406,33 @@ async def get_movement_analysis(
     movement = await analytics_service.get_movement_analysis(match_id, player_id)
 
     return movement
+
+
+@router.get("/trend-analysis/{match_id}")
+async def get_trend_analysis(
+    match_id: str = Path(..., description="Match ID"),
+    player_id: Optional[str] = Query(None, description="Specific player ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get trend analysis for a match
+
+    Returns:
+    - trend_by_set: Performance trends per set
+    - critical_moments: Performance in critical moments (break points, game points)
+    - clutch_factor: Performance under pressure (0-100)
+    - streaks: Winning/losing streaks during the match
+    - Statistics per player or for specific player
+    """
+    logger.info("Fetching trend analysis", match_id=match_id, player_id=player_id)
+
+    # Verify match exists
+    match_service = MatchService(db)
+    match = await match_service.get_match(match_id)
+    if not match:
+        raise MatchNotFoundException(match_id)
+
+    analytics_service = AnalyticsService(db)
+    trends = await analytics_service.get_trend_analysis(match_id, player_id)
+
+    return trends

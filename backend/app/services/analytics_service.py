@@ -879,6 +879,133 @@ class AnalyticsService:
             }
         }
 
+    async def get_trend_analysis(
+        self,
+        match_id: str,
+        player_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Get trend analysis for a match
+
+        Returns:
+        - trend_by_set: Performance trends per set
+        - critical_moments: Performance in critical moments (break points, tie-breaks)
+        - clutch_factor: Performance under pressure (0-100)
+        - streaks: Winning/losing streaks during the match
+        """
+
+        # Get match
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {}
+
+        # Get points for the match ordered by time
+        points_query = select(Point).where(Point.match_id == match_id).order_by(Point.created_at)
+        points_result = await self.db.execute(points_query)
+        points = points_result.scalars().all()
+
+        player_ids = [match.player1_id, match.player2_id]
+        if player_id:
+            player_ids = [player_id]
+
+        trend_stats = {}
+
+        for pid in player_ids:
+            # Trend by set
+            trend_by_set = {}
+            set_numbers = set([getattr(p, "set_number", 1) for p in points])
+
+            for set_num in sorted(set_numbers):
+                set_points = [p for p in points if getattr(p, "set_number", 1) == set_num]
+                player_points = len([p for p in set_points if p.winner_player_id == pid])
+                total_set_points = len(set_points)
+
+                trend_by_set[f"set_{set_num}"] = {
+                    "points_won": player_points,
+                    "total_points": total_set_points,
+                    "win_percentage": round((player_points / total_set_points * 100) if total_set_points > 0 else 0, 2)
+                }
+
+            # Critical moments (break points, game points)
+            critical_points = [
+                p for p in points
+                if getattr(p, "is_break_point", False) or getattr(p, "is_game_point", False)
+            ]
+            critical_won = len([p for p in critical_points if p.winner_player_id == pid])
+            critical_total = len([p for p in critical_points if p.server_player_id == pid or p.server_player_id != pid])
+
+            # Clutch factor (0-100)
+            # Based on performance in critical moments vs overall performance
+            overall_points_won = len([p for p in points if p.winner_player_id == pid])
+            overall_total = len(points)
+            overall_pct = (overall_points_won / overall_total) if overall_total > 0 else 0
+            critical_pct = (critical_won / critical_total) if critical_total > 0 else 0
+
+            # Clutch factor: how much better (or worse) in critical moments
+            if overall_pct > 0:
+                clutch_factor = min((critical_pct / overall_pct) * 50, 100)
+            else:
+                clutch_factor = 0
+
+            # Streaks (consecutive points won/lost)
+            streaks = []
+            current_streak = 0
+            streak_type = None
+
+            for point in points:
+                if point.winner_player_id == pid:
+                    if streak_type == "win":
+                        current_streak += 1
+                    else:
+                        if current_streak > 0:
+                            streaks.append({"type": streak_type, "length": current_streak})
+                        current_streak = 1
+                        streak_type = "win"
+                else:
+                    if streak_type == "loss":
+                        current_streak += 1
+                    else:
+                        if current_streak > 0:
+                            streaks.append({"type": streak_type, "length": current_streak})
+                        current_streak = 1
+                        streak_type = "loss"
+
+            # Add final streak
+            if current_streak > 0:
+                streaks.append({"type": streak_type, "length": current_streak})
+
+            # Find longest streaks
+            win_streaks = [s for s in streaks if s["type"] == "win"]
+            loss_streaks = [s for s in streaks if s["type"] == "loss"]
+
+            longest_win_streak = max([s["length"] for s in win_streaks]) if win_streaks else 0
+            longest_loss_streak = max([s["length"] for s in loss_streaks]) if loss_streaks else 0
+
+            trend_stats[pid] = {
+                "player_id": pid,
+                "trend_by_set": trend_by_set,
+                "critical_moments": {
+                    "total_critical_points": critical_total,
+                    "critical_points_won": critical_won,
+                    "critical_win_percentage": round((critical_won / critical_total * 100) if critical_total > 0 else 0, 2)
+                },
+                "clutch_factor": round(clutch_factor, 2),
+                "streaks": {
+                    "longest_win_streak": longest_win_streak,
+                    "longest_loss_streak": longest_loss_streak,
+                    "total_streaks": len(streaks),
+                    "all_streaks": streaks[-10:] if len(streaks) > 10 else streaks  # Last 10 streaks
+                }
+            }
+
+        return {
+            "match_id": match_id,
+            "trend_analysis": trend_stats
+        }
+
     async def get_movement_analysis(
         self,
         match_id: str,
