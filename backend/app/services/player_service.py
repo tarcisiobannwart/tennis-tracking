@@ -10,6 +10,7 @@ import structlog
 
 from app.models.player import Player
 from app.models.match import Match
+from app.models.point import Point
 from app.schemas.player import PlayerCreate, PlayerUpdate
 
 logger = structlog.get_logger(__name__)
@@ -203,3 +204,113 @@ class PlayerService:
 
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_detailed_stats(
+        self,
+        player_id: str,
+        period: Optional[str] = "all_time",
+        surface: Optional[str] = None
+    ) -> dict:
+        """Get detailed statistics for a player by period and surface"""
+
+        # Import needed here to avoid circular dependencies
+        from app.services.analytics_service import AnalyticsService
+        analytics_service = AnalyticsService(self.db)
+
+        # Get basic stats
+        basic_stats = await analytics_service.get_player_statistics(
+            player_id,
+            period=period,
+            surface=surface
+        )
+
+        # Get matches with filters
+        matches_query = select(Match).where(
+            or_(Match.player1_id == player_id, Match.player2_id == player_id),
+            Match.status == "completed"
+        )
+
+        if surface:
+            matches_query = matches_query.where(Match.surface == surface)
+
+        if period != "all_time":
+            cutoff_date = self._get_period_cutoff(period)
+            matches_query = matches_query.where(Match.created_at >= cutoff_date)
+
+        matches_result = await self.db.execute(matches_query)
+        matches = matches_result.scalars().all()
+
+        # Calculate advanced metrics
+        service_games_won = 0
+        return_games_won = 0
+        break_points_won = 0
+        break_points_faced = 0
+        total_service_games = 0
+        total_return_games = 0
+
+        for match in matches:
+            # Get points for this match
+            points_query = select(Point).where(Point.match_id == match.id)
+            points_result = await self.db.execute(points_query)
+            points = points_result.scalars().all()
+
+            for point in points:
+                # Service games
+                if point.server_player_id == player_id:
+                    total_service_games += 1
+                    if point.winner_player_id == player_id:
+                        service_games_won += 1
+                else:
+                    total_return_games += 1
+                    if point.winner_player_id == player_id:
+                        return_games_won += 1
+
+                # Break points
+                if point.is_break_point:
+                    if point.server_player_id == player_id:
+                        break_points_faced += 1
+                        if point.winner_player_id == player_id:
+                            break_points_won += 1
+
+        service_games_won_pct = (service_games_won / total_service_games * 100) if total_service_games > 0 else 0
+        return_games_won_pct = (return_games_won / total_return_games * 100) if total_return_games > 0 else 0
+        break_points_saved_pct = (break_points_won / break_points_faced * 100) if break_points_faced > 0 else 0
+
+        return {
+            "player_id": player_id,
+            "period": period,
+            "surface": surface,
+            "win_rate": basic_stats.win_percentage,
+            "matches_played": basic_stats.total_matches,
+            "wins": basic_stats.wins,
+            "losses": basic_stats.losses,
+            "aces": basic_stats.aces,
+            "double_faults": basic_stats.double_faults,
+            "first_serve_percentage": basic_stats.first_serve_percentage,
+            "service_games_won": service_games_won,
+            "service_games_won_percentage": service_games_won_pct,
+            "return_games_won": return_games_won,
+            "return_games_won_percentage": return_games_won_pct,
+            "break_points_saved": break_points_won,
+            "break_points_faced": break_points_faced,
+            "break_points_saved_percentage": break_points_saved_pct,
+            "total_points_won": basic_stats.points_won,
+            "total_points_played": basic_stats.total_points_played,
+            "winners": basic_stats.winners,
+            "unforced_errors": basic_stats.unforced_errors
+        }
+
+    def _get_period_cutoff(self, period: str) -> datetime:
+        """Get cutoff date for period filtering"""
+        from datetime import timedelta
+
+        now = datetime.utcnow()
+
+        if period == "week":
+            return now - timedelta(days=7)
+        elif period == "month":
+            return now - timedelta(days=30)
+        elif period == "year":
+            return now - timedelta(days=365)
+        else:
+            return datetime.min  # All time

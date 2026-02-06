@@ -274,3 +274,40 @@ async def search_players_by_ranking(
     )
 
     return players
+
+
+@router.get("/{player_id}/stats/detailed")
+async def get_player_detailed_stats(
+    player_id: str = Path(..., description="Player ID"),
+    period: str = Query("all_time", description="Time period: week, month, year, all_time"),
+    surface: Optional[str] = Query(None, description="Filter by court surface: hard, clay, grass"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get detailed statistics for a player by period and surface
+
+    Returns comprehensive stats including:
+    - Win rate, matches played, wins/losses
+    - Aces, double faults, first serve percentage
+    - Service games won/percentage
+    - Return games won/percentage
+    - Break points saved/faced/percentage
+    - Total points won/played
+    - Winners and unforced errors
+    """
+    logger.info("Fetching detailed player stats", player_id=player_id, period=period, surface=surface)
+
+    # Verify player exists
+    player_service = PlayerService(db)
+    player = await player_service.get_player(player_id)
+    if not player:
+        raise PlayerNotFoundException(player_id)
+
+    # Get detailed stats
+    stats = await player_service.get_detailed_stats(
+        player_id,
+        period=period,
+        surface=surface
+    )
+
+    return stats
