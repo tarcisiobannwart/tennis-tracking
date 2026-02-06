@@ -1,90 +1,59 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { LogIn } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { LogIn } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { authService } from '@/services/authService'
+import { useAuthStore } from '@/stores/authStore'
 
 const Login = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { setAuth, isAuthenticated } = useAuthStore()
+  const [loading, setLoading] = useState(false)
   const [credentials, setCredentials] = useState({
-    email: 'test@tennis.com',
-    password: 'test123'
-  });
+    username: '',
+    password: '',
+  })
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    const from = (location.state as any)?.from?.pathname || '/app'
+    navigate(from, { replace: true })
+    return null
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+    e.preventDefault()
+    setLoading(true)
 
     try {
-      const response = await fetch('/api/test-auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+      const data = await authService.login(credentials.username, credentials.password)
+      setAuth(data.user, data.access_token, data.refresh_token)
+      toast.success(t('auth.login.loginSuccess'))
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify({ email: credentials.email, name: 'Test User' }));
-
-        toast.success(t('auth.login.loginSuccess'));
-
-        // Verificar se já completou onboarding
-        const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-        if (!onboardingCompleted) {
-          navigate('/onboarding');
-        } else {
-          navigate('/');
-        }
-      } else {
-        toast.error(t('auth.login.invalidCredentials'));
-      }
-    } catch (error) {
-      toast.error(t('errors.network'));
+      const from = (location.state as any)?.from?.pathname || '/app'
+      navigate(from, { replace: true })
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || t('auth.login.invalidCredentials')
+      toast.error(msg)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
-  const handleQuickLogin = async () => {
-    try {
-      const response = await fetch('/api/test-auth/test-token');
-      const data = await response.json();
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({ email: 'test@tennis.com', name: 'Test User' }));
-
-      toast.success('Login rápido realizado!');
-
-      // Verificar se já completou onboarding
-      const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-      if (!onboardingCompleted) {
-        navigate('/onboarding');
-      } else {
-        navigate('/');
-      }
-    } catch (error) {
-      toast.error('Erro no login rápido');
-    }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
-      {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl" />
         <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-blue-500/10 to-transparent rounded-full blur-3xl" />
       </div>
 
-      {/* Card de login */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -92,7 +61,6 @@ const Login = () => {
         className="relative z-10 w-full max-w-md px-4"
       >
         <Card className="bg-slate-800 border-slate-700 overflow-hidden">
-          {/* Header com gradiente */}
           <div className="relative bg-gradient-to-r from-blue-500/20 to-blue-600/20 p-8 text-center border-b border-slate-700">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -106,11 +74,10 @@ const Login = () => {
               Tennis Tracking
             </h1>
             <p className="text-sm text-slate-400">
-              Análise profissional de partidas
+              {t('auth.login.title')}
             </p>
           </div>
 
-          {/* Formulário */}
           <div className="p-8">
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
@@ -118,19 +85,24 @@ const Login = () => {
                   {t('auth.login.email')}
                 </label>
                 <Input
-                  type="email"
-                  value={credentials.email}
-                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                  placeholder="seu@email.com"
+                  type="text"
+                  value={credentials.username}
+                  onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+                  placeholder="usuario ou email"
                   className="bg-slate-900 border-slate-700 text-slate-100 focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-slate-100">
-                  {t('auth.login.password')}
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-100">
+                    {t('auth.login.password')}
+                  </label>
+                  <Link to="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">
+                    {t('auth.login.forgotPassword')}
+                  </Link>
+                </div>
                 <Input
                   type="password"
                   value={credentials.password}
@@ -150,53 +122,34 @@ const Login = () => {
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  >
-                    ⏳
-                  </motion.div>
+                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                  />
                 ) : (
                   t('auth.login.submit')
                 )}
               </Button>
             </form>
 
-            {/* Divisor */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-800 px-2 text-slate-400">
-                  Desenvolvimento
-                </span>
-              </div>
-            </div>
-
-            {/* Login rápido */}
-            <Button
-              onClick={handleQuickLogin}
-              variant="outline"
-              className="w-full border-slate-700 text-slate-400 hover:bg-slate-900 hover:text-slate-100"
-            >
-              🚀 Login Rápido (Dev)
-            </Button>
-            <p className="text-xs text-center text-slate-500 mt-3">
-              Credenciais: test@tennis.com / test123
+            <p className="text-sm text-center text-slate-400 mt-6">
+              {t('auth.login.noAccount')}{' '}
+              <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium">
+                {t('auth.login.signUp')}
+              </Link>
             </p>
           </div>
         </Card>
 
-        {/* Footer */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
           className="text-center text-xs text-slate-500 mt-6"
         >
-          © 2024 Tennis Tracking. Todos os direitos reservados.
+          {t('footer.copyright')}
         </motion.p>
       </motion.div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

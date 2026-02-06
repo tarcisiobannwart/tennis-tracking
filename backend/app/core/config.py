@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+    FRONTEND_URL: str = "http://localhost:3000"
 
     # Security & JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -74,6 +75,17 @@ class Settings(BaseSettings):
     MEDIAMTX_RTSP_URL: str = "rtsp://localhost:8554"
     MEDIAMTX_HLS_URL: str = "http://localhost:8888"
     MEDIAMTX_API_URL: str = "http://localhost:9997"
+
+    # Stripe
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_MATCH_POINT_MONTHLY: str = ""
+    STRIPE_PRICE_GRAND_SLAM_MONTHLY: str = ""
+
+    # Email (Resend)
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "Tennis Tracking <noreply@tennistrack.app>"
 
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 100

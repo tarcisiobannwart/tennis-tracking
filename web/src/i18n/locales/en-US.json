@@ -36,7 +36,7 @@
   "auth": {
     "login": {
       "title": "Sign in to your account",
-      "email": "Email",
+      "email": "Email or username",
       "password": "Password",
       "rememberMe": "Remember me",
       "forgotPassword": "Forgot password?",
@@ -57,8 +57,90 @@
       "haveAccount": "Already have an account?",
       "signIn": "Sign In",
       "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
       "registerSuccess": "Registration successful!"
+    },
+    "forgotPassword": {
+      "title": "Recover password",
+      "description": "Enter your email to receive a reset link",
+      "submit": "Send link",
+      "emailSent": "If the email exists, a reset link will be sent",
+      "checkEmail": "Check your inbox for the password reset link.",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "newPassword": "New password",
+      "submit": "Reset password",
+      "success": "Password reset successfully!",
+      "invalidToken": "Invalid or expired token",
+      "requestNew": "Request new link"
     }
+  },
+  "subscription": {
+    "featureLocked": "Feature locked",
+    "upgradeMessage": "This feature requires the {{plan}} plan or higher.",
+    "upgrade": "Upgrade",
+    "currentPlan": "Current plan",
+    "changePlan": "Change plan",
+    "manageBilling": "Manage billing",
+    "cancelSubscription": "Cancel subscription",
+    "plans": {
+      "rally": "Rally",
+      "match_point": "Match Point",
+      "grand_slam": "Grand Slam"
+    },
+    "status": {
+      "active": "Active",
+      "trialing": "Trial",
+      "past_due": "Past due",
+      "canceled": "Canceled"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "personalInfo": "Personal information",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordChanged": "Password changed successfully!",
+    "updateProfile": "Update profile",
+    "profileUpdated": "Profile updated successfully!"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "dashboard": "Admin Dashboard",
+    "users": "Users",
+    "subscriptions": "Subscriptions",
+    "logs": "Activity Logs",
+    "totalUsers": "Total Users",
+    "activeSubscriptions": "Active Subscriptions",
+    "mrr": "MRR",
+    "newUsersThisMonth": "New users this month",
+    "editUser": "Edit user",
+    "role": "Role",
+    "plan": "Plan",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "organization": {
+    "title": "Organization",
+    "members": "Members",
+    "inviteMembers": "Invite member",
+    "inviteEmail": "Guest email",
+    "inviteRole": "Role",
+    "sendInvite": "Send invite",
+    "inviteSent": "Invite sent successfully!",
+    "removeMember": "Remove member",
+    "acceptInvite": "Accept invite",
+    "inviteAccepted": "Invite accepted successfully!",
+    "inviteExpired": "Invite expired or invalid",
+    "createOrg": "Create organization",
+    "orgName": "Organization name",
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member"
   },
   "dashboard": {
     "title": "Dashboard",

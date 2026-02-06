@@ -61,6 +61,11 @@ async def create_indexes():
         await users.create_index("email", unique=True)
         await users.create_index("username", unique=True)
         await users.create_index("createdAt")
+        await users.create_index("role")
+        await users.create_index("subscription.plan")
+        await users.create_index("organizationId")
+        await users.create_index("emailVerificationToken", sparse=True)
+        await users.create_index("passwordResetToken", sparse=True)
 
         # Matches collection indexes
         matches = db.database.matches
@@ -99,6 +104,31 @@ async def create_indexes():
         await streams_col.create_index("matchId")
         await streams_col.create_index("status")
         await streams_col.create_index("createdAt")
+
+        # Organizations collection indexes
+        orgs = db.database.organizations
+        await orgs.create_index("slug", unique=True)
+        await orgs.create_index("ownerId")
+        await orgs.create_index("members.userId")
+
+        # Organization invites collection indexes
+        invites = db.database.organization_invites
+        await invites.create_index("token", unique=True)
+        await invites.create_index("organizationId")
+        await invites.create_index([("organizationId", 1), ("email", 1)])
+        await invites.create_index("expiresAt", expireAfterSeconds=0)
+
+        # Activity logs collection indexes
+        logs = db.database.activity_logs
+        await logs.create_index("userId")
+        await logs.create_index("action")
+        await logs.create_index("createdAt")
+        await logs.create_index([("userId", 1), ("action", 1), ("createdAt", -1)])
+
+        # Subscription events collection indexes
+        sub_events = db.database.subscription_events
+        await sub_events.create_index("stripeEventId", unique=True)
+        await sub_events.create_index("userId")
 
         logger.info("Database indexes created successfully")
 

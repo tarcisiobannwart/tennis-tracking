@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Camera,
   Maximize2,
@@ -19,7 +18,6 @@ interface MultiCameraGridProps {
 }
 
 const MultiCameraGrid = ({ streams, onStreamSelect }: MultiCameraGridProps) => {
-  const { t } = useTranslation()
   const [primaryStreamId, setPrimaryStreamId] = useState<string | null>(
     streams.find((s) => s.status === 'live')?.id || streams[0]?.id || null
   )

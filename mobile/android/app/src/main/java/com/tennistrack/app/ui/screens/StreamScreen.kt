@@ -118,7 +118,7 @@ fun StreamScreen(
         streamer.onDisconnected = {
             viewModel.onDisconnected()
         }
-        streamer.onNewBitrate = { bitrate ->
+        streamer.onNewBitrateCallback = { bitrate ->
             viewModel.onBitrateUpdate(bitrate)
         }
     }

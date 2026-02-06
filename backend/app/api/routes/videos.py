@@ -7,7 +7,10 @@ from datetime import datetime
 from bson import ObjectId
 
 from app.core.mongodb import get_database
-from app.core.auth import get_current_user
+from app.core.auth import get_current_active_user
+from app.models.user import UserInDB
+from app.services.user_service import user_service
+from app.core.dependencies import get_plan_limits
 
 router = APIRouter()
 
@@ -15,14 +18,27 @@ router = APIRouter()
 @router.post("/upload")
 async def upload_video(
     file: UploadFile = File(...),
-    current_user=Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_active_user),
 ):
     """Upload a video for analysis"""
     db = get_database()
+    user_id = str(current_user.id)
+
+    # Check plan limits
+    limits = get_plan_limits(current_user)
+    videos_limit = limits["videos_per_month"]
+
+    if videos_limit > 0:  # -1 = unlimited
+        video_count = await user_service.get_video_count_this_month(user_id)
+        if video_count >= videos_limit:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Limite de {videos_limit} videos/mes atingido. Faca upgrade do seu plano."
+            )
 
     # Save video info to database
     video_doc = {
-        "userId": str(current_user["_id"]),
+        "userId": user_id,
         "filename": file.filename,
         "contentType": file.content_type,
         "size": file.size,
@@ -36,19 +52,28 @@ async def upload_video(
         "id": str(result.inserted_id),
         "filename": file.filename,
         "status": "uploaded",
-        "message": "Video uploaded successfully"
+        "message": "Video enviado com sucesso"
     }
 
 
 @router.get("/")
-async def get_user_videos(current_user=Depends(get_current_user)):
+async def get_user_videos(current_user: UserInDB = Depends(get_current_active_user)):
     """Get all videos for current user"""
     db = get_database()
-    videos = await db.videos.find(
-        {"userId": str(current_user["_id"])}
-    ).sort("uploadedAt", -1).to_list(100)
+    user_id = str(current_user.id)
 
-    # Convert ObjectId to string
+    # Check history limit
+    limits = get_plan_limits(current_user)
+    history_days = limits["history_days"]
+
+    query = {"userId": user_id}
+    if history_days > 0:
+        from datetime import timedelta
+        cutoff = datetime.utcnow() - timedelta(days=history_days)
+        query["uploadedAt"] = {"$gte": cutoff}
+
+    videos = await db.videos.find(query).sort("uploadedAt", -1).to_list(100)
+
     for video in videos:
         video["_id"] = str(video["_id"])
 
@@ -56,31 +81,31 @@ async def get_user_videos(current_user=Depends(get_current_user)):
 
 
 @router.get("/{video_id}")
-async def get_video(video_id: str, current_user=Depends(get_current_user)):
+async def get_video(video_id: str, current_user: UserInDB = Depends(get_current_active_user)):
     """Get video by ID"""
     db = get_database()
     video = await db.videos.find_one({
         "_id": ObjectId(video_id),
-        "userId": str(current_user["_id"])
+        "userId": str(current_user.id)
     })
 
     if not video:
-        raise HTTPException(status_code=404, detail="Video not found")
+        raise HTTPException(status_code=404, detail="Video nao encontrado")
 
     video["_id"] = str(video["_id"])
     return video
 
 
 @router.delete("/{video_id}")
-async def delete_video(video_id: str, current_user=Depends(get_current_user)):
+async def delete_video(video_id: str, current_user: UserInDB = Depends(get_current_active_user)):
     """Delete video"""
     db = get_database()
     result = await db.videos.delete_one({
         "_id": ObjectId(video_id),
-        "userId": str(current_user["_id"])
+        "userId": str(current_user.id)
     })
 
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Video not found")
+        raise HTTPException(status_code=404, detail="Video nao encontrado")
 
-    return {"message": "Video deleted successfully"}
+    return {"message": "Video excluido com sucesso"}

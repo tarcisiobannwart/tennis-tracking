@@ -1,21 +1,16 @@
 """
-Pytest configuration and fixtures
+Pytest configuration and fixtures for MongoDB-based tests
 """
 
 import pytest
 import asyncio
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import StaticPool
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
+from mongomock_motor import AsyncMongoMockClient
 
 from app.main import app
-from app.core.database import Base, get_db
+from app.core import mongodb as mongodb_module
 from app.core.config import settings
-
-
-# Test database URL
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
 @pytest.fixture(scope="session")
@@ -26,128 +21,66 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="function")
-async def test_db() -> AsyncGenerator[AsyncSession, None]:
-    """Create a test database session."""
-    # Create test engine
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        connect_args={
-            "check_same_thread": False,
-        },
-        poolclass=StaticPool,
-    )
+@pytest.fixture(autouse=True)
+async def mock_mongodb():
+    """Mock MongoDB with mongomock-motor for each test."""
+    mock_client = AsyncMongoMockClient()
+    mock_db = mock_client[settings.DATABASE_NAME]
 
-    # Create tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Patch the global db object
+    mongodb_module.db.client = mock_client
+    mongodb_module.db.database = mock_db
 
-    # Create session
-    async_session_factory = async_sessionmaker(
-        engine,
-        class_=AsyncSession,
-        expire_on_commit=False
-    )
+    yield mock_db
 
-    async with async_session_factory() as session:
-        yield session
-
-    # Drop tables after test
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-    await engine.dispose()
+    # Clean up all collections after each test
+    for name in await mock_db.list_collection_names():
+        await mock_db[name].drop()
 
 
 @pytest.fixture
-async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Create a test client."""
-    def override_get_db():
-        return test_db
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+async def client(mock_mongodb) -> AsyncGenerator[AsyncClient, None]:
+    """Create a test HTTP client."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
-    app.dependency_overrides.clear()
+
+@pytest.fixture
+def test_user_data():
+    """Standard test user data for registration."""
+    return {
+        "email": "test@example.com",
+        "username": "testuser",
+        "fullName": "Test User",
+        "password": "TestPassword123!",
+        "role": "player",
+        "language": "pt-BR",
+    }
 
 
 @pytest.fixture
-async def sample_player(test_db: AsyncSession):
-    """Create a sample player for testing."""
-    from app.models.player import Player
-
-    player = Player(
-        name="Test Player",
-        email="test@example.com",
-        age=25,
-        country="USA",
-        dominant_hand="right",
-        skill_level="advanced"
-    )
-
-    test_db.add(player)
-    await test_db.commit()
-    await test_db.refresh(player)
-
-    return player
+def admin_user_data():
+    """Admin test user data for registration."""
+    return {
+        "email": "admin@example.com",
+        "username": "adminuser",
+        "fullName": "Admin User",
+        "password": "AdminPassword123!",
+        "role": "admin",
+        "language": "pt-BR",
+    }
 
 
 @pytest.fixture
-async def sample_players(test_db: AsyncSession):
-    """Create multiple sample players for testing."""
-    from app.models.player import Player
-
-    players = [
-        Player(
-            name="Player One",
-            email="player1@example.com",
-            age=24,
-            country="USA",
-            dominant_hand="right",
-            skill_level="professional"
-        ),
-        Player(
-            name="Player Two",
-            email="player2@example.com",
-            age=26,
-            country="ESP",
-            dominant_hand="left",
-            skill_level="professional"
-        )
-    ]
-
-    for player in players:
-        test_db.add(player)
-
-    await test_db.commit()
-
-    for player in players:
-        await test_db.refresh(player)
-
-    return players
+async def registered_user(client: AsyncClient, test_user_data: dict):
+    """Register a user and return the response data with tokens."""
+    response = await client.post("/api/auth/register", json=test_user_data)
+    assert response.status_code == 200
+    return response.json()
 
 
 @pytest.fixture
-async def sample_match(test_db: AsyncSession, sample_players):
-    """Create a sample match for testing."""
-    from app.models.match import Match
-
-    player1, player2 = sample_players
-
-    match = Match(
-        title="Test Match",
-        match_type="singles",
-        surface="hard",
-        player1_id=player1.id,
-        player2_id=player2.id,
-        tournament_name="Test Tournament",
-        venue="Test Court"
-    )
-
-    test_db.add(match)
-    await test_db.commit()
-    await test_db.refresh(match)
-
-    return match
+async def auth_headers(registered_user: dict):
+    """Return authorization headers for the registered user."""
+    return {"Authorization": f"Bearer {registered_user['access_token']}"}

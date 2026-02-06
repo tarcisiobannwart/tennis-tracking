@@ -2,11 +2,11 @@ package com.tennistrack.app.streaming
 
 import android.util.Log
 import android.view.SurfaceView
+import com.pedro.common.ConnectChecker
 import com.pedro.encoder.input.video.CameraHelper
-import com.pedro.rtmp.utils.ConnectCheckerRtmp
-import com.pedro.rtplibrary.rtmp.RtmpCamera2
+import com.pedro.library.rtmp.RtmpCamera2
 
-class RtmpStreamer : ConnectCheckerRtmp {
+class RtmpStreamer : ConnectChecker {
 
     companion object {
         private const val TAG = "RtmpStreamer"
@@ -20,7 +20,7 @@ class RtmpStreamer : ConnectCheckerRtmp {
     var onConnectionSuccess: (() -> Unit)? = null
     var onConnectionFailed: ((reason: String) -> Unit)? = null
     var onDisconnected: (() -> Unit)? = null
-    var onNewBitrate: ((bitrate: Long) -> Unit)? = null
+    var onNewBitrateCallback: ((bitrate: Long) -> Unit)? = null
 
     fun initCamera(surfaceView: SurfaceView) {
         rtmpCamera = RtmpCamera2(surfaceView, this)
@@ -85,7 +85,11 @@ class RtmpStreamer : ConnectCheckerRtmp {
     }
 
     fun switchCamera() {
-        rtmpCamera?.switchCamera()
+        try {
+            rtmpCamera?.switchCamera()
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao trocar camera: ${e.message}")
+        }
     }
 
     fun toggleFlash(): Boolean {
@@ -146,41 +150,41 @@ class RtmpStreamer : ConnectCheckerRtmp {
         rtmpCamera = null
     }
 
-    // ConnectCheckerRtmp callbacks
+    // ConnectChecker callbacks
 
-    override fun onConnectionStartedRtmp(rtmpUrl: String) {
-        Log.d(TAG, "Conexao iniciada: $rtmpUrl")
+    override fun onConnectionStarted(url: String) {
+        Log.d(TAG, "Conexao iniciada: $url")
     }
 
-    override fun onConnectionSuccessRtmp() {
+    override fun onConnectionSuccess() {
         _isStreaming = true
         Log.d(TAG, "Conexao RTMP estabelecida")
         onConnectionSuccess?.invoke()
     }
 
-    override fun onConnectionFailedRtmp(reason: String) {
+    override fun onConnectionFailed(reason: String) {
         _isStreaming = false
         Log.e(TAG, "Conexao RTMP falhou: $reason")
         onConnectionFailed?.invoke(reason)
     }
 
-    override fun onNewBitrateRtmp(bitrate: Long) {
-        onNewBitrate?.invoke(bitrate)
+    override fun onNewBitrate(bitrate: Long) {
+        onNewBitrateCallback?.invoke(bitrate)
     }
 
-    override fun onDisconnectRtmp() {
+    override fun onDisconnect() {
         _isStreaming = false
         Log.d(TAG, "Desconectado do RTMP")
         onDisconnected?.invoke()
     }
 
-    override fun onAuthErrorRtmp() {
+    override fun onAuthError() {
         _isStreaming = false
         Log.e(TAG, "Erro de autenticacao RTMP")
         onConnectionFailed?.invoke("Erro de autenticacao RTMP")
     }
 
-    override fun onAuthSuccessRtmp() {
+    override fun onAuthSuccess() {
         Log.d(TAG, "Autenticacao RTMP bem-sucedida")
     }
 }

@@ -57,6 +57,16 @@ services:
       - UPLOAD_DIR=/app/uploads
       - CORS_ORIGINS=http://localhost:3000,http://frontend:3000,http://192.168.0.78:3000,https://tennis.tarcisiobannwart.com,http://tennis.tarcisiobannwart.com
       - ENVIRONMENT=development
+      # Stripe
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - STRIPE_PRICE_MATCH_POINT_MONTHLY=${STRIPE_PRICE_MATCH_POINT_MONTHLY:-}
+      - STRIPE_PRICE_GRAND_SLAM_MONTHLY=${STRIPE_PRICE_GRAND_SLAM_MONTHLY:-}
+      # Email (Resend)
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@tennistrack.app}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      # MediaMTX
       - MEDIAMTX_RTMP_URL=rtmp://mediamtx:1935
       - MEDIAMTX_RTSP_URL=rtsp://mediamtx:8554
       - MEDIAMTX_HLS_URL=http://mediamtx:8888
@@ -86,6 +96,11 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000
+      - VITE_MEDIAMTX_HLS_URL=http://localhost:8888
+      - VITE_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
     depends_on:
       - backend
     networks:
@@ -125,6 +140,8 @@ services:
       - MONGODB_URL=mongodb://admin:tennis_admin_2024@mongodb:27017/tennis_tracking?authSource=admin
       - REDIS_URL=redis://redis:6379
       - MODEL_PATH=/app/models
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads

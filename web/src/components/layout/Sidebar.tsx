@@ -8,51 +8,66 @@ import {
   Menu,
   Activity,
   Video,
-  Target
+  Target,
+  Shield,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
 
 const Sidebar = () => {
   const { sidebarOpen, toggleSidebar } = useUIStore()
+  const { user } = useAuthStore()
   const location = useLocation()
   const { t } = useTranslation()
 
   const navigation = [
     {
       name: t('navigation.dashboard'),
-      href: '/',
+      href: '/app',
       icon: Home,
     },
     {
       name: t('navigation.analysis'),
-      href: '/live',
+      href: '/app/live',
       icon: Activity,
     },
     {
       name: t('navigation.matches'),
-      href: '/matches',
+      href: '/app/matches',
       icon: Trophy,
     },
     {
       name: 'Jogadores',
-      href: '/players',
+      href: '/app/players',
       icon: Users,
     },
     {
       name: t('navigation.statistics'),
-      href: '/analytics',
+      href: '/app/analytics',
       icon: BarChart3,
     },
     {
       name: 'Treino',
-      href: '/training',
+      href: '/app/training',
       icon: Target,
     },
   ]
 
-  const isActive = (href: string) => location.pathname === href
+  // Add admin link for admin users
+  if (user?.role === 'admin') {
+    navigation.push({
+      name: 'Admin',
+      href: '/app/admin',
+      icon: Shield,
+    })
+  }
+
+  const isActive = (href: string) => {
+    if (href === '/app') return location.pathname === '/app'
+    return location.pathname.startsWith(href)
+  }
 
   return (
     <>
@@ -90,7 +105,7 @@ const Sidebar = () => {
             const active = isActive(item.href)
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
                 className={cn(
                   "flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-300 relative group",
@@ -100,13 +115,11 @@ const Sidebar = () => {
                   !sidebarOpen && "justify-center"
                 )}
               >
-                {/* Active indicator */}
                 {active && (
                   <div className="absolute left-0 w-1 h-8 bg-court-accent rounded-r-full" />
                 )}
                 <Icon className={cn("w-5 h-5", sidebarOpen && "mr-3")} />
                 {sidebarOpen && item.name}
-                {/* Tooltip for collapsed state */}
                 {!sidebarOpen && (
                   <div className="absolute left-16 px-2 py-1 bg-slate-700 text-slate-100 text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                     {item.name}
@@ -117,17 +130,19 @@ const Sidebar = () => {
           })}
         </nav>
 
-        {/* Live indicator */}
-        {sidebarOpen && (
+        {/* Plan badge */}
+        {sidebarOpen && user?.subscription && (
           <div className="p-4 border-t border-slate-700">
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-                <span className="text-xs text-slate-400">
-                  Sistema Ativo
-                </span>
+            <Link to="/app/settings" className="block">
+              <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600 hover:border-slate-500 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Plano</span>
+                  <span className="text-xs font-medium text-blue-400 capitalize">
+                    {user.subscription.plan?.replace('_', ' ')}
+                  </span>
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
         )}
       </div>
@@ -140,7 +155,7 @@ const Sidebar = () => {
             const active = isActive(item.href)
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-300 min-w-[60px]",
@@ -151,7 +166,6 @@ const Sidebar = () => {
               >
                 <Icon className="w-5 h-5 mb-1" />
                 <span className="text-[10px]">{item.name.split(' ')[0]}</span>
-                {/* Active indicator dot */}
                 {active && (
                   <div className="absolute bottom-0 w-1 h-1 bg-court-accent rounded-full" />
                 )}

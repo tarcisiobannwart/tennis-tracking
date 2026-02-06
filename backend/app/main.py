@@ -11,33 +11,50 @@ import uvicorn
 
 from app.core.config import settings
 from app.core.mongodb import connect_mongodb, close_mongodb
-from app.api.routes import auth, users, videos, analysis, matches, upload, test_auth, streams
+from app.core.middleware import setup_rate_limiting
+from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
-    print("🚀 Starting Tennis Tracking API")
+    print("Starting Tennis Tracking API")
     await connect_mongodb()
-    print("✅ Connected to MongoDB")
+    print("Connected to MongoDB")
 
     yield
 
     # Shutdown
-    print("🛑 Shutting down Tennis Tracking API")
+    print("Shutting down Tennis Tracking API")
     await close_mongodb()
-    print("✅ Disconnected from MongoDB")
+    print("Disconnected from MongoDB")
 
+
+# OpenAPI tag descriptions
+tags_metadata = [
+    {"name": "Authentication", "description": "Registro, login, tokens e reset de senha"},
+    {"name": "Users", "description": "Perfil de usuario, configuracoes e uso"},
+    {"name": "Matches", "description": "Partidas de tenis e estatisticas"},
+    {"name": "Videos", "description": "Upload e gerenciamento de videos"},
+    {"name": "Analysis", "description": "Analise de video com IA e CV"},
+    {"name": "Upload", "description": "Upload de arquivos e progresso"},
+    {"name": "Streams", "description": "Streaming ao vivo multi-camera"},
+    {"name": "Subscriptions", "description": "Planos, checkout Stripe e portal"},
+    {"name": "Admin", "description": "Painel administrativo (requer role admin)"},
+    {"name": "Organizations", "description": "Times e organizacoes (plano Grand Slam)"},
+]
 
 # Create FastAPI application
 app = FastAPI(
     title="Tennis Tracking API",
-    description="Professional API for tennis video analysis and player tracking",
+    description="API profissional para analise de video de tenis e rastreamento de jogadores. "
+    "Inclui autenticacao JWT, assinaturas Stripe, streaming ao vivo e painel admin.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    openapi_tags=tags_metadata,
     lifespan=lifespan,
 )
 
@@ -53,6 +70,9 @@ app.add_middleware(
 # Add compression middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+# Setup rate limiting
+setup_rate_limiting(app)
+
 # Include API routes
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
@@ -60,8 +80,10 @@ app.include_router(matches.router, prefix="/api/matches", tags=["Matches"])
 app.include_router(videos.router, prefix="/api/videos", tags=["Videos"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
-app.include_router(test_auth.router, prefix="/api/test-auth", tags=["Test Auth"])
 app.include_router(streams.router, prefix="/api/streams", tags=["Streams"])
+app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["Subscriptions"])
+app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(organizations.router, prefix="/api/organizations", tags=["Organizations"])
 
 
 @app.get("/")

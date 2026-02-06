@@ -33,33 +33,6 @@
     "logout": "Sair",
     "login": "Entrar"
   },
-  "auth": {
-    "login": {
-      "title": "Entrar na sua conta",
-      "email": "E-mail",
-      "password": "Senha",
-      "rememberMe": "Lembrar de mim",
-      "forgotPassword": "Esqueceu a senha?",
-      "submit": "Entrar",
-      "noAccount": "Não tem uma conta?",
-      "signUp": "Cadastre-se",
-      "invalidCredentials": "E-mail ou senha inválidos",
-      "loginSuccess": "Login realizado com sucesso!"
-    },
-    "register": {
-      "title": "Criar uma conta",
-      "name": "Nome completo",
-      "email": "E-mail",
-      "password": "Senha",
-      "confirmPassword": "Confirmar senha",
-      "terms": "Eu aceito os termos e condições",
-      "submit": "Cadastrar",
-      "haveAccount": "Já tem uma conta?",
-      "signIn": "Entrar",
-      "passwordMismatch": "As senhas não coincidem",
-      "registerSuccess": "Cadastro realizado com sucesso!"
-    }
-  },
   "dashboard": {
     "title": "Painel de Controle",
     "welcome": "Bem-vindo de volta, {{name}}!",
@@ -302,8 +275,117 @@
       "useCamera": "Usar Câmera"
     }
   },
+  "auth": {
+    "login": {
+      "title": "Entrar na sua conta",
+      "email": "E-mail ou usuario",
+      "password": "Senha",
+      "rememberMe": "Lembrar de mim",
+      "forgotPassword": "Esqueceu a senha?",
+      "submit": "Entrar",
+      "noAccount": "Nao tem uma conta?",
+      "signUp": "Cadastre-se",
+      "invalidCredentials": "E-mail ou senha invalidos",
+      "loginSuccess": "Login realizado com sucesso!"
+    },
+    "register": {
+      "title": "Criar uma conta",
+      "name": "Nome completo",
+      "email": "E-mail",
+      "password": "Senha",
+      "confirmPassword": "Confirmar senha",
+      "terms": "Eu aceito os termos e condicoes",
+      "submit": "Cadastrar",
+      "haveAccount": "Ja tem uma conta?",
+      "signIn": "Entrar",
+      "passwordMismatch": "As senhas nao coincidem",
+      "passwordTooShort": "A senha deve ter no minimo 6 caracteres",
+      "registerSuccess": "Cadastro realizado com sucesso!"
+    },
+    "forgotPassword": {
+      "title": "Recuperar senha",
+      "description": "Informe seu e-mail para receber um link de redefinicao",
+      "submit": "Enviar link",
+      "emailSent": "Se o e-mail existir, um link de redefinicao sera enviado",
+      "checkEmail": "Verifique sua caixa de entrada para o link de redefinicao de senha.",
+      "backToLogin": "Voltar ao login"
+    },
+    "resetPassword": {
+      "title": "Redefinir senha",
+      "newPassword": "Nova senha",
+      "submit": "Redefinir senha",
+      "success": "Senha redefinida com sucesso!",
+      "invalidToken": "Token invalido ou expirado",
+      "requestNew": "Solicitar novo link"
+    }
+  },
+  "subscription": {
+    "featureLocked": "Recurso bloqueado",
+    "upgradeMessage": "Este recurso requer o plano {{plan}} ou superior.",
+    "upgrade": "Fazer upgrade",
+    "currentPlan": "Plano atual",
+    "changePlan": "Alterar plano",
+    "manageBilling": "Gerenciar pagamento",
+    "cancelSubscription": "Cancelar assinatura",
+    "plans": {
+      "rally": "Rally",
+      "match_point": "Match Point",
+      "grand_slam": "Grand Slam"
+    },
+    "status": {
+      "active": "Ativo",
+      "trialing": "Periodo de teste",
+      "past_due": "Pagamento pendente",
+      "canceled": "Cancelado"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "personalInfo": "Informacoes pessoais",
+    "changePassword": "Alterar senha",
+    "currentPassword": "Senha atual",
+    "newPassword": "Nova senha",
+    "confirmNewPassword": "Confirmar nova senha",
+    "passwordChanged": "Senha alterada com sucesso!",
+    "updateProfile": "Atualizar perfil",
+    "profileUpdated": "Perfil atualizado com sucesso!"
+  },
+  "admin": {
+    "title": "Painel Administrativo",
+    "dashboard": "Dashboard Admin",
+    "users": "Usuarios",
+    "subscriptions": "Assinaturas",
+    "logs": "Logs de Atividade",
+    "totalUsers": "Total de Usuarios",
+    "activeSubscriptions": "Assinaturas Ativas",
+    "mrr": "MRR",
+    "newUsersThisMonth": "Novos usuarios este mes",
+    "editUser": "Editar usuario",
+    "role": "Papel",
+    "plan": "Plano",
+    "status": "Status",
+    "actions": "Acoes"
+  },
+  "organization": {
+    "title": "Organizacao",
+    "members": "Membros",
+    "inviteMembers": "Convidar membro",
+    "inviteEmail": "E-mail do convidado",
+    "inviteRole": "Papel",
+    "sendInvite": "Enviar convite",
+    "inviteSent": "Convite enviado com sucesso!",
+    "removeMember": "Remover membro",
+    "acceptInvite": "Aceitar convite",
+    "inviteAccepted": "Convite aceito com sucesso!",
+    "inviteExpired": "Convite expirado ou invalido",
+    "createOrg": "Criar organizacao",
+    "orgName": "Nome da organizacao",
+    "owner": "Dono",
+    "admin": "Admin",
+    "member": "Membro"
+  },
   "footer": {
-    "copyright": "© 2024 Tennis Tracking. Todos os direitos reservados.",
+    "copyright": "© 2026 Tennis Tracking. Todos os direitos reservados.",
     "privacy": "Privacidade",
     "terms": "Termos de Uso",
     "contact": "Contato",
