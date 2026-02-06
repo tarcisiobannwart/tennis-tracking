@@ -43,6 +43,9 @@ class Settings(BaseSettings):
         "http://localhost:8080",  # Vue dev
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "http://192.168.0.78:3000",  # Rede local
+        "https://tennis.tarcisiobannwart.com",  # Dominio producao
+        "http://tennis.tarcisiobannwart.com",
     ]
 
     # File uploads

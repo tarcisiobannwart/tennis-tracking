@@ -55,7 +55,7 @@ services:
       - JWT_ALGORITHM=HS256
       - JWT_EXPIRATION_HOURS=24
       - UPLOAD_DIR=/app/uploads
-      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000,http://192.168.0.78:3000,https://tennis.tarcisiobannwart.com,http://tennis.tarcisiobannwart.com
       - ENVIRONMENT=development
       - MEDIAMTX_RTMP_URL=rtmp://mediamtx:1935
       - MEDIAMTX_RTSP_URL=rtsp://mediamtx:8554
@@ -72,27 +72,25 @@ services:
         condition: service_healthy
     networks:
       - tennis-network
+      - infra
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # Frontend
   frontend:
     build:
-      context: ./frontend
+      context: ./web
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=
     container_name: tennis-tracking-frontend
     restart: always
     ports:
       - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - VITE_WS_URL=ws://localhost:8000
-      - VITE_MEDIAMTX_HLS_URL=http://localhost:8888
     depends_on:
       - backend
     networks:
       - tennis-network
+      - infra
 
   # MediaMTX - Media Server for live streaming
   mediamtx:
@@ -153,3 +151,6 @@ volumes:
 networks:
   tennis-network:
     driver: bridge
+  infra:
+    external: true
+    name: docker_infra

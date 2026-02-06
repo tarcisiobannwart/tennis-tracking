@@ -22,7 +22,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/test-auth/login', {
+      const response = await fetch('/api/test-auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ const Login = () => {
 
   const handleQuickLogin = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/test-auth/test-token');
+      const response = await fetch('/api/test-auth/test-token');
       const data = await response.json();
 
       localStorage.setItem('token', data.token);
