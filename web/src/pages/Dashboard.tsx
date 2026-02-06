@@ -215,44 +215,44 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </PageTransition>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common tasks and shortcuts
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link to="/live">
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>
+              Common tasks and shortcuts
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Link to="/live">
+                <Button variant="outline" className="w-full">
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Live Analysis
+                </Button>
+              </Link>
               <Button variant="outline" className="w-full">
-                <Play className="w-4 h-4 mr-2" />
-                Start Live Analysis
+                <Calendar className="w-4 h-4 mr-2" />
+                Schedule Match
               </Button>
-            </Link>
-            <Button variant="outline" className="w-full">
-              <Calendar className="w-4 h-4 mr-2" />
-              Schedule Match
-            </Button>
-            <Link to="/players">
-              <Button variant="outline" className="w-full">
-                <Users className="w-4 h-4 mr-2" />
-                Manage Players
-              </Button>
-            </Link>
-            <Link to="/analytics">
-              <Button variant="outline" className="w-full">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                View Reports
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              <Link to="/players">
+                <Button variant="outline" className="w-full">
+                  <Users className="w-4 h-4 mr-2" />
+                  Manage Players
+                </Button>
+              </Link>
+              <Link to="/analytics">
+                <Button variant="outline" className="w-full">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  View Reports
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </PageTransition>
   )
 }
 

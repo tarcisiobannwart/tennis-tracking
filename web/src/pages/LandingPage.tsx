@@ -14,7 +14,6 @@ import {
   Shield,
   Cpu,
   Eye,
-  TrendingUp,
   Star,
   Check,
   ArrowRight,
@@ -186,8 +185,8 @@ export default function LandingPage() {
                 }`}
                 style={{
                   backgroundColor: courtColors[color].hex,
-                  ringColor: courtColors[color].hex,
-                }}
+                  '--tw-ring-color': courtColors[color].hex,
+                } as React.CSSProperties}
                 title={courtColors[color].name}
               />
             ))}

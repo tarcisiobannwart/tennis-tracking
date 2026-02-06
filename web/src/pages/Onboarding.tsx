@@ -45,7 +45,7 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { courtColor, setCourtColor } = useThemeStore();
   const [selectedCourt, setSelectedCourt] = useState<CourtColor>(courtColor);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [, setIsAnimating] = useState(false);
 
   // Pegar nome do usuário do localStorage
   const user = JSON.parse(localStorage.getItem('user') || '{}');

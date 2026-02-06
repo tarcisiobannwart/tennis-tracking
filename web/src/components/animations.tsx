@@ -341,8 +341,12 @@ export const GetReadyScreen = ({ isVisible, text = 'Get Ready', onComplete }: Ge
 }
 
 // Animated Button
-interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface AnimatedButtonProps {
   children: ReactNode
+  className?: string
+  onClick?: () => void
+  disabled?: boolean
+  type?: 'button' | 'submit' | 'reset'
 }
 
 export const AnimatedButton = ({ children, className, ...props }: AnimatedButtonProps) => {

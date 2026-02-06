@@ -33,7 +33,7 @@ interface BottomNavProps {
 export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) => {
   const location = useLocation()
   const [fabOpen, setFabOpen] = useState(false)
-  const [isVisible, setIsVisible] = useState(true)
+  const [isVisible] = useState(true)
 
   const fabActions: FABAction[] = [
     {
