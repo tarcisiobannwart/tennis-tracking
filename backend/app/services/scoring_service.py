@@ -12,7 +12,8 @@ from app.models.scoring import (
     GameScore,
     SetScore,
     ScoreUpdate,
-    GameSituation
+    GameSituation,
+    LiveBroadcastData
 )
 from app.models.scoreboard import (
     Scoreboard,
@@ -529,3 +530,219 @@ class ScoringService:
             raise ValueError(f"Match score not found for match_id: {match_id}")
 
         return self._get_game_situation(match_score)
+
+    async def get_live_broadcast_data(
+        self,
+        match_id: str,
+        player1_name: str,
+        player2_name: str,
+        player1_ranking: Optional[int] = None,
+        player2_ranking: Optional[int] = None,
+        player1_country: Optional[str] = None,
+        player2_country: Optional[str] = None,
+        last_points_count: int = 5
+    ) -> LiveBroadcastData:
+        """
+        Get optimized data package for live broadcast/streaming
+
+        Combines scoreboard, situation, recent points, and key stats
+        in a single optimized response for minimal latency.
+
+        Args:
+            match_id: Match ID
+            player1_name: Player 1 name
+            player2_name: Player 2 name
+            player1_ranking: Player 1 ranking (optional)
+            player2_ranking: Player 2 ranking (optional)
+            player1_country: Player 1 country code (optional)
+            player2_country: Player 2 country code (optional)
+            last_points_count: Number of recent points to include (default: 5)
+
+        Returns:
+            LiveBroadcastData with all broadcast info
+        """
+        from app.services.point_history_service import PointHistoryService
+
+        match_score = await self.get_match_score(match_id)
+        if not match_score:
+            raise ValueError(f"Match score not found for match_id: {match_id}")
+
+        # Get scoreboard (compact format)
+        scoreboard = await self.get_scoreboard(
+            match_id=match_id,
+            player1_name=player1_name,
+            player2_name=player2_name,
+            player1_ranking=player1_ranking,
+            player2_ranking=player2_ranking,
+            player1_country=player1_country,
+            player2_country=player2_country
+        )
+
+        # Get situation
+        situation = self._get_game_situation(match_score)
+
+        # Get last points from history
+        point_service = PointHistoryService(self.db)
+        all_points = await point_service.get_points_by_match(match_id)
+        last_points = all_points[-last_points_count:] if len(all_points) >= last_points_count else all_points
+
+        # Format last points for broadcast (compact)
+        last_points_summary = []
+        for point in last_points:
+            last_points_summary.append({
+                "winner_id": point.point_winner_id,
+                "score": point.score_after_point,
+                "outcome": point.outcome,
+                "is_break_point": point.is_break_point
+            })
+
+        # Get key stats
+        stats = await self.get_match_stats(match_id)
+        summary = await point_service.get_match_summary(match_id)
+
+        key_stats = {
+            "sets_won": stats["sets_won"],
+            "games_won": stats["games_won"],
+            "aces": summary.aces_count,
+            "double_faults": summary.double_faults_count,
+            "winners": summary.winners_count,
+            "unforced_errors": summary.unforced_errors_count,
+            "break_points": {
+                "total": summary.break_points_total,
+                "converted": summary.break_points_converted
+            }
+        }
+
+        return LiveBroadcastData(
+            match_id=match_id,
+            scoreboard=scoreboard,
+            situation=situation,
+            last_points=last_points_summary,
+            key_stats=key_stats,
+            timestamp=datetime.utcnow().isoformat()
+        )
+
+    async def get_broadcast_score(self, match_id: str) -> Dict[str, any]:
+        """
+        Get minimal score data optimized for broadcast overlay
+
+        Returns only essential info for TV/streaming overlay:
+        - Current game score
+        - Sets won
+        - Current set games
+        - Server indicator
+
+        Args:
+            match_id: Match ID
+
+        Returns:
+            Compact dict with broadcast score
+        """
+        match_score = await self.get_match_score(match_id)
+        if not match_score:
+            raise ValueError(f"Match score not found for match_id: {match_id}")
+
+        # Get game score
+        current_game_score = None
+        if match_score.current_game:
+            p1_score, p2_score = match_score.current_game.get_score_display()
+            current_game_score = {
+                "p1": p1_score,
+                "p2": p2_score,
+                "tiebreak": match_score.current_game.is_tiebreak
+            }
+
+        # Get sets won
+        p1_sets = sum(1 for s in match_score.sets if s.winner_player_id == match_score.player1_id)
+        p2_sets = sum(1 for s in match_score.sets if s.winner_player_id == match_score.player2_id)
+
+        # Get current set games
+        current_set_games = None
+        if match_score.current_set:
+            current_set_games = {
+                "p1": match_score.current_set.player1_games,
+                "p2": match_score.current_set.player2_games
+            }
+
+        # Get all completed sets
+        completed_sets = []
+        for set_score in match_score.sets:
+            completed_sets.append({
+                "p1": set_score.player1_games,
+                "p2": set_score.player2_games,
+                "tiebreak": set_score.tiebreak_score
+            })
+
+        return {
+            "match_id": match_id,
+            "game": current_game_score,
+            "sets": {
+                "p1": p1_sets,
+                "p2": p2_sets
+            },
+            "current_set": current_set_games,
+            "completed_sets": completed_sets,
+            "server": "p1" if match_score.current_server_id == match_score.player1_id else "p2",
+            "complete": match_score.is_complete
+        }
+
+    async def export_complete_match_data(self, match_id: str) -> Dict[str, any]:
+        """
+        Export complete match data for analysis/archival
+
+        Includes:
+        - Full match score
+        - All point history
+        - Complete statistics
+        - Timeline of events
+
+        Args:
+            match_id: Match ID
+
+        Returns:
+            Complete match data package
+        """
+        from app.services.point_history_service import PointHistoryService
+
+        match_score = await self.get_match_score(match_id)
+        if not match_score:
+            raise ValueError(f"Match score not found for match_id: {match_id}")
+
+        # Get all points
+        point_service = PointHistoryService(self.db)
+        all_points = await point_service.get_points_by_match(match_id)
+        summary = await point_service.get_match_summary(match_id)
+
+        # Get stats
+        stats = await self.get_match_stats(match_id)
+
+        # Build timeline of key events
+        timeline = []
+        for point in all_points:
+            if point.is_break_point or point.is_set_point or point.is_match_point:
+                timeline.append({
+                    "set": point.set_number,
+                    "game": point.game_number,
+                    "point": point.point_number,
+                    "type": "break_point" if point.is_break_point else ("match_point" if point.is_match_point else "set_point"),
+                    "winner": point.point_winner_id,
+                    "score": point.score_after_point
+                })
+
+        return {
+            "match_id": match_id,
+            "format": match_score.format.value,
+            "winner": match_score.winner_player_id,
+            "is_complete": match_score.is_complete,
+            "score": {
+                "sets": [s.model_dump() for s in match_score.sets],
+                "current_set": match_score.current_set.model_dump() if match_score.current_set else None
+            },
+            "statistics": {
+                "match_stats": stats,
+                "point_summary": summary.model_dump()
+            },
+            "points": [p.model_dump() for p in all_points],
+            "timeline": timeline,
+            "export_timestamp": datetime.utcnow().isoformat()
+        }

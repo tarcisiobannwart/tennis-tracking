@@ -262,6 +262,16 @@ class GameSituation(BaseModel):
     situation_text: str = Field(default="", description="Human-readable situation description")
 
 
+class LiveBroadcastData(BaseModel):
+    """Optimized data for live broadcast"""
+    match_id: str = Field(..., description="Match ID")
+    scoreboard: dict = Field(..., description="Compact scoreboard data")
+    situation: GameSituation = Field(..., description="Current game situation")
+    last_points: List[dict] = Field(default_factory=list, description="Last 5 points summary")
+    key_stats: dict = Field(default_factory=dict, description="Key statistics for broadcast")
+    timestamp: str = Field(..., description="Data timestamp")
+
+
 class ScoreUpdate(BaseModel):
     """Score update event"""
     match_id: str
