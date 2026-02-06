@@ -499,6 +499,179 @@ class AnalyticsService:
             max_speed=28.5
         )
 
+    async def get_rally_analysis(
+        self,
+        match_id: str,
+        min_length: int = 3,
+        max_length: Optional[int] = None,
+        rally_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get detailed rally analysis for a match"""
+
+        # Get points for the match
+        points_query = select(Point).where(Point.match_id == match_id)
+        points_result = await self.db.execute(points_query)
+        points = points_result.scalars().all()
+
+        # Filter rallies by length
+        rallies = [p for p in points if p.rally_length >= min_length]
+        if max_length:
+            rallies = [p for p in rallies if p.rally_length <= max_length]
+
+        # Calculate rally statistics
+        total_rallies = len(rallies)
+        rally_lengths = [p.rally_length for p in rallies]
+        avg_rally_length = sum(rally_lengths) / len(rally_lengths) if rally_lengths else 0
+        max_rally = max(rally_lengths) if rally_lengths else 0
+
+        # Distribution by duration
+        distribution = {
+            "short (3-5)": len([r for r in rally_lengths if 3 <= r <= 5]),
+            "medium (6-9)": len([r for r in rally_lengths if 6 <= r <= 9]),
+            "long (10-15)": len([r for r in rally_lengths if 10 <= r <= 15]),
+            "very_long (16+)": len([r for r in rally_lengths if r >= 16])
+        }
+
+        # Winners by rally length
+        winner_breakdown = {}
+        for rally in rallies:
+            winner_id = rally.winner_player_id
+            if winner_id not in winner_breakdown:
+                winner_breakdown[winner_id] = {
+                    "total": 0,
+                    "short": 0,
+                    "medium": 0,
+                    "long": 0,
+                    "very_long": 0
+                }
+
+            winner_breakdown[winner_id]["total"] += 1
+            if rally.rally_length <= 5:
+                winner_breakdown[winner_id]["short"] += 1
+            elif rally.rally_length <= 9:
+                winner_breakdown[winner_id]["medium"] += 1
+            elif rally.rally_length <= 15:
+                winner_breakdown[winner_id]["long"] += 1
+            else:
+                winner_breakdown[winner_id]["very_long"] += 1
+
+        # Outcome types
+        outcome_types = {}
+        for rally in rallies:
+            outcome = rally.outcome or "unknown"
+            outcome_types[outcome] = outcome_types.get(outcome, 0) + 1
+
+        return {
+            "match_id": match_id,
+            "total_rallies": total_rallies,
+            "average_rally_length": round(avg_rally_length, 2),
+            "max_rally_length": max_rally,
+            "distribution_by_duration": distribution,
+            "winner_breakdown": winner_breakdown,
+            "outcome_types": outcome_types,
+            "filters": {
+                "min_length": min_length,
+                "max_length": max_length,
+                "rally_type": rally_type
+            }
+        }
+
+    async def get_serve_analysis(
+        self,
+        match_id: str,
+        player_id: Optional[str] = None,
+        serve_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get detailed serve analysis for a match"""
+
+        # Get points for the match
+        points_query = select(Point).where(Point.match_id == match_id)
+        points_result = await self.db.execute(points_query)
+        points = points_result.scalars().all()
+
+        # Get match to identify players
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {}
+
+        player_ids = [match.player1_id, match.player2_id]
+        if player_id:
+            player_ids = [player_id]
+
+        serve_stats = {}
+
+        for pid in player_ids:
+            # Filter serves by this player
+            serves = [p for p in points if p.server_player_id == pid]
+
+            if serve_type == "first":
+                serves = [s for s in serves if not s.second_serve]
+            elif serve_type == "second":
+                serves = [s for s in serves if s.second_serve]
+
+            total_serves = len(serves)
+            first_serves = [s for s in serves if not s.second_serve]
+            second_serves = [s for s in serves if s.second_serve]
+
+            # First serve stats
+            first_serve_in = len([s for s in first_serves if s.first_serve_in])
+            first_serve_pct = (first_serve_in / len(first_serves) * 100) if first_serves else 0
+
+            first_serve_won = len([s for s in first_serves if s.first_serve_in and s.winner_player_id == pid])
+            first_serve_won_pct = (first_serve_won / first_serve_in * 100) if first_serve_in > 0 else 0
+
+            # Second serve stats
+            second_serve_won = len([s for s in second_serves if s.winner_player_id == pid])
+            second_serve_won_pct = (second_serve_won / len(second_serves) * 100) if second_serves else 0
+
+            # Aces and double faults
+            aces = len([s for s in serves if s.outcome == "ace"])
+            double_faults = len([s for s in serves if s.outcome == "double_fault"])
+
+            # Serve direction (if available)
+            serve_directions = {}
+            for serve in serves:
+                direction = getattr(serve, "serve_direction", None) or "center"
+                serve_directions[direction] = serve_directions.get(direction, 0) + 1
+
+            # Serve speed (if available - mock data for now)
+            avg_first_serve_speed = 180.0  # km/h - would be calculated from actual data
+            avg_second_serve_speed = 150.0  # km/h
+
+            serve_stats[pid] = {
+                "player_id": pid,
+                "total_serves": total_serves,
+                "first_serves": {
+                    "total": len(first_serves),
+                    "in": first_serve_in,
+                    "percentage": round(first_serve_pct, 2),
+                    "won": first_serve_won,
+                    "won_percentage": round(first_serve_won_pct, 2),
+                    "average_speed_kmh": avg_first_serve_speed
+                },
+                "second_serves": {
+                    "total": len(second_serves),
+                    "won": second_serve_won,
+                    "won_percentage": round(second_serve_won_pct, 2),
+                    "average_speed_kmh": avg_second_serve_speed
+                },
+                "aces": aces,
+                "double_faults": double_faults,
+                "serve_direction_distribution": serve_directions
+            }
+
+        return {
+            "match_id": match_id,
+            "serve_statistics": serve_stats,
+            "filters": {
+                "player_id": player_id,
+                "serve_type": serve_type
+            }
+        }
+
     def _get_period_cutoff(self, period: str) -> datetime:
         """Get cutoff date for period filtering"""
 

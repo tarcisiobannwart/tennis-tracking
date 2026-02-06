@@ -192,6 +192,13 @@ async def get_rally_analysis(
 ):
     """
     Get detailed rally analysis for a match
+
+    Returns:
+    - Total rallies and statistics
+    - Distribution by duration (short, medium, long, very long)
+    - Winner breakdown by rally length
+    - Outcome types (winner, unforced error, etc)
+    - Average and max rally length
     """
     logger.info("Fetching rally analysis", match_id=match_id, min_length=min_length)
 
@@ -218,6 +225,13 @@ async def get_serve_analysis(
 ):
     """
     Get detailed serve analysis for a match
+
+    Returns:
+    - First serve statistics (percentage in, won, speed)
+    - Second serve statistics (won percentage, speed)
+    - Aces and double faults
+    - Serve direction distribution
+    - Statistics per player or for specific player
     """
     logger.info("Fetching serve analysis", match_id=match_id, player_id=player_id)
 
