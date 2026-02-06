@@ -24,6 +24,11 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    /* Court theme colors - defaults to Hard Court (Blue) */
+    --court-accent: 33, 150, 243;
+    --court-accent-hover: 21, 101, 192;
+    --court-accent-bg: 33, 150, 243;
   }
 
   .dark {
@@ -49,13 +54,50 @@
   }
 }
 
+/* Dark theme with improved colors - Tennis Tracking Design System */
+.dark {
+  --background: 215 28% 7%;        /* #0f172a - slate-900 */
+  --foreground: 210 20% 98%;       /* #f1f5f9 - slate-100 */
+  --card: 215 25% 13%;             /* #1e293b - slate-800 */
+  --card-foreground: 210 20% 98%;  /* #f1f5f9 - slate-100 */
+  --border: 215 20% 20%;           /* #334155 - slate-700 */
+  --muted-foreground: 215 16% 60%; /* #94a3b8 - slate-400 */
+}
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
   }
+}
+
+/* Court accent color utilities */
+.court-accent {
+  color: rgb(var(--court-accent));
+}
+
+.bg-court-accent {
+  background-color: rgb(var(--court-accent));
+}
+
+.bg-court-accent-soft {
+  background-color: rgba(var(--court-accent-bg), 0.12);
+}
+
+.border-court-accent {
+  border-color: rgb(var(--court-accent));
+}
+
+.hover\:bg-court-accent-hover:hover {
+  background-color: rgb(var(--court-accent-hover));
+}
+
+.hover\:court-glow:hover {
+  box-shadow: 0 0 20px rgba(var(--court-accent), 0.4);
+  border-color: rgb(var(--court-accent));
+  transition: all 0.3s ease;
 }
 
 /* Custom scrollbar */

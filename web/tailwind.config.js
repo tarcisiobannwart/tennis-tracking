@@ -51,11 +51,20 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Dynamic court theme colors
+        'court-accent': 'rgb(var(--court-accent) / <alpha-value>)',
+        'court-accent-hover': 'rgb(var(--court-accent-hover) / <alpha-value>)',
+        'court-accent-bg': 'rgba(var(--court-accent-bg), 0.12)',
         // Tennis specific colors
         court: {
           green: "#4CAF50",
           line: "#FFFFFF",
           net: "#D4AF37",
+          // Court surface colors
+          hard: "#2196F3",
+          clay: "#D4A373",
+          grass: "#4CAF50",
+          redClay: "#E53935",
         },
         ball: {
           yellow: "#FFEB3B",
