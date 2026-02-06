@@ -1,36 +1,39 @@
-import { useParams, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   Play,
-  Download,
-  Share,
-  BarChart3,
-  Video,
-  Map,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Clock,
   Trophy,
-  Target,
-  Activity
+  MapPin,
+  Calendar,
+  User,
+  TrendingUp,
+  Video,
+  Target
 } from 'lucide-react'
 import { useMatch, useMatchStatistics, useMatchHighlights } from '@/hooks/useMatchData'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import ScoreBoard from '@/components/stats/ScoreBoard'
-import VideoPlayer from '@/components/video/VideoPlayer'
-import CourtView from '@/components/court/CourtView'
+import { Badge } from '@/components/ui/badge'
 
 const MatchDetail = () => {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [showReplays, setShowReplays] = useState(false)
 
   const { data: match, isLoading: matchLoading } = useMatch(id!)
   const { data: statistics } = useMatchStatistics(id!)
   const { data: highlights } = useMatchHighlights(id!)
 
-  // Verificação defensiva dos dados
   const highlightsList = Array.isArray(highlights?.highlights) ? highlights.highlights : []
 
   if (matchLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="loading-spinner"></div>
       </div>
     )
@@ -38,12 +41,12 @@ const MatchDetail = () => {
 
   if (!match) {
     return (
-      <div className="text-center py-12">
-        <Trophy className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium mb-2">Match not found</h3>
-        <p className="text-muted-foreground">The requested match could not be found.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
+        <Trophy className="w-16 h-16 text-slate-600 mb-4" />
+        <h3 className="text-xl font-semibold mb-2 text-slate-100">Partida não encontrada</h3>
+        <p className="text-slate-400 mb-6">A partida solicitada não pôde ser encontrada.</p>
         <Link to="/matches">
-          <Button className="mt-4">Back to Matches</Button>
+          <Button>Voltar para Partidas</Button>
         </Link>
       </div>
     )
@@ -55,279 +58,390 @@ const MatchDetail = () => {
     return `${hours}h ${minutes}m`
   }
 
+  const getSurfaceEmoji = (surface: string) => {
+    switch (surface) {
+      case 'clay': return '🟠'
+      case 'grass': return '🟢'
+      case 'hard': return '🔵'
+      default: return '⚪'
+    }
+  }
+
+  const getSurfaceLabel = (surface: string) => {
+    switch (surface) {
+      case 'clay': return 'Saibro'
+      case 'grass': return 'Grama'
+      case 'hard': return 'Duro'
+      case 'carpet': return 'Carpete'
+      default: return surface
+    }
+  }
+
+  const getFinalScore = () => {
+    if (!match.score?.sets) return 'N/A'
+    return match.score.sets.map(set =>
+      `${set.player1Games}-${set.player2Games}`
+    ).join(', ')
+  }
+
+  const renderStatBar = (label: string, value1: number, value2: number) => {
+    const total = value1 + value2 || 1
+    const percent1 = (value1 / total) * 100
+    const percent2 = (value2 / total) * 100
+
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-slate-300">{label}</span>
+          <span className="text-slate-400 font-mono">{value1} - {value2}</span>
+        </div>
+        <div className="flex gap-2 h-2">
+          <div
+            className="bg-court-accent rounded-full transition-all duration-500"
+            style={{ width: `${percent1}%` }}
+          />
+          <div
+            className="bg-slate-500 rounded-full transition-all duration-500"
+            style={{ width: `${percent2}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-slate-900">
+      {/* Back Button */}
+      <div className="bg-slate-800/50 border-b border-slate-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link to="/matches">
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
+              Voltar
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {match.player1.name} vs {match.player2.name}
-            </h1>
-            <p className="text-muted-foreground">
-              {match.tournament} • {match.round} • {new Date(match.date).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {match.status === 'live' && (
-            <Link to={`/live?match=${match.id}`}>
-              <Button>
-                <Play className="w-4 h-4 mr-2" />
-                Watch Live
-              </Button>
-            </Link>
-          )}
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline">
-            <Share className="w-4 h-4 mr-2" />
-            Share
-          </Button>
         </div>
       </div>
 
-      {/* Score Board */}
-      <ScoreBoard match={match} />
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700">
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-100 mb-6">
+              {match.player1.name} <span className="text-court-accent">vs</span> {match.player2.name}
+            </h1>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+              <Badge variant="neutral" className="text-base px-4 py-2">
+                <Clock className="w-4 h-4 mr-2" />
+                {match.duration ? formatDuration(match.duration) : 'Em andamento'}
+              </Badge>
+              <Badge variant="neutral" className="text-base px-4 py-2">
+                <Trophy className="w-4 h-4 mr-2" />
+                {match.score?.sets?.length || 0} Sets
+              </Badge>
+              <Badge variant="neutral" className="text-base px-4 py-2">
+                {getSurfaceEmoji(match.surface)} {getSurfaceLabel(match.surface)}
+              </Badge>
+              {match.status === 'live' && (
+                <Badge variant="success" className="text-base px-4 py-2 animate-pulse">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2" />
+                  AO VIVO
+                </Badge>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Video and Analysis */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Video Player */}
-          {match.videoUrl && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Video className="w-5 h-5 mr-2" />
-                  Match Video
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VideoPlayer src={match.videoUrl} showOverlays={true} />
-              </CardContent>
-            </Card>
-          )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-court-accent-soft rounded-lg flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-court-accent" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Superfície</p>
+                <p className="text-lg font-semibold text-slate-100">{getSurfaceLabel(match.surface)}</p>
+              </div>
+            </div>
+          </motion.div>
 
-          {/* Court Analysis */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Map className="w-5 h-5 mr-2" />
-                Court Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CourtView showTrajectory={true} />
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-court-accent-soft rounded-lg flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-court-accent" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Placar Final</p>
+                <p className="text-lg font-semibold text-slate-100">{getFinalScore()}</p>
+              </div>
+            </div>
+          </motion.div>
 
-          {/* Match Highlights */}
-          {highlightsList.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Target className="w-5 h-5 mr-2" />
-                  Match Highlights
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {highlightsList.map((highlight, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                    >
-                      <div>
-                        <p className="font-medium">{highlight.description}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {Math.floor(highlight.timestamp / 60)}:{(highlight.timestamp % 60).toString().padStart(2, '0')}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="px-2 py-1 bg-secondary rounded text-xs">
-                          {highlight.type}
-                        </span>
-                        <Button variant="outline" size="sm">
-                          <Play className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-court-accent-soft rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-court-accent" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Duração</p>
+                <p className="text-lg font-semibold text-slate-100">
+                  {match.duration ? formatDuration(match.duration) : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
-        {/* Statistics Panel */}
-        <div className="space-y-6">
-          {/* Match Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Match Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Surface</span>
-                <span className="font-medium capitalize">{match.surface}</span>
+        {/* About Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+        >
+          <h2 className="text-2xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <Calendar className="w-6 h-6 text-court-accent" />
+            Sobre a Partida
+          </h2>
+          <div className="space-y-2 text-slate-300">
+            <p><span className="font-semibold text-slate-100">Torneio:</span> {match.tournament}</p>
+            <p><span className="font-semibold text-slate-100">Rodada:</span> {match.round}</p>
+            <p><span className="font-semibold text-slate-100">Data:</span> {new Date(match.date).toLocaleDateString('pt-BR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })}</p>
+          </div>
+        </motion.div>
+
+        {/* Replays Section */}
+        {highlightsList.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden"
+          >
+            <button
+              onClick={() => setShowReplays(!showReplays)}
+              className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-700/50 transition-colors"
+            >
+              <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                <Video className="w-6 h-6 text-court-accent" />
+                Replays e Highlights
+              </h2>
+              <ChevronDown className={`w-6 h-6 text-slate-400 transition-transform ${showReplays ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showReplays && (
+              <div className="px-6 pb-6 space-y-3">
+                {highlightsList.map((highlight, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-center justify-between p-4 bg-slate-700/50 border border-slate-600 rounded-lg hover:border-court-accent hover:court-glow transition-all cursor-pointer"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-100">{highlight.description}</p>
+                      <p className="text-sm text-slate-400 mt-1">
+                        {Math.floor(highlight.timestamp / 60)}:{(highlight.timestamp % 60).toString().padStart(2, '0')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="neutral">{highlight.type}</Badge>
+                      <Button variant="outline" size="sm">
+                        <Play className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Duration</span>
-                <span className="font-medium">
-                  {match.duration ? formatDuration(match.duration) : 'N/A'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  match.status === 'live' ? 'bg-green-100 text-green-800' :
-                  match.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {match.status.toUpperCase()}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+            )}
+          </motion.div>
+        )}
 
-          {/* Player Statistics */}
-          {statistics && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="w-5 h-5 mr-2" />
-                  Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Aces */}
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Aces</span>
-                      <span>{statistics.player1Stats.aces} - {statistics.player2Stats.aces}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="h-2 bg-blue-200 rounded">
-                        <div
-                          className="h-2 bg-blue-500 rounded"
-                          style={{
-                            width: `${(statistics.player1Stats.aces / Math.max(statistics.player1Stats.aces + statistics.player2Stats.aces, 1)) * 100}%`
-                          }}
-                        />
-                      </div>
-                      <div className="h-2 bg-red-200 rounded">
-                        <div
-                          className="h-2 bg-red-500 rounded"
-                          style={{
-                            width: `${(statistics.player2Stats.aces / Math.max(statistics.player1Stats.aces + statistics.player2Stats.aces, 1)) * 100}%`
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Winners */}
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Winners</span>
-                      <span>{statistics.player1Stats.winners} - {statistics.player2Stats.winners}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="h-2 bg-blue-200 rounded">
-                        <div
-                          className="h-2 bg-blue-500 rounded"
-                          style={{
-                            width: `${(statistics.player1Stats.winners / Math.max(statistics.player1Stats.winners + statistics.player2Stats.winners, 1)) * 100}%`
-                          }}
-                        />
-                      </div>
-                      <div className="h-2 bg-red-200 rounded">
-                        <div
-                          className="h-2 bg-red-500 rounded"
-                          style={{
-                            width: `${(statistics.player2Stats.winners / Math.max(statistics.player1Stats.winners + statistics.player2Stats.winners, 1)) * 100}%`
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Unforced Errors */}
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Unforced Errors</span>
-                      <span>{statistics.player1Stats.unforcedErrors} - {statistics.player2Stats.unforcedErrors}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="h-2 bg-blue-200 rounded">
-                        <div
-                          className="h-2 bg-blue-500 rounded"
-                          style={{
-                            width: `${(statistics.player1Stats.unforcedErrors / Math.max(statistics.player1Stats.unforcedErrors + statistics.player2Stats.unforcedErrors, 1)) * 100}%`
-                          }}
-                        />
-                      </div>
-                      <div className="h-2 bg-red-200 rounded">
-                        <div
-                          className="h-2 bg-red-500 rounded"
-                          style={{
-                            width: `${(statistics.player2Stats.unforcedErrors / Math.max(statistics.player1Stats.unforcedErrors + statistics.player2Stats.unforcedErrors, 1)) * 100}%`
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* First Serve Percentage */}
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>First Serve %</span>
-                      <span>
-                        {((statistics.player1Stats.firstServeIn / statistics.player1Stats.firstServeAttempts) * 100).toFixed(0)}% - {' '}
-                        {((statistics.player2Stats.firstServeIn / statistics.player2Stats.firstServeAttempts) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
+        {/* Players Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+        >
+          <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+            <User className="w-6 h-6 text-court-accent" />
+            Jogadores
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Player 1 */}
+            <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-6 hover:border-court-accent hover:court-glow transition-all">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-court-accent to-court-accent/70 rounded-full flex items-center justify-center text-2xl font-bold text-white">
+                  {match.player1.name.split(' ').map(n => n[0]).join('')}
                 </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-100">{match.player1.name}</h3>
+                  <p className="text-slate-400">{match.player1.country}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Ranking</span>
+                  <span className="font-semibold text-slate-100">#{match.player1.ranking}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Idade</span>
+                  <span className="font-semibold text-slate-100">{match.player1.age} anos</span>
+                </div>
+              </div>
+            </div>
 
-                <Button variant="outline" className="w-full mt-4">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Detailed Analytics
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+            {/* Player 2 */}
+            <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-6 hover:border-court-accent hover:court-glow transition-all">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center text-2xl font-bold text-white">
+                  {match.player2.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-100">{match.player2.name}</h3>
+                  <p className="text-slate-400">{match.player2.country}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Ranking</span>
+                  <span className="font-semibold text-slate-100">#{match.player2.ranking}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Idade</span>
+                  <span className="font-semibold text-slate-100">{match.player2.age} anos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full">
-                <Video className="w-4 h-4 mr-2" />
-                Download Video
-              </Button>
-              <Button variant="outline" className="w-full">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Export Statistics
-              </Button>
-              <Button variant="outline" className="w-full">
-                <Activity className="w-4 h-4 mr-2" />
-                Generate Report
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Statistics Section */}
+        {statistics && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+          >
+            <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-court-accent" />
+              Estatísticas
+            </h2>
+            <div className="space-y-6">
+              {renderStatBar('Aces', statistics.player1Stats.aces, statistics.player2Stats.aces)}
+              {renderStatBar('Winners', statistics.player1Stats.winners, statistics.player2Stats.winners)}
+              {renderStatBar('Erros Não Forçados', statistics.player1Stats.unforcedErrors, statistics.player2Stats.unforcedErrors)}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-300">1º Saque %</span>
+                  <span className="text-slate-400 font-mono">
+                    {((statistics.player1Stats.firstServeIn / statistics.player1Stats.firstServeAttempts) * 100).toFixed(0)}% - {' '}
+                    {((statistics.player2Stats.firstServeIn / statistics.player2Stats.firstServeAttempts) * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="flex gap-2 h-2">
+                  <div
+                    className="bg-court-accent rounded-full"
+                    style={{
+                      width: `${(statistics.player1Stats.firstServeIn / statistics.player1Stats.firstServeAttempts) * 100}%`
+                    }}
+                  />
+                  <div
+                    className="bg-slate-500 rounded-full"
+                    style={{
+                      width: `${(statistics.player2Stats.firstServeIn / statistics.player2Stats.firstServeAttempts) * 100}%`
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Points/Games Timeline */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="bg-slate-800 border border-slate-700 rounded-xl p-6"
+        >
+          <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+            <Target className="w-6 h-6 text-court-accent" />
+            Pontos e Games
+          </h2>
+          <div className="overflow-x-auto">
+            <div className="flex gap-2 pb-4">
+              {match.score?.sets?.map((set, index) => (
+                <div key={index} className="flex-shrink-0 bg-slate-700/50 border border-slate-600 rounded-lg p-4 min-w-[120px]">
+                  <p className="text-xs text-slate-400 mb-2">Set {index + 1}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-court-accent">{set.player1Games}</span>
+                    <span className="text-slate-500">-</span>
+                    <span className="text-2xl font-bold text-slate-400">{set.player2Games}</span>
+                  </div>
+                  {set.player1Tiebreak !== undefined && (
+                    <p className="text-xs text-slate-400 mt-2 text-center">
+                      TB: {set.player1Tiebreak}-{set.player2Tiebreak}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between items-center pt-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/matches/${parseInt(id!) - 1}`)}
+            className="gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Partida Anterior
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/matches/${parseInt(id!) + 1}`)}
+            className="gap-2"
+          >
+            Próxima Partida
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </div>
