@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageTransition } from '@/components/animations'
 
 const Training = () => {
   const [selectedModule, setSelectedModule] = useState('shot-accuracy')
@@ -147,7 +148,7 @@ const Training = () => {
       case 'Beginner': return 'text-green-600 bg-green-100 dark:bg-green-900'
       case 'Intermediate': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900'
       case 'Advanced': return 'text-red-600 bg-red-100 dark:bg-red-900'
-      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-900'
+      default: return 'text-slate-600 bg-slate-100 dark:bg-slate-900'
     }
   }
 
@@ -155,14 +156,15 @@ const Training = () => {
     switch (status) {
       case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />
       case 'in-progress': return <Clock className="w-4 h-4 text-yellow-500" />
-      default: return <Target className="w-4 h-4 text-gray-400" />
+      default: return <Target className="w-4 h-4 text-slate-400" />
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <PageTransition>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Training Center</h1>
           <p className="text-muted-foreground">
@@ -347,7 +349,7 @@ const Training = () => {
                               className={`h-2 rounded-full ${
                                 exercise.status === 'completed' ? 'bg-green-500' :
                                 exercise.status === 'in-progress' ? 'bg-yellow-500' :
-                                'bg-gray-300'
+                                'bg-slate-300'
                               }`}
                               style={{ width: `${(exercise.achieved / exercise.target) * 100}%` }}
                             />
@@ -407,7 +409,8 @@ const Training = () => {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

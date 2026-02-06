@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 import { Trophy, Flame, Target, Award } from 'lucide-react'
 
 // Circular Progress Component
@@ -50,7 +50,7 @@ export const CircularProgress = ({
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="var(--accent)"
+            stroke="rgb(var(--court-accent))"
             strokeWidth={strokeWidth}
             fill="none"
             strokeDasharray={circumference}
@@ -104,7 +104,7 @@ export const LinearProgress = ({
       )}
       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
         <div
-          className={cn('h-full bg-[var(--accent)] transition-all duration-500 ease-out', barClassName)}
+          className={cn('h-full bg-court-accent transition-all duration-500 ease-out', barClassName)}
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -220,7 +220,7 @@ export const StreakCounter = ({ days, className }: StreakCounterProps) => {
 }
 
 // Animated Counter Component
-interface AnimatedCounterProps {
+interface AnimatedStatCounterProps {
   value: number
   label: string
   icon?: React.ReactNode
@@ -228,16 +228,16 @@ interface AnimatedCounterProps {
   className?: string
 }
 
-export const AnimatedCounter = ({
+export const AnimatedStatCounter = ({
   value,
   label,
   icon,
   suffix = '',
   className
-}: AnimatedCounterProps) => {
+}: AnimatedStatCounterProps) => {
   return (
     <div className={cn('flex items-center space-x-3', className)}>
-      {icon && <div className="p-2 rounded-lg bg-[var(--accent)]/10">{icon}</div>}
+      {icon && <div className="p-2 rounded-lg bg-court-accent/10">{icon}</div>}
       <div>
         <div className="text-2xl font-bold">
           {value.toLocaleString()}
@@ -326,9 +326,9 @@ export const RadarChart = ({ data, size = 200, className }: RadarChartProps) => 
         {/* Data polygon */}
         <polygon
           points={dataPoints.map((p) => `${p.x},${p.y}`).join(' ')}
-          fill="var(--accent)"
+          fill="rgb(var(--court-accent))"
           fillOpacity="0.3"
-          stroke="var(--accent)"
+          stroke="rgb(var(--court-accent))"
           strokeWidth="2"
         />
 
@@ -339,7 +339,7 @@ export const RadarChart = ({ data, size = 200, className }: RadarChartProps) => 
             cx={point.x}
             cy={point.y}
             r="4"
-            fill="var(--accent)"
+            fill="rgb(var(--court-accent))"
           />
         ))}
 
@@ -384,7 +384,7 @@ export const StatsCard = ({
   return (
     <div className={cn('p-4 rounded-lg border border-border bg-card', className)}>
       <div className="flex items-start justify-between mb-3">
-        <div className="p-2 rounded-lg bg-[var(--accent)]/10">{icon}</div>
+        <div className="p-2 rounded-lg bg-court-accent/10">{icon}</div>
         {trend && (
           <span
             className={cn('text-xs font-medium', {

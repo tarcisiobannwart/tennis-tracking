@@ -47,6 +47,7 @@ function Chip({
       {children}
       {onRemove && (
         <button
+          type="button"
           onClick={onRemove}
           className="ml-1 rounded-full hover:bg-white/20 p-0.5 transition-colors"
           aria-label="Remove"

@@ -19,6 +19,7 @@ import {
 import { useMatch, useMatchStatistics, useMatchHighlights } from '@/hooks/useMatchData'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PageTransition } from '@/components/animations'
 
 const MatchDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -110,7 +111,8 @@ const MatchDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <PageTransition>
+      <div className="min-h-screen bg-slate-900">
       {/* Back Button */}
       <div className="bg-slate-800/50 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -445,6 +447,7 @@ const MatchDetail = () => {
         </div>
       </div>
     </div>
+    </PageTransition>
   )
 }
 

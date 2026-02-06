@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { useLiveMatches, useRecentMatches } from '@/hooks/useMatchData'
 import { Link } from 'react-router-dom'
+import { PageTransition, StaggerContainer, StaggerItem, Skeleton } from '@/components/animations'
 
 const Dashboard = () => {
   const { t } = useTranslation()
@@ -35,66 +36,88 @@ const Dashboard = () => {
       value: '1,234',
       change: '+12% from last month',
       icon: Trophy,
-      color: 'text-blue-600',
+      color: 'text-court-accent',
     },
     {
       title: 'Jogadores Rastreados',
       value: '156',
       change: '+8 new this week',
       icon: Users,
-      color: 'text-purple-600',
+      color: 'text-court-accent',
     },
     {
       title: t('dashboard.statistics.totalHours'),
       value: '2,847h',
       change: '+15% from last month',
       icon: BarChart3,
-      color: 'text-orange-600',
+      color: 'text-court-accent',
     },
   ]
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('dashboard.welcome', { name: 'Treinador' })}
-          </p>
+  if (liveLoading && recentLoading) {
+    return (
+      <PageTransition>
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-32 rounded-2xl" />
+            ))}
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-96 lg:col-span-2 rounded-2xl" />
+            <Skeleton className="h-96 rounded-2xl" />
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Link to="/live">
-            <Button>
-              <Play className="w-4 h-4 mr-2" />
-              {t('dashboard.quickActions.newAnalysis')}
-            </Button>
-          </Link>
-        </div>
-      </div>
+      </PageTransition>
+    )
+  }
 
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stat.change}
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+  return (
+    <PageTransition>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+            <p className="text-muted-foreground">
+              {t('dashboard.welcome', { name: 'Treinador' })}
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <Link to="/live">
+              <Button>
+                <Play className="w-4 h-4 mr-2" />
+                {t('dashboard.quickActions.newAnalysis')}
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <StaggerItem key={stat.title}>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {stat.title}
+                    </CardTitle>
+                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stat.change}
+                    </p>
+                  </CardContent>
+                </Card>
+              </StaggerItem>
+            )
+          })}
+        </StaggerContainer>
 
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -110,11 +133,7 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {liveLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="loading-spinner"></div>
-              </div>
-            ) : liveMatches.length ? (
+            {liveMatches.length ? (
               <div className="space-y-4">
                 {liveMatches.map((match: any) => (
                   <div
@@ -168,11 +187,6 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="loading-spinner"></div>
-              </div>
-            ) : (
               <div className="space-y-4">
                 {recentMatches.slice(0, 5).map((match: any) => (
                   <div key={match.id} className="flex items-center space-x-3">
@@ -198,10 +212,10 @@ const Dashboard = () => {
                   </Button>
                 </Link>
               </div>
-            )}
           </CardContent>
         </Card>
       </div>
+    </PageTransition>
 
       {/* Quick Actions */}
       <Card>

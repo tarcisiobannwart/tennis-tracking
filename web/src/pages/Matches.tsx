@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Chip } from '@/components/ui/chip'
 import { MatchFilters } from '@/services/matchService'
 import { Match } from '@/types'
+import { PageTransition, StaggerContainer, StaggerItem, Skeleton } from '@/components/animations'
 
 type StatusFilter = 'all' | 'live' | 'completed' | 'scheduled'
 
@@ -198,7 +199,8 @@ const Matches = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <PageTransition>
+      <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -311,23 +313,11 @@ const Matches = () => {
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <Card key={i} className="bg-slate-800 border-slate-700 animate-pulse">
-              <CardContent className="p-0">
-                <div className="h-40 bg-slate-700/50 rounded-t-lg" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-slate-700 rounded w-3/4" />
-                  <div className="h-3 bg-slate-700 rounded w-1/2" />
-                  <div className="h-6 bg-slate-700 rounded" />
-                </div>
-              </CardContent>
-            </Card>
+            <Skeleton key={i} className="h-64 rounded-2xl" />
           ))}
         </div>
       ) : filteredMatches.length > 0 ? (
-        <motion.div
-          className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-          layout
-        >
+        <StaggerContainer className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filteredMatches.map((match: Match) => {
               const surfaceConfig = getSurfaceConfig(match.surface)
@@ -335,14 +325,7 @@ const Matches = () => {
               const isBookmarked = bookmarkedMatches.has(match.id)
 
               return (
-                <motion.div
-                  key={match.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <StaggerItem key={match.id}>
                   <Card
                     className="bg-slate-800 border-slate-700 hover:border-court-accent transition-all duration-300 overflow-hidden group hover:shadow-lg hover:shadow-court-accent/10"
                     style={{ '--court-accent': surfaceConfig.accent } as React.CSSProperties}
@@ -450,11 +433,11 @@ const Matches = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </StaggerItem>
               )
             })}
           </AnimatePresence>
-        </motion.div>
+        </StaggerContainer>
       ) : (
         /* Empty State */
         <motion.div
@@ -489,6 +472,7 @@ const Matches = () => {
         </motion.div>
       )}
     </div>
+    </PageTransition>
   )
 }
 

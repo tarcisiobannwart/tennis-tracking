@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, X, AlertCircle, Info, Trophy, Award, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
 
 // Congratulation Screen Component
@@ -53,13 +53,13 @@ export const CongratulationScreen = ({
               className="mb-8 flex justify-center"
             >
               <div className="relative">
-                <Icon className="w-24 h-24 text-[var(--accent)]" />
+                <Icon className="w-24 h-24 text-court-accent" />
                 {/* Pulsing ring effect */}
                 <motion.div
                   initial={{ scale: 1, opacity: 0.6 }}
                   animate={{ scale: 1.5, opacity: 0 }}
                   transition={{ duration: 1.5, repeat: Infinity }}
-                  className="absolute inset-0 rounded-full border-4 border-[var(--accent)]"
+                  className="absolute inset-0 rounded-full border-4 border-court-accent"
                 />
               </div>
             </motion.div>
@@ -80,7 +80,7 @@ export const CongratulationScreen = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="text-3xl font-bold text-[var(--accent)] mb-4"
+                className="text-3xl font-bold text-court-accent mb-4"
               >
                 {score}
               </motion.div>
@@ -104,7 +104,7 @@ export const CongratulationScreen = ({
             >
               <Button
                 onClick={onClose}
-                className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-6 text-lg"
+                className="bg-court-accent hover:bg-court-accent-hover text-white px-8 py-6 text-lg"
               >
                 Close
               </Button>
@@ -148,7 +148,7 @@ export const CountdownScreen = ({ isVisible, onComplete, duration = 3 }: Countdo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--accent)]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-court-accent"
         >
           <motion.div
             key={count}
@@ -300,8 +300,8 @@ export const BadgeEarned = ({
                 transition={{ delay: 0.2, type: 'spring' }}
                 className="mb-6 flex justify-center"
               >
-                <div className="w-24 h-24 rounded-full bg-[var(--accent)]/10 flex items-center justify-center">
-                  {badgeIcon || <Trophy className="w-12 h-12 text-[var(--accent)]" />}
+                <div className="w-24 h-24 rounded-full bg-court-accent/10 flex items-center justify-center">
+                  {badgeIcon || <Trophy className="w-12 h-12 text-court-accent" />}
                 </div>
               </motion.div>
 
@@ -318,7 +318,7 @@ export const BadgeEarned = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-lg font-semibold text-[var(--accent)] mb-2"
+                className="text-lg font-semibold text-court-accent mb-2"
               >
                 {badgeTitle}
               </motion.p>
@@ -400,7 +400,7 @@ export const ConfettiEffect = ({ isActive }: { isActive: boolean }) => {
           initial={{ y: -20, x: `${particle.x}%`, opacity: 1 }}
           animate={{ y: '100vh', opacity: 0 }}
           transition={{ duration: 2, delay: particle.delay }}
-          className="absolute w-2 h-2 rounded-full bg-[var(--accent)]"
+          className="absolute w-2 h-2 rounded-full bg-court-accent"
         />
       ))}
     </div>

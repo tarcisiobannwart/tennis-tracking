@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageTransition } from '@/components/animations'
 
 const Analytics = () => {
   const [dateRange, setDateRange] = useState('30d')
@@ -72,9 +73,10 @@ const Analytics = () => {
   )
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <PageTransition>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
           <p className="text-muted-foreground">
@@ -142,28 +144,28 @@ const Analytics = () => {
           value={analyticsData.overview.totalMatches}
           change="+12% from last period"
           icon={Activity}
-          color="text-blue-500"
+          color="text-court-accent"
         />
         <StatCard
           title="Win Rate"
           value={`${analyticsData.overview.winRate}%`}
           change="+2.3% from last period"
           icon={TrendingUp}
-          color="text-green-500"
+          color="text-court-accent"
         />
         <StatCard
           title="Avg Match Duration"
           value={`${Math.floor(analyticsData.overview.avgMatchDuration / 60)}h ${analyticsData.overview.avgMatchDuration % 60}m`}
           change="-5 min from last period"
           icon={Target}
-          color="text-orange-500"
+          color="text-court-accent"
         />
         <StatCard
           title="Total Points"
           value={analyticsData.overview.totalPoints.toLocaleString()}
           change="+1,247 from last period"
           icon={BarChart3}
-          color="text-purple-500"
+          color="text-court-accent"
         />
       </div>
 
@@ -190,15 +192,15 @@ const Analytics = () => {
               {/* Key Metrics */}
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-green-500">↑ 5.2%</p>
+                  <p className="text-2xl font-bold text-court-accent">↑ 5.2%</p>
                   <p className="text-xs text-muted-foreground">Win Rate Change</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-blue-500">127</p>
+                  <p className="text-2xl font-bold text-court-accent">127</p>
                   <p className="text-xs text-muted-foreground">Avg Points/Match</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-orange-500">15</p>
+                  <p className="text-2xl font-bold text-court-accent">15</p>
                   <p className="text-xs text-muted-foreground">Matches This Month</p>
                 </div>
               </div>
@@ -231,7 +233,7 @@ const Analytics = () => {
                       <p className="font-bold text-lg">{surface.winRate}%</p>
                       <div className="w-full bg-secondary rounded-full h-2 mt-1">
                         <div
-                          className="bg-green-500 h-2 rounded-full"
+                          className="bg-court-accent h-2 rounded-full"
                           style={{ width: `${surface.winRate}%` }}
                         />
                       </div>
@@ -241,7 +243,7 @@ const Analytics = () => {
                       <p className="font-bold text-lg">{surface.avgDuration}m</p>
                       <div className="w-full bg-secondary rounded-full h-2 mt-1">
                         <div
-                          className="bg-blue-500 h-2 rounded-full"
+                          className="bg-court-accent h-2 rounded-full"
                           style={{ width: `${(surface.avgDuration / 150) * 100}%` }}
                         />
                       </div>
@@ -285,7 +287,7 @@ const Analytics = () => {
                       </div>
                       <div className="w-full bg-secondary rounded-full h-1.5">
                         <div
-                          className="bg-green-500 h-1.5 rounded-full"
+                          className="bg-court-accent h-1.5 rounded-full"
                           style={{ width: `${successRate}%` }}
                         />
                       </div>
@@ -334,7 +336,8 @@ const Analytics = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

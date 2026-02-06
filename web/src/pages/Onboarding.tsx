@@ -72,7 +72,7 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -84,7 +84,7 @@ const Onboarding = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-4xl md:text-5xl font-bold text-[#f1f5f9] mb-3"
+            className="text-4xl md:text-5xl font-bold text-slate-100 mb-3"
           >
             Olá, {userName}!
           </motion.h1>
@@ -92,7 +92,7 @@ const Onboarding = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-lg text-[#94a3b8]"
+            className="text-lg text-slate-400"
           >
             Escolha a cor da quadra que melhor representa seu estilo
           </motion.p>
@@ -109,10 +109,10 @@ const Onboarding = () => {
               <Card
                 className={`
                   relative overflow-hidden cursor-pointer transition-all duration-300
-                  bg-[#1e293b] border-2 hover:scale-105
+                  bg-slate-800 border-2 hover:scale-105
                   ${selectedCourt === court.id
                     ? 'border-current shadow-lg shadow-current/20'
-                    : 'border-[#334155] hover:border-[#475569]'
+                    : 'border-slate-700 hover:border-slate-600'
                   }
                 `}
                 style={{
@@ -127,10 +127,10 @@ const Onboarding = () => {
                 <div className="relative p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-[#f1f5f9] mb-1">
+                      <h3 className="text-xl font-bold text-slate-100 mb-1">
                         {court.name}
                       </h3>
-                      <p className="text-sm text-[#94a3b8]">
+                      <p className="text-sm text-slate-400">
                         {court.description}
                       </p>
                     </div>
@@ -144,7 +144,7 @@ const Onboarding = () => {
                       }}
                       className={`
                         flex items-center justify-center w-8 h-8 rounded-full
-                        ${selectedCourt === court.id ? 'bg-current' : 'bg-[#334155]'}
+                        ${selectedCourt === court.id ? 'bg-current' : 'bg-slate-700'}
                       `}
                       style={{
                         backgroundColor: selectedCourt === court.id ? court.color : undefined,
@@ -174,7 +174,7 @@ const Onboarding = () => {
                         style={{ backgroundColor: court.hoverColor }}
                       />
                     </div>
-                    <span className="text-xs text-[#94a3b8] ml-auto">
+                    <span className="text-xs text-slate-400 ml-auto">
                       Preview do tema
                     </span>
                   </div>
@@ -205,7 +205,7 @@ const Onboarding = () => {
           <Button
             variant="outline"
             onClick={handleSkip}
-            className="border-[#334155] text-[#94a3b8] hover:bg-[#1e293b] hover:text-[#f1f5f9]"
+            className="border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
           >
             Pular por enquanto
           </Button>
@@ -230,7 +230,7 @@ const Onboarding = () => {
           <div className="w-8 h-1 rounded-full bg-current" style={{
             backgroundColor: courtOptions.find(c => c.id === selectedCourt)?.color
           }} />
-          <div className="w-8 h-1 rounded-full bg-[#334155]" />
+          <div className="w-8 h-1 rounded-full bg-slate-700" />
         </motion.div>
       </motion.div>
     </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MessageCircle, Calendar, Trophy, Star, TrendingUp, Users, MapPin, Mail, Phone, Globe, Instagram, Twitter, Facebook } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageTransition } from '@/components/animations'
 
 // Mock data - in real app this would come from API
 interface PlayerProfile {
@@ -10,7 +11,7 @@ interface PlayerProfile {
   country: string
   countryFlag: string
   ranking: number
-  age: age
+  age: number
   bio: string
   profileImage: string
   coverImage: string
@@ -158,8 +159,9 @@ const PlayerProfile = () => {
   const totalReviews = Object.values(player.rating.distribution).reduce((a, b) => a + b, 0)
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Hero Section with Cover Image */}
+    <PageTransition>
+      <div className="space-y-6 pb-8">
+        {/* Hero Section with Cover Image */}
       <div className="relative h-[300px] rounded-lg overflow-hidden">
         <img
           src={player.coverImage}
@@ -188,7 +190,7 @@ const PlayerProfile = () => {
                   <span className="text-3xl">{player.countryFlag}</span>
                 </div>
                 <div className="flex items-center space-x-4 text-white/90">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]/30">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-court-accent/20 text-court-accent border border-court-accent/30">
                     ATP Ranking #{player.ranking}
                   </span>
                   <span className="text-sm">{player.age} years old</span>
@@ -198,7 +200,7 @@ const PlayerProfile = () => {
             </div>
 
             {/* Contact Button */}
-            <Button className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white">
+            <Button className="bg-court-accent hover:bg-court-accent-hover text-white">
               <MessageCircle className="w-4 h-4 mr-2" />
               Contact
             </Button>
@@ -224,8 +226,8 @@ const PlayerProfile = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 rounded-lg bg-blue-500/10">
-                    <Calendar className="w-6 h-6 text-blue-500" />
+                  <div className="p-3 rounded-lg bg-court-accent/10">
+                    <Calendar className="w-6 h-6 text-court-accent" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{player.stats.yearsPro}</p>
@@ -238,8 +240,8 @@ const PlayerProfile = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 rounded-lg bg-green-500/10">
-                    <TrendingUp className="w-6 h-6 text-green-500" />
+                  <div className="p-3 rounded-lg bg-court-accent/10">
+                    <TrendingUp className="w-6 h-6 text-court-accent" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{player.stats.careerWins}</p>
@@ -252,8 +254,8 @@ const PlayerProfile = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 rounded-lg bg-yellow-500/10">
-                    <Trophy className="w-6 h-6 text-yellow-500" />
+                  <div className="p-3 rounded-lg bg-court-accent/10">
+                    <Trophy className="w-6 h-6 text-court-accent" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{player.stats.careerTitles}</p>
@@ -273,7 +275,7 @@ const PlayerProfile = () => {
               <div className="flex items-start space-x-8">
                 {/* Overall Rating */}
                 <div className="text-center">
-                  <div className="text-5xl font-bold text-[var(--accent)] mb-2">
+                  <div className="text-5xl font-bold text-court-accent mb-2">
                     {player.rating.overall}
                   </div>
                   <div className="flex items-center justify-center mb-1">
@@ -282,7 +284,7 @@ const PlayerProfile = () => {
                         key={i}
                         className={`w-5 h-5 ${
                           i < Math.floor(player.rating.overall)
-                            ? 'fill-[var(--accent)] text-[var(--accent)]'
+                            ? 'fill-court-accent text-court-accent'
                             : 'text-muted-foreground'
                         }`}
                       />
@@ -299,10 +301,10 @@ const PlayerProfile = () => {
                     return (
                       <div key={stars} className="flex items-center space-x-3">
                         <span className="text-sm w-8">{stars}</span>
-                        <Star className="w-4 h-4 fill-[var(--accent)] text-[var(--accent)]" />
+                        <Star className="w-4 h-4 fill-court-accent text-court-accent" />
                         <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[var(--accent)] transition-all"
+                            className="h-full bg-court-accent transition-all"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -378,8 +380,8 @@ const PlayerProfile = () => {
                     className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="p-2 rounded-lg bg-[var(--accent)]/10">
-                        <Calendar className="w-5 h-5 text-[var(--accent)]" />
+                      <div className="p-2 rounded-lg bg-court-accent/10">
+                        <Calendar className="w-5 h-5 text-court-accent" />
                       </div>
                       <div>
                         <p className="font-medium">{event.tournament}</p>
@@ -483,7 +485,7 @@ const PlayerProfile = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)]">
+              <Button className="w-full bg-court-accent hover:bg-court-accent-hover">
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Send Message
               </Button>
@@ -499,7 +501,8 @@ const PlayerProfile = () => {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

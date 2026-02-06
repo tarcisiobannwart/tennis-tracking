@@ -27,6 +27,7 @@ interface UIStore {
     playerProfile: boolean
     matchSettings: boolean
     analyticsExport: boolean
+    newMatch: boolean
   }
 
   // Actions
@@ -99,6 +100,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
     playerProfile: false,
     matchSettings: false,
     analyticsExport: false,
+    newMatch: false,
   },
 
   // Actions
@@ -153,6 +155,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       playerProfile: false,
       matchSettings: false,
       analyticsExport: false,
+      newMatch: false,
     }
   }),
 }))

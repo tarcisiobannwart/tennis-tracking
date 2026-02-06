@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Home, BarChart3, Plus, TrendingUp, Settings, Video, Upload, Dumbbell, ScanLine, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 
 interface NavItem {
   id: string
@@ -104,7 +104,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
                   animationDelay: `${index * 50}ms`
                 }}
               >
-                <div className="p-2 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">
+                <div className="p-2 rounded-full bg-court-accent/10 text-court-accent">
                   {action.icon}
                 </div>
                 <span className="text-sm font-medium pr-2">{action.label}</span>
@@ -135,7 +135,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
                   className={cn(
                     'absolute left-1/2 -translate-x-1/2 -top-6',
                     'w-14 h-14 rounded-full',
-                    'bg-[var(--accent)] hover:bg-[var(--accent-hover)]',
+                    'bg-court-accent hover:bg-court-accent-hover',
                     'text-white shadow-lg hover:shadow-xl',
                     'flex items-center justify-center',
                     'transition-all duration-300',
@@ -161,7 +161,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
                   'flex flex-col items-center justify-center',
                   'min-w-[60px] h-full px-2',
                   'transition-colors duration-200',
-                  active ? 'text-[var(--accent)]' : 'text-muted-foreground hover:text-foreground'
+                  active ? 'text-court-accent' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <div className={cn('transition-transform duration-200', active && 'scale-110')}>
@@ -169,7 +169,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
                 </div>
                 <span className="text-xs mt-1 font-medium">{item.label}</span>
                 {active && (
-                  <div className="absolute bottom-0 w-12 h-1 bg-[var(--accent)] rounded-t-full" />
+                  <div className="absolute bottom-0 w-12 h-1 bg-court-accent rounded-t-full" />
                 )}
               </Link>
             )

@@ -25,6 +25,7 @@ import LiveStats from '@/components/stats/LiveStats'
 import ScoreBoard from '@/components/stats/ScoreBoard'
 import EventTimeline from '@/components/stats/EventTimeline'
 import VideoUploadModal from '@/components/modals/VideoUploadModal'
+import { PageTransition } from '@/components/animations'
 
 const LiveAnalysis = () => {
   const { t } = useTranslation()
@@ -109,7 +110,8 @@ const LiveAnalysis = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <PageTransition>
+      <div className="min-h-screen bg-background p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
@@ -229,13 +231,13 @@ const LiveAnalysis = () => {
               {/* Status indicators */}
               <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-slate-300'}`} />
                   <span className={isRecording ? 'text-red-500' : 'text-muted-foreground'}>
                     {t('liveAnalysis.recording.recording')}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${isAnalyzing ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <div className={`w-2 h-2 rounded-full ${isAnalyzing ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
                   <span className={isAnalyzing ? 'text-green-500' : 'text-muted-foreground'}>
                     {t('liveAnalysis.analysis.analyzing')}
                   </span>
@@ -305,6 +307,7 @@ const LiveAnalysis = () => {
         }}
       />
     </div>
+    </PageTransition>
   )
 }
 

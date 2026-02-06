@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Search, Plus, Users, Trophy, TrendingUp, Target } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations'
 
 // Mock data - in real app this would come from API
 const playersData = [
@@ -104,9 +105,10 @@ const Players = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <PageTransition>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Players</h1>
           <p className="text-muted-foreground">
@@ -146,9 +148,10 @@ const Players = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <StaggerContainer className="space-y-2">
                 {filteredPlayers.map((player) => (
-                  <div
+                  <StaggerItem key={player.id}>
+                    <div
                     key={player.id}
                     onClick={() => setSelectedPlayer(player)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
@@ -169,8 +172,9 @@ const Players = () => {
                       </div>
                     </div>
                   </div>
+                  </StaggerItem>
                 ))}
-              </div>
+              </StaggerContainer>
             </CardContent>
           </Card>
         </div>
@@ -228,7 +232,7 @@ const Players = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Trophy className="w-5 h-5 mr-2 text-yellow-500" />
+                  <Trophy className="w-5 h-5 mr-2 text-court-accent" />
                   Match Record
                 </CardTitle>
               </CardHeader>
@@ -243,7 +247,7 @@ const Players = () => {
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
                     <div
-                      className="bg-green-500 h-2 rounded-full"
+                      className="bg-court-accent h-2 rounded-full"
                       style={{ width: `${selectedPlayer.statistics.winPercentage}%` }}
                     />
                   </div>
@@ -254,7 +258,7 @@ const Players = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-blue-500" />
+                  <Target className="w-5 h-5 mr-2 text-court-accent" />
                   Serving
                 </CardTitle>
               </CardHeader>
@@ -279,7 +283,7 @@ const Players = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                  <TrendingUp className="w-5 h-5 mr-2 text-court-accent" />
                   Return & Defense
                 </CardTitle>
               </CardHeader>
@@ -325,7 +329,7 @@ const Players = () => {
                         </div>
                         <div className="w-full bg-secondary rounded-full h-2">
                           <div
-                            className="bg-blue-500 h-2 rounded-full"
+                            className="bg-court-accent h-2 rounded-full"
                             style={{ width: `${stat.value}%` }}
                           />
                         </div>
@@ -349,7 +353,7 @@ const Players = () => {
                         </div>
                         <div className="w-full bg-secondary rounded-full h-2">
                           <div
-                            className="bg-green-500 h-2 rounded-full"
+                            className="bg-court-accent h-2 rounded-full"
                             style={{ width: `${stat.value}%` }}
                           />
                         </div>
@@ -362,7 +366,8 @@ const Players = () => {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

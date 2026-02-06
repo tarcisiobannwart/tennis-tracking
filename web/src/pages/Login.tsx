@@ -77,7 +77,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
       {/* Background decorativo */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl" />
@@ -91,9 +91,9 @@ const Login = () => {
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-md px-4"
       >
-        <Card className="bg-[#1e293b] border-[#334155] overflow-hidden">
+        <Card className="bg-slate-800 border-slate-700 overflow-hidden">
           {/* Header com gradiente */}
-          <div className="relative bg-gradient-to-r from-blue-500/20 to-blue-600/20 p-8 text-center border-b border-[#334155]">
+          <div className="relative bg-gradient-to-r from-blue-500/20 to-blue-600/20 p-8 text-center border-b border-slate-700">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -102,10 +102,10 @@ const Login = () => {
             >
               <LogIn className="w-8 h-8 text-blue-400" />
             </motion.div>
-            <h1 className="text-3xl font-bold text-[#f1f5f9] mb-2">
+            <h1 className="text-3xl font-bold text-slate-100 mb-2">
               Tennis Tracking
             </h1>
-            <p className="text-sm text-[#94a3b8]">
+            <p className="text-sm text-slate-400">
               Análise profissional de partidas
             </p>
           </div>
@@ -114,7 +114,7 @@ const Login = () => {
           <div className="p-8">
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#f1f5f9]">
+                <label className="block text-sm font-medium mb-2 text-slate-100">
                   {t('auth.login.email')}
                 </label>
                 <Input
@@ -122,13 +122,13 @@ const Login = () => {
                   value={credentials.email}
                   onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                   placeholder="seu@email.com"
-                  className="bg-[#0f172a] border-[#334155] text-[#f1f5f9] focus:border-blue-500"
+                  className="bg-slate-900 border-slate-700 text-slate-100 focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#f1f5f9]">
+                <label className="block text-sm font-medium mb-2 text-slate-100">
                   {t('auth.login.password')}
                 </label>
                 <Input
@@ -136,7 +136,7 @@ const Login = () => {
                   value={credentials.password}
                   onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                   placeholder="••••••••"
-                  className="bg-[#0f172a] border-[#334155] text-[#f1f5f9] focus:border-blue-500"
+                  className="bg-slate-900 border-slate-700 text-slate-100 focus:border-blue-500"
                   required
                 />
               </div>
@@ -162,10 +162,10 @@ const Login = () => {
             {/* Divisor */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#334155]" />
+                <div className="w-full border-t border-slate-700" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#1e293b] px-2 text-[#94a3b8]">
+                <span className="bg-slate-800 px-2 text-slate-400">
                   Desenvolvimento
                 </span>
               </div>
@@ -175,11 +175,11 @@ const Login = () => {
             <Button
               onClick={handleQuickLogin}
               variant="outline"
-              className="w-full border-[#334155] text-[#94a3b8] hover:bg-[#0f172a] hover:text-[#f1f5f9]"
+              className="w-full border-slate-700 text-slate-400 hover:bg-slate-900 hover:text-slate-100"
             >
               🚀 Login Rápido (Dev)
             </Button>
-            <p className="text-xs text-center text-[#64748b] mt-3">
+            <p className="text-xs text-center text-slate-500 mt-3">
               Credenciais: test@tennis.com / test123
             </p>
           </div>
@@ -190,7 +190,7 @@ const Login = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-center text-xs text-[#64748b] mt-6"
+          className="text-center text-xs text-slate-500 mt-6"
         >
           © 2024 Tennis Tracking. Todos os direitos reservados.
         </motion.p>

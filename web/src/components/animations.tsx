@@ -1,6 +1,6 @@
 import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { ReactNode, useEffect, useState } from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn'
 
 // Page Transition Wrapper
 interface PageTransitionProps {
@@ -204,6 +204,7 @@ export const AnimatedCounter = ({
   const [count, setCount] = useState(0)
 
   useEffect(() => {
+    let rafId: number
     let startTime: number | null = null
     const startValue = 0
     const endValue = value
@@ -219,11 +220,12 @@ export const AnimatedCounter = ({
       setCount(currentCount)
 
       if (progress < 1) {
-        requestAnimationFrame(animate)
+        rafId = requestAnimationFrame(animate)
       }
     }
 
-    requestAnimationFrame(animate)
+    rafId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafId)
   }, [value, duration])
 
   return (
@@ -322,14 +324,14 @@ export const GetReadyScreen = ({ isVisible, text = 'Get Ready', onComplete }: Ge
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="text-center"
           >
-            <h1 className="text-6xl md:text-8xl font-bold text-[var(--accent)] mb-4">
+            <h1 className="text-6xl md:text-8xl font-bold text-court-accent mb-4">
               {text}
             </h1>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: '100%' }}
               transition={{ duration: 2, ease: 'easeInOut' }}
-              className="h-2 bg-[var(--accent)] rounded-full mx-auto max-w-xs"
+              className="h-2 bg-court-accent rounded-full mx-auto max-w-xs"
             />
           </motion.div>
         </motion.div>
