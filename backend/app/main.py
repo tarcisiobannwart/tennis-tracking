@@ -11,7 +11,7 @@ import uvicorn
 
 from app.core.config import settings
 from app.core.mongodb import connect_mongodb, close_mongodb
-from app.api.routes import auth, users, videos, analysis, matches, upload, test_auth
+from app.api.routes import auth, users, videos, analysis, matches, upload, test_auth, streams
 
 
 @asynccontextmanager
@@ -61,6 +61,7 @@ app.include_router(videos.router, prefix="/api/videos", tags=["Videos"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
 app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
 app.include_router(test_auth.router, prefix="/api/test-auth", tags=["Test Auth"])
+app.include_router(streams.router, prefix="/api/streams", tags=["Streams"])
 
 
 @app.get("/")

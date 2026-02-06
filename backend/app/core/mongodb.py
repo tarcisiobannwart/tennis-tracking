@@ -92,6 +92,14 @@ async def create_indexes():
         await events.create_index([("matchId", 1), ("timestamp", 1)])
         await events.create_index("eventType")
 
+        # Streams collection indexes
+        streams_col = db.database.streams
+        await streams_col.create_index("streamKey", unique=True)
+        await streams_col.create_index("userId")
+        await streams_col.create_index("matchId")
+        await streams_col.create_index("status")
+        await streams_col.create_index("createdAt")
+
         logger.info("Database indexes created successfully")
 
     except Exception as e:

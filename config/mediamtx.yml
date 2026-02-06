@@ -1,0 +1,40 @@
+###############################################
+# MediaMTX Configuration for Tennis Tracking
+# Handles RTMP input from mobile cameras and
+# serves HLS/WebRTC output for web viewers
+###############################################
+
+# Global settings
+logLevel: info
+logDestinations: [stdout]
+
+# RTMP server - receives streams from mobile cameras
+rtmpAddress: :1935
+
+# HLS server - serves video to web frontend
+hlsAddress: :8888
+hlsAlwaysRemux: yes
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsAllowOrigin: '*'
+
+# RTSP server - used by backend CV pipeline
+rtspAddress: :8554
+
+# WebRTC server - low-latency option
+webrtcAddress: :8889
+
+# API for stream status queries
+apiAddress: :9997
+
+# Path configuration
+# court/cam~ matches any path starting with court/cam (e.g. court/cam1, court/cam2)
+paths:
+  court/cam~:
+    source: publisher
+    sourceOnDemand: no
+    record: yes
+    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S
+    # Authentication will be handled by the backend API
+    # The stream key acts as the auth token

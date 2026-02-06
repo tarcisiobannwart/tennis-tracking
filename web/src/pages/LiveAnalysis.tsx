@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Play,
   Pause,
@@ -11,7 +11,9 @@ import {
   Video,
   Eye,
   Target,
-  Upload
+  Upload,
+  PlusCircle,
+  RefreshCw,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLiveStore } from '@/stores/liveStore'
@@ -20,18 +22,24 @@ import { useWebSocket } from '@/hooks/useWebSocket'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import VideoPlayer from '@/components/video/VideoPlayer'
+import MultiCameraGrid from '@/components/video/MultiCameraGrid'
 import CourtView from '@/components/court/CourtView'
 import LiveStats from '@/components/stats/LiveStats'
 import ScoreBoard from '@/components/stats/ScoreBoard'
 import EventTimeline from '@/components/stats/EventTimeline'
 import VideoUploadModal from '@/components/modals/VideoUploadModal'
 import { PageTransition } from '@/components/animations'
+import { streamService } from '@/services/streamService'
+import { LiveStream } from '@/types'
 
 const LiveAnalysis = () => {
   const { t } = useTranslation()
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [viewMode, setViewMode] = useState<'camera' | 'multi-stream' | 'upload'>('multi-stream')
+  const [streams, setStreams] = useState<LiveStream[]>([])
+  const [loadingStreams, setLoadingStreams] = useState(false)
 
   const {
     isConnected,
@@ -47,7 +55,7 @@ const LiveAnalysis = () => {
 
   const { setModal } = useUIStore()
 
-  // WebSocket connection for live data (temporarily disabled to prevent infinite loop)
+  // WebSocket connection for live data
   const { send } = useWebSocket({
     url: 'ws://localhost:8000/ws/live',
     enabled: false, // Disabled until WebSocket endpoint is properly configured
@@ -62,14 +70,34 @@ const LiveAnalysis = () => {
     }
   })
 
-  // Camera selection
+  // Fetch active streams
+  const fetchStreams = useCallback(async () => {
+    setLoadingStreams(true)
+    try {
+      const response = await streamService.listStreams()
+      setStreams(response.streams)
+    } catch (error) {
+      console.error('Error fetching streams:', error)
+    } finally {
+      setLoadingStreams(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStreams()
+    // Refresh streams every 10 seconds
+    const interval = setInterval(fetchStreams, 10000)
+    return () => clearInterval(interval)
+  }, [fetchStreams])
+
+  // Camera selection (local camera)
   const selectCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: 1280,
           height: 720,
-          facingMode: 'environment' // Back camera on mobile
+          facingMode: 'environment'
         }
       })
 
@@ -77,6 +105,7 @@ const LiveAnalysis = () => {
       if (videoElement) {
         videoElement.srcObject = stream
         setSelectedCamera('camera')
+        setViewMode('camera')
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
@@ -109,6 +138,9 @@ const LiveAnalysis = () => {
     send({ type: 'reset_session' })
   }
 
+  const activeStreams = streams.filter((s) => s.status !== 'ended')
+  const liveCount = streams.filter((s) => s.status === 'live').length
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-background p-6">
@@ -116,9 +148,13 @@ const LiveAnalysis = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Radio className={`w-5 h-5 ${isConnected ? 'text-green-500' : 'text-red-500'}`} />
+            <Radio className={`w-5 h-5 ${liveCount > 0 ? 'text-green-500' : isConnected ? 'text-green-500' : 'text-red-500'}`} />
             <span className="text-sm font-medium">
-              {isConnected ? t('liveAnalysis.status.connected') : t('liveAnalysis.status.disconnected')}
+              {liveCount > 0
+                ? `${liveCount} camera${liveCount > 1 ? 's' : ''} ao vivo`
+                : isConnected
+                ? t('liveAnalysis.status.connected')
+                : t('liveAnalysis.status.disconnected')}
             </span>
           </div>
           {currentMatch && (
@@ -129,6 +165,15 @@ const LiveAnalysis = () => {
         </div>
 
         <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchStreams}
+            disabled={loadingStreams}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loadingStreams ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -152,24 +197,31 @@ const LiveAnalysis = () => {
       <div className={`grid gap-6 ${isFullscreen ? 'grid-cols-1' : 'grid-cols-12'}`}>
         {/* Video Feed - Main Area */}
         <div className={`${isFullscreen ? 'col-span-1' : 'col-span-8'} space-y-4`}>
-          {/* Video Player */}
+          {/* Video Player / Multi-Camera Grid */}
           <Card className="relative">
             <CardContent className="p-0">
-              {videoUrl || selectedCamera ? (
+              {viewMode === 'multi-stream' && activeStreams.length > 0 ? (
+                <div className="p-3">
+                  <MultiCameraGrid
+                    streams={activeStreams}
+                    onStreamSelect={(stream) => {
+                      console.log('Selected stream:', stream.camera_label)
+                    }}
+                  />
+                </div>
+              ) : videoUrl || selectedCamera ? (
                 <VideoPlayer
                   src={videoUrl || undefined}
                   showOverlays={true}
                   currentFrame={currentFrame}
-                  onTimeUpdate={(_time) => {
-                    // Handle time updates
-                  }}
+                  onTimeUpdate={(_time) => {}}
                 />
               ) : (
                 <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center">
                   <Video className="w-16 h-16 text-muted-foreground mb-4" />
                   <p className="text-lg font-medium mb-2">{t('liveAnalysis.analysis.noVideoSource')}</p>
                   <p className="text-sm text-muted-foreground mb-6">
-                    {t('liveAnalysis.analysis.selectSourceMessage')}
+                    Conecte cameras moveis ou selecione um video
                   </p>
                   <div className="flex space-x-2">
                     <Button onClick={selectCamera}>
@@ -194,9 +246,44 @@ const LiveAnalysis = () => {
             </CardContent>
           </Card>
 
-          {/* Controls */}
+          {/* View Mode Toggle + Controls */}
           <Card>
             <CardContent className="p-4">
+              {/* View mode tabs */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Button
+                  variant={viewMode === 'multi-stream' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('multi-stream')}
+                >
+                  <PlusCircle className="w-4 h-4 mr-1.5" />
+                  Multi-Camera ({activeStreams.length})
+                </Button>
+                <Button
+                  variant={viewMode === 'camera' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setViewMode('camera')
+                    selectCamera()
+                  }}
+                >
+                  <Video className="w-4 h-4 mr-1.5" />
+                  Camera Local
+                </Button>
+                <Button
+                  variant={viewMode === 'upload' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setViewMode('upload')
+                    setShowUploadModal(true)
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-1.5" />
+                  Video
+                </Button>
+              </div>
+
+              {/* Recording/Analysis Controls */}
               <div className="flex items-center justify-center space-x-4">
                 {!isRecording ? (
                   <Button onClick={startRecording} size="lg">
@@ -276,6 +363,40 @@ const LiveAnalysis = () => {
         {/* Right Panel - Stats and Controls */}
         {!isFullscreen && (
           <div className="col-span-4 space-y-4">
+            {/* Active Streams Info */}
+            {activeStreams.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center">
+                    <Radio className="w-4 h-4 mr-2 text-red-500" />
+                    Cameras Conectadas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {activeStreams.map((stream) => (
+                    <div
+                      key={stream.id}
+                      className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            stream.status === 'live'
+                              ? 'bg-red-500 animate-pulse'
+                              : 'bg-yellow-500'
+                          }`}
+                        />
+                        <span className="font-medium">{stream.camera_label}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {stream.device_info.platform}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Score Board */}
             {currentMatch && (
               <ScoreBoard match={currentMatch} />
@@ -302,8 +423,7 @@ const LiveAnalysis = () => {
         onClose={() => setShowUploadModal(false)}
         onUploadSuccess={(data) => {
           console.log('Upload success:', data)
-          // Aqui você pode processar o resultado do upload
-          // Por exemplo, iniciar a análise do vídeo
+          setViewMode('upload')
         }}
       />
     </div>

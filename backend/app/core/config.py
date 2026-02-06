@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     COURT_DETECTION_CONFIDENCE: float = 0.5
     PLAYER_DETECTION_CONFIDENCE: float = 0.6
 
+    # MediaMTX - Streaming server
+    MEDIAMTX_RTMP_URL: str = "rtmp://localhost:1935"
+    MEDIAMTX_RTSP_URL: str = "rtsp://localhost:8554"
+    MEDIAMTX_HLS_URL: str = "http://localhost:8888"
+    MEDIAMTX_API_URL: str = "http://localhost:9997"
+
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 100
 

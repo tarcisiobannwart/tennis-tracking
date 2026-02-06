@@ -266,3 +266,34 @@ export interface TimelineEvent {
   importance: 'low' | 'medium' | 'high'
   player?: number
 }
+
+// Live Streaming types
+export interface StreamDeviceInfo {
+  platform: 'android' | 'ios' | 'unknown'
+  model?: string
+  resolution?: string
+  os_version?: string
+}
+
+export interface LiveStream {
+  id: string
+  match_id?: string
+  user_id: string
+  camera_label: string
+  stream_key: string
+  rtmp_url: string
+  hls_url: string
+  status: 'waiting' | 'live' | 'ended'
+  device_info: StreamDeviceInfo
+  started_at?: string
+  ended_at?: string
+  created_at: string
+  is_recording: boolean
+  viewer_count: number
+}
+
+export interface StreamListResponse {
+  streams: LiveStream[]
+  total: number
+  active_count: number
+}

@@ -57,6 +57,10 @@ services:
       - UPLOAD_DIR=/app/uploads
       - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
       - ENVIRONMENT=development
+      - MEDIAMTX_RTMP_URL=rtmp://mediamtx:1935
+      - MEDIAMTX_RTSP_URL=rtsp://mediamtx:8554
+      - MEDIAMTX_HLS_URL=http://mediamtx:8888
+      - MEDIAMTX_API_URL=http://mediamtx:9997
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
@@ -84,10 +88,33 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000
       - VITE_WS_URL=ws://localhost:8000
+      - VITE_MEDIAMTX_HLS_URL=http://localhost:8888
     depends_on:
       - backend
     networks:
       - tennis-network
+
+  # MediaMTX - Media Server for live streaming
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: tennis-tracking-mediamtx
+    restart: always
+    ports:
+      - "8554:8554"   # RTSP
+      - "1935:1935"   # RTMP (input from mobile cameras)
+      - "8888:8888"   # HLS (output for web frontend)
+      - "8889:8889"   # WebRTC (low-latency option)
+      - "9997:9997"   # API (stream status)
+    volumes:
+      - ./config/mediamtx.yml:/mediamtx.yml
+      - recordings_data:/recordings
+    networks:
+      - tennis-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9997/v3/paths/list"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # Video Processing Worker (for async processing)
   worker:
@@ -119,6 +146,8 @@ volumes:
   redis_data:
     driver: local
   uploads_data:
+    driver: local
+  recordings_data:
     driver: local
 
 networks:
