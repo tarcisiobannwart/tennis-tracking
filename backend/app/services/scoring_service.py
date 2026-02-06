@@ -11,7 +11,8 @@ from app.models.scoring import (
     MatchFormat,
     GameScore,
     SetScore,
-    ScoreUpdate
+    ScoreUpdate,
+    GameSituation
 )
 from app.models.scoreboard import (
     Scoreboard,
@@ -119,6 +120,9 @@ class ScoringService:
         # Add point and get events
         events = match_score.add_point(winner_player_id)
 
+        # Get current game situation
+        situation = self._get_game_situation(match_score)
+
         # Update in database
         await self.collection.update_one(
             {"match_id": match_id},
@@ -129,7 +133,8 @@ class ScoringService:
             match_id=match_id,
             point_winner_id=winner_player_id,
             timestamp=datetime.utcnow().isoformat(),
-            events=events
+            events=events,
+            situation=situation
         )
 
     async def get_current_score_display(self, match_id: str) -> Dict[str, any]:
@@ -322,3 +327,205 @@ class ScoringService:
         )
 
         return scoreboard.to_display_dict()
+
+    def _is_break_point(self, match_score: MatchScore) -> tuple[bool, Optional[str]]:
+        """
+        Check if current situation is a break point
+        Break point = receiver is one point away from winning server's game
+
+        Returns:
+            Tuple (is_break_point, break_point_player_id)
+        """
+        if not match_score.current_game or match_score.current_game.is_complete:
+            return False, None
+
+        if match_score.current_game.is_tiebreak:
+            return False, None  # No break points in tiebreak
+
+        server_id = match_score.current_server_id
+        receiver_id = match_score.player2_id if server_id == match_score.player1_id else match_score.player1_id
+
+        # Check if receiver is one point from winning
+        if server_id == match_score.player1_id:
+            server_points = match_score.current_game.player1_points
+            receiver_points = match_score.current_game.player2_points
+        else:
+            server_points = match_score.current_game.player2_points
+            receiver_points = match_score.current_game.player1_points
+
+        # Break point scenarios:
+        # 1. Receiver has 40, server has < 40 (0, 15, 30)
+        # 2. Receiver has advantage (deuce situation)
+        if receiver_points >= 3:
+            if server_points < 3:
+                return True, receiver_id  # 40-0, 40-15, 40-30
+            elif receiver_points > server_points:
+                return True, receiver_id  # Advantage receiver
+
+        return False, None
+
+    def _is_set_point(self, match_score: MatchScore) -> tuple[bool, Optional[str]]:
+        """
+        Check if current situation is a set point
+        Set point = player is one point away from winning the set
+
+        Returns:
+            Tuple (is_set_point, set_point_player_id)
+        """
+        if not match_score.current_game or not match_score.current_set:
+            return False, None
+
+        if match_score.current_game.is_complete:
+            return False, None
+
+        player1_games = match_score.current_set.player1_games
+        player2_games = match_score.current_set.player2_games
+
+        # Check each player for set point opportunity
+        for player_id in [match_score.player1_id, match_score.player2_id]:
+            is_player1 = player_id == match_score.player1_id
+            player_games = player1_games if is_player1 else player2_games
+            opponent_games = player2_games if is_player1 else player1_games
+            player_points = match_score.current_game.player1_points if is_player1 else match_score.current_game.player2_points
+            opponent_points = match_score.current_game.player2_points if is_player1 else match_score.current_game.player1_points
+
+            # Set point scenarios:
+            # 1. Leading 5-x and one point from game (regular set)
+            # 2. In tiebreak at 6-6, leading in tiebreak points >= 6 with 1-point lead
+
+            if match_score.current_game.is_tiebreak:
+                # Tiebreak at 6-6: need 7+ points with 2-point lead
+                if player_points >= 6 and player_points > opponent_points:
+                    # One point away from winning tiebreak (would be 2-point lead)
+                    if player_points - opponent_points == 1:
+                        return True, player_id
+            else:
+                # Regular game: player has 5+ games and is one point from winning game
+                if player_games >= 5:
+                    # Check if one point from game
+                    if player_points >= 3:
+                        if opponent_points < 3:
+                            return True, player_id  # 40-0, 40-15, 40-30
+                        elif player_points > opponent_points:
+                            return True, player_id  # Advantage
+
+        return False, None
+
+    def _is_match_point(self, match_score: MatchScore) -> tuple[bool, Optional[str]]:
+        """
+        Check if current situation is a match point
+        Match point = player is one point away from winning the match
+
+        Returns:
+            Tuple (is_match_point, match_point_player_id)
+        """
+        is_set_point, set_point_player_id = self._is_set_point(match_score)
+
+        if not is_set_point:
+            return False, None
+
+        # Check if winning this set would win the match
+        sets_needed = 3 if match_score.format == MatchFormat.BEST_OF_5 else 2
+        player_sets = match_score.get_sets_won(set_point_player_id)
+
+        # If player already has (sets_needed - 1) sets, this is match point
+        if player_sets >= sets_needed - 1:
+            return True, set_point_player_id
+
+        return False, None
+
+    def _get_game_situation(self, match_score: MatchScore) -> GameSituation:
+        """
+        Get comprehensive game situation analysis
+
+        Returns:
+            GameSituation object with all situation flags
+        """
+        situation = GameSituation()
+
+        if not match_score.current_game or match_score.current_game.is_complete:
+            return situation
+
+        # Check special situations
+        is_break_point, break_point_player_id = self._is_break_point(match_score)
+        is_set_point, set_point_player_id = self._is_set_point(match_score)
+        is_match_point, match_point_player_id = self._is_match_point(match_score)
+
+        situation.is_break_point = is_break_point
+        situation.break_point_player_id = break_point_player_id
+        situation.is_set_point = is_set_point
+        situation.set_point_player_id = set_point_player_id
+        situation.is_match_point = is_match_point
+        situation.match_point_player_id = match_point_player_id
+
+        # Check deuce/advantage
+        if not match_score.current_game.is_tiebreak:
+            p1_points = match_score.current_game.player1_points
+            p2_points = match_score.current_game.player2_points
+
+            if p1_points >= 3 and p2_points >= 3:
+                if p1_points == p2_points:
+                    situation.is_deuce = True
+                else:
+                    situation.is_advantage = True
+                    situation.advantage_player_id = match_score.player1_id if p1_points > p2_points else match_score.player2_id
+
+        # Check tiebreak
+        situation.is_tiebreak = match_score.current_game.is_tiebreak
+
+        # Check bagel/breadstick possibilities
+        if match_score.current_set:
+            p1_games = match_score.current_set.player1_games
+            p2_games = match_score.current_set.player2_games
+
+            # Bagel: 5-0 or 0-5 (possible 6-0)
+            if (p1_games == 5 and p2_games == 0) or (p1_games == 0 and p2_games == 5):
+                situation.is_bagel_possible = True
+
+            # Breadstick: 5-1 or 1-5 (possible 6-1)
+            if (p1_games == 5 and p2_games == 1) or (p1_games == 1 and p2_games == 5):
+                situation.is_breadstick_possible = True
+
+        # Build situation text
+        text_parts = []
+
+        if situation.is_match_point:
+            text_parts.append("MATCH POINT")
+        elif situation.is_set_point:
+            text_parts.append("SET POINT")
+
+        if situation.is_break_point:
+            text_parts.append("BREAK POINT")
+
+        if situation.is_deuce:
+            text_parts.append("DEUCE")
+        elif situation.is_advantage:
+            text_parts.append("ADVANTAGE")
+
+        if situation.is_tiebreak:
+            text_parts.insert(0, "TIE-BREAK")
+
+        if situation.is_bagel_possible:
+            text_parts.append("BAGEL THREAT (6-0)")
+        elif situation.is_breadstick_possible:
+            text_parts.append("BREADSTICK THREAT (6-1)")
+
+        situation.situation_text = " | ".join(text_parts) if text_parts else "IN PLAY"
+
+        return situation
+
+    async def get_game_situation(self, match_id: str) -> GameSituation:
+        """
+        Get current game situation with all special conditions
+
+        Args:
+            match_id: Match ID
+
+        Returns:
+            GameSituation object
+        """
+        match_score = await self.get_match_score(match_id)
+        if not match_score:
+            raise ValueError(f"Match score not found for match_id: {match_id}")
+
+        return self._get_game_situation(match_score)

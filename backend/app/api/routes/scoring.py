@@ -7,7 +7,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.services.scoring_service import ScoringService
-from app.models.scoring import MatchFormat, ScoreUpdate
+from app.models.scoring import MatchFormat, ScoreUpdate, GameSituation
 from app.models.scoreboard import ScoreboardStyle
 from app.core.auth import get_current_user
 from app.models.user import User
@@ -129,7 +129,8 @@ async def add_point(
             "match_id": score_update.match_id,
             "point_winner_id": score_update.point_winner_id,
             "timestamp": score_update.timestamp,
-            "events": score_update.events
+            "events": score_update.events,
+            "situation": score_update.situation.model_dump() if score_update.situation else None
         }
     except ValueError as e:
         raise HTTPException(
@@ -229,6 +230,52 @@ async def get_scoreboard(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get scoreboard: {str(e)}"
+        )
+
+
+@router.get("/matches/{match_id}/situation")
+async def get_game_situation(
+    match_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current game situation with special conditions detection
+
+    Returns comprehensive situation analysis:
+    - is_break_point: Receiver one point from breaking serve
+    - is_set_point: Player one point from winning set
+    - is_match_point: Player one point from winning match
+    - is_deuce: Game at deuce (40-40)
+    - is_advantage: One player has advantage
+    - is_tiebreak: Currently in tiebreak
+    - is_bagel_possible: Possible 6-0 set (bagel)
+    - is_breadstick_possible: Possible 6-1 set (breadstick)
+    - situation_text: Human-readable description
+
+    Special situations detected:
+    - Break Point: Receiver is one point from winning server's game
+    - Set Point: Player needs 1 point to win set (5+ games or tiebreak 6+)
+    - Match Point: Player needs 1 point to win match (already has sets_needed-1 sets)
+    - Deuce: Both players at 40-40
+    - Advantage: One player at 40+ after deuce
+    - Tiebreak: Players at 6-6 in games
+    - Bagel: Leading 5-0 (possible 6-0 set)
+    - Breadstick: Leading 5-1 (possible 6-1 set)
+    """
+    service = ScoringService()
+
+    try:
+        situation = await service.get_game_situation(match_id)
+        return situation.model_dump()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get game situation: {str(e)}"
         )
 
 

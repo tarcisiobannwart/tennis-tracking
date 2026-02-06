@@ -245,9 +245,27 @@ class MatchScore(BaseModel):
         return events
 
 
+class GameSituation(BaseModel):
+    """Game situation indicators"""
+    is_break_point: bool = Field(default=False, description="Server is one point away from losing game")
+    is_set_point: bool = Field(default=False, description="Player is one point away from winning set")
+    is_match_point: bool = Field(default=False, description="Player is one point away from winning match")
+    is_deuce: bool = Field(default=False, description="Game is at deuce (40-40)")
+    is_advantage: bool = Field(default=False, description="One player has advantage")
+    advantage_player_id: Optional[str] = Field(default=None, description="Player ID with advantage")
+    is_tiebreak: bool = Field(default=False, description="Currently in tiebreak")
+    is_bagel_possible: bool = Field(default=False, description="Possible 6-0 set (bagel)")
+    is_breadstick_possible: bool = Field(default=False, description="Possible 6-1 set (breadstick)")
+    break_point_player_id: Optional[str] = Field(default=None, description="Player ID with break point opportunity")
+    set_point_player_id: Optional[str] = Field(default=None, description="Player ID with set point opportunity")
+    match_point_player_id: Optional[str] = Field(default=None, description="Player ID with match point opportunity")
+    situation_text: str = Field(default="", description="Human-readable situation description")
+
+
 class ScoreUpdate(BaseModel):
     """Score update event"""
     match_id: str
     point_winner_id: str
     timestamp: str
     events: dict = Field(default_factory=dict, description="Events that occurred (game_won, set_won, etc)")
+    situation: Optional[GameSituation] = Field(default=None, description="Current game situation")
