@@ -203,7 +203,12 @@ async def get_player_recent_form(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get recent form for a player (W/L record)
+    Get recent form for a player with detailed match history
+
+    Returns:
+    - W/L results array
+    - Wins, losses, win percentage
+    - Detailed match information (date, opponent, score, surface, tournament)
     """
     logger.info("Fetching player recent form", player_id=player_id, matches=matches)
 
@@ -218,11 +223,13 @@ async def get_player_recent_form(
 
     return {
         "player_id": player_id,
-        "recent_matches": matches,
+        "requested_matches": matches,
+        "actual_matches": len(form["results"]),
         "form": form["results"],
         "wins": form["wins"],
         "losses": form["losses"],
-        "win_percentage": form["win_percentage"]
+        "win_percentage": form["win_percentage"],
+        "matches": form["matches"]
     }
 
 

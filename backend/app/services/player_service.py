@@ -143,35 +143,57 @@ class PlayerService:
         return result.scalars().all()
 
     async def get_recent_form(self, player_id: str, matches: int = 10) -> dict:
-        """Get recent form for a player"""
+        """Get recent form for a player with detailed match info"""
 
-        # Get recent matches
-        recent_matches = await self.get_player_matches(
-            player_id,
-            limit=matches,
-            status="completed"
-        )
+        # Get recent matches ordered by date
+        recent_matches_query = select(Match).where(
+            or_(Match.player1_id == player_id, Match.player2_id == player_id),
+            Match.status == "completed"
+        ).order_by(desc(Match.created_at)).limit(matches)
+
+        recent_matches_result = await self.db.execute(recent_matches_query)
+        recent_matches = recent_matches_result.scalars().all()
 
         results = []
         wins = 0
         losses = 0
+        match_details = []
 
         for match in recent_matches:
             # Determine if player won
-            if match.status == "completed":
-                # Simple logic - can be enhanced with actual set scores
-                if match.player1_id == player_id:
-                    won = match.player1_sets > match.player2_sets
-                else:
-                    won = match.player2_sets > match.player1_sets
+            if match.player1_id == player_id:
+                won = match.player1_sets > match.player2_sets
+                player_sets = match.player1_sets
+                opponent_sets = match.player2_sets
+                opponent_id = match.player2_id
+            else:
+                won = match.player2_sets > match.player1_sets
+                player_sets = match.player2_sets
+                opponent_sets = match.player1_sets
+                opponent_id = match.player1_id
 
-                result = "W" if won else "L"
-                results.append(result)
+            result = "W" if won else "L"
+            results.append(result)
 
-                if won:
-                    wins += 1
-                else:
-                    losses += 1
+            if won:
+                wins += 1
+            else:
+                losses += 1
+
+            # Get opponent details
+            opponent = await self.get_player(opponent_id)
+            opponent_name = opponent.name if opponent else "Unknown"
+
+            match_details.append({
+                "match_id": match.id,
+                "date": match.created_at.isoformat() if match.created_at else None,
+                "result": result,
+                "score": f"{player_sets}-{opponent_sets}",
+                "opponent_id": opponent_id,
+                "opponent_name": opponent_name,
+                "surface": match.surface,
+                "tournament": getattr(match, "tournament_name", None)
+            })
 
         win_percentage = (wins / len(results)) * 100 if results else 0
 
@@ -179,7 +201,8 @@ class PlayerService:
             "results": results,
             "wins": wins,
             "losses": losses,
-            "win_percentage": win_percentage
+            "win_percentage": win_percentage,
+            "matches": match_details
         }
 
     async def search_by_ranking(

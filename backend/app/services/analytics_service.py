@@ -329,42 +329,88 @@ class AnalyticsService:
         )
 
     async def get_head_to_head(self, player1_id: str, player2_id: str) -> Dict[str, Any]:
-        """Get head-to-head record between two players"""
+        """Get head-to-head record between two players with detailed history"""
 
-        # Get matches between the two players
+        # Get matches between the two players ordered by date
         h2h_query = select(Match).where(
             or_(
                 and_(Match.player1_id == player1_id, Match.player2_id == player2_id),
                 and_(Match.player1_id == player2_id, Match.player2_id == player1_id)
             ),
             Match.status == "completed"
-        )
+        ).order_by(desc(Match.created_at))
 
         h2h_result = await self.db.execute(h2h_query)
         matches = h2h_result.scalars().all()
 
         player1_wins = 0
         player2_wins = 0
+        surface_breakdown = {}
+        match_history = []
 
         for match in matches:
+            # Determine winner
             if match.player1_id == player1_id:
-                if match.player1_sets > match.player2_sets:
-                    player1_wins += 1
-                else:
-                    player2_wins += 1
+                player1_won = match.player1_sets > match.player2_sets
+                player1_sets = match.player1_sets
+                player2_sets = match.player2_sets
             else:
-                if match.player2_sets > match.player1_sets:
-                    player1_wins += 1
-                else:
-                    player2_wins += 1
+                player1_won = match.player2_sets > match.player1_sets
+                player1_sets = match.player2_sets
+                player2_sets = match.player1_sets
+
+            if player1_won:
+                player1_wins += 1
+                winner_id = player1_id
+            else:
+                player2_wins += 1
+                winner_id = player2_id
+
+            # Track surface breakdown
+            surface = match.surface or "unknown"
+            if surface not in surface_breakdown:
+                surface_breakdown[surface] = {"player1_wins": 0, "player2_wins": 0, "total": 0}
+
+            if player1_won:
+                surface_breakdown[surface]["player1_wins"] += 1
+            else:
+                surface_breakdown[surface]["player2_wins"] += 1
+            surface_breakdown[surface]["total"] += 1
+
+            # Add to match history
+            match_history.append({
+                "match_id": match.id,
+                "date": match.created_at.isoformat() if match.created_at else None,
+                "winner_id": winner_id,
+                "score": f"{player1_sets}-{player2_sets}",
+                "surface": surface,
+                "tournament": getattr(match, "tournament_name", None),
+                "duration_minutes": match.duration_minutes
+            })
 
         total_matches = len(matches)
+        player1_win_pct = (player1_wins / total_matches * 100) if total_matches > 0 else 0
+        player2_win_pct = (player2_wins / total_matches * 100) if total_matches > 0 else 0
+
+        # Recent form (last 5 matches)
+        recent_form = []
+        for match_info in match_history[:5]:
+            if match_info["winner_id"] == player1_id:
+                recent_form.append("W1")  # Player 1 won
+            else:
+                recent_form.append("W2")  # Player 2 won
 
         return {
+            "player1_id": player1_id,
+            "player2_id": player2_id,
             "total_matches": total_matches,
             "player1_wins": player1_wins,
             "player2_wins": player2_wins,
-            "player1_win_percentage": (player1_wins / total_matches * 100) if total_matches > 0 else 0
+            "player1_win_percentage": player1_win_pct,
+            "player2_win_percentage": player2_win_pct,
+            "surface_breakdown": surface_breakdown,
+            "recent_form": recent_form,
+            "match_history": match_history
         }
 
     async def get_player_trends(
