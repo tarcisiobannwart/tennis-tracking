@@ -2,16 +2,13 @@
 WebSocket endpoints for live match streaming and real-time updates
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Dict, List, Set
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import Dict, Set
 import json
 import asyncio
 import structlog
 
-from app.core.database import get_db
-from app.services.websocket_service import WebSocketService
-from app.services.match_service import MatchService
+from app.core.mongodb import get_collection
 
 router = APIRouter()
 logger = structlog.get_logger(__name__)
@@ -98,7 +95,6 @@ manager = ConnectionManager()
 async def websocket_match_endpoint(
     websocket: WebSocket,
     match_id: str,
-    db: AsyncSession = Depends(get_db)
 ):
     """
     WebSocket endpoint for live match updates
@@ -107,8 +103,8 @@ async def websocket_match_endpoint(
 
     try:
         # Verify match exists
-        match_service = MatchService(db)
-        match = await match_service.get_match(match_id)
+        matches = get_collection("matches")
+        match = await matches.find_one({"_id": match_id})
 
         if not match:
             await websocket.send_text(json.dumps({
@@ -123,10 +119,7 @@ async def websocket_match_endpoint(
             "type": "match_state",
             "match_id": match_id,
             "data": {
-                "status": match.status,
-                "player1_sets": match.player1_sets,
-                "player2_sets": match.player2_sets,
-                "current_set": match.current_set
+                "status": match.get("status", "unknown"),
             }
         }))
 
@@ -142,7 +135,7 @@ async def websocket_match_endpoint(
                 # Parse incoming message
                 try:
                     data = json.loads(message)
-                    await handle_client_message(websocket, match_id, data, db)
+                    await handle_client_message(websocket, match_id, data)
                 except json.JSONDecodeError:
                     await websocket.send_text(json.dumps({
                         "type": "error",
@@ -211,16 +204,14 @@ async def websocket_global_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-async def handle_client_message(websocket: WebSocket, match_id: str, data: dict, db: AsyncSession):
+async def handle_client_message(websocket: WebSocket, match_id: str, data: dict):
     """Handle incoming client messages"""
     message_type = data.get("type")
 
     if message_type == "pong":
-        # Client responded to ping
         pass
 
     elif message_type == "subscribe_events":
-        # Client wants to subscribe to specific event types
         event_types = data.get("event_types", [])
         await websocket.send_text(json.dumps({
             "type": "subscription_confirmed",
@@ -228,21 +219,15 @@ async def handle_client_message(websocket: WebSocket, match_id: str, data: dict,
         }))
 
     elif message_type == "request_current_state":
-        # Client requests current match state
-        match_service = MatchService(db)
-        match = await match_service.get_match(match_id)
+        matches = get_collection("matches")
+        match = await matches.find_one({"_id": match_id})
 
         if match:
             await websocket.send_text(json.dumps({
                 "type": "current_state",
                 "data": {
                     "match_id": match_id,
-                    "status": match.status,
-                    "score": {
-                        "player1_sets": match.player1_sets,
-                        "player2_sets": match.player2_sets,
-                        "current_set": match.current_set
-                    }
+                    "status": match.get("status", "unknown"),
                 }
             }))
 
