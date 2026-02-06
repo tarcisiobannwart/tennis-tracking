@@ -374,3 +374,35 @@ async def get_player_efficiency(
     efficiency = await analytics_service.get_player_efficiency(player_id, match_id, period)
 
     return efficiency
+
+
+@router.get("/movement-analysis/{match_id}")
+async def get_movement_analysis(
+    match_id: str = Path(..., description="Match ID"),
+    player_id: Optional[str] = Query(None, description="Specific player ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get detailed movement analysis for a match
+
+    Returns:
+    - average_speed: Average movement speed (m/s)
+    - max_speed: Maximum speed reached (m/s)
+    - total_distance: Total distance covered (meters)
+    - sprints: Number of sprint bursts (speed > threshold)
+    - time_in_zones: Time spent in each court zone (9 zones)
+    - agility_score: Overall agility score (0-100)
+    - Statistics per player or for specific player
+    """
+    logger.info("Fetching movement analysis", match_id=match_id, player_id=player_id)
+
+    # Verify match exists
+    match_service = MatchService(db)
+    match = await match_service.get_match(match_id)
+    if not match:
+        raise MatchNotFoundException(match_id)
+
+    analytics_service = AnalyticsService(db)
+    movement = await analytics_service.get_movement_analysis(match_id, player_id)
+
+    return movement

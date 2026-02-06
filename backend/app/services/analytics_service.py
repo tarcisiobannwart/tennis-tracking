@@ -879,6 +879,166 @@ class AnalyticsService:
             }
         }
 
+    async def get_movement_analysis(
+        self,
+        match_id: str,
+        player_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Get detailed movement analysis for a match
+
+        Returns:
+        - average_speed: Average movement speed (m/s)
+        - max_speed: Maximum speed reached (m/s)
+        - total_distance: Total distance covered (meters)
+        - sprints: Number of sprint bursts (speed > threshold)
+        - time_in_zones: Time spent in each court zone
+        - agility_score: Overall agility score (0-100)
+        """
+
+        # Get match
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {}
+
+        # Get events (player positions) for the match
+        events_query = select(Event).where(
+            Event.match_id == match_id,
+            Event.event_type == "position"
+        ).order_by(Event.created_at)
+        events_result = await self.db.execute(events_query)
+        events = events_result.scalars().all()
+
+        player_ids = [match.player1_id, match.player2_id]
+        if player_id:
+            player_ids = [player_id]
+
+        movement_stats = {}
+
+        for pid in player_ids:
+            # Filter events for this player
+            player_events = [e for e in events if e.player_id == pid]
+
+            if not player_events:
+                movement_stats[pid] = {
+                    "player_id": pid,
+                    "average_speed_ms": 0.0,
+                    "max_speed_ms": 0.0,
+                    "total_distance_meters": 0.0,
+                    "sprints": 0,
+                    "time_in_zones": {},
+                    "agility_score": 0.0,
+                    "positions_tracked": 0
+                }
+                continue
+
+            # Calculate distances and speeds
+            total_distance = 0.0
+            speeds = []
+            sprint_threshold = 5.0  # m/s
+            sprints = 0
+
+            for i in range(1, len(player_events)):
+                prev_event = player_events[i-1]
+                curr_event = player_events[i]
+
+                # Calculate distance
+                prev_x = getattr(prev_event, "position_x", 0.0)
+                prev_y = getattr(prev_event, "position_y", 0.0)
+                curr_x = getattr(curr_event, "position_x", 0.0)
+                curr_y = getattr(curr_event, "position_y", 0.0)
+
+                distance = ((curr_x - prev_x)**2 + (curr_y - prev_y)**2)**0.5
+                total_distance += distance
+
+                # Calculate speed (distance / time)
+                if prev_event.created_at and curr_event.created_at:
+                    time_diff = (curr_event.created_at - prev_event.created_at).total_seconds()
+                    if time_diff > 0:
+                        speed = distance / time_diff
+                        speeds.append(speed)
+
+                        # Count sprints
+                        if speed > sprint_threshold:
+                            sprints += 1
+
+            # Average and max speed
+            average_speed = sum(speeds) / len(speeds) if speeds else 0.0
+            max_speed = max(speeds) if speeds else 0.0
+
+            # Time in zones (9 zones: left/center/right x baseline/mid/net)
+            zone_times = {
+                "left_baseline": 0,
+                "center_baseline": 0,
+                "right_baseline": 0,
+                "left_mid": 0,
+                "center_mid": 0,
+                "right_mid": 0,
+                "left_net": 0,
+                "center_net": 0,
+                "right_net": 0
+            }
+
+            for i, event in enumerate(player_events):
+                x = getattr(event, "position_x", 0.0)
+                y = getattr(event, "position_y", 0.0)
+
+                # Determine zone (assuming court dimensions: x (0-23.77m), y (0-10.97m))
+                if y < 3.66:
+                    horizontal = "left"
+                elif y < 7.31:
+                    horizontal = "center"
+                else:
+                    horizontal = "right"
+
+                if x < 7.92:
+                    vertical = "baseline"
+                elif x < 15.85:
+                    vertical = "mid"
+                else:
+                    vertical = "net"
+
+                zone_key = f"{horizontal}_{vertical}"
+                if zone_key in zone_times:
+                    # Approximate time in zone (time to next position)
+                    if i < len(player_events) - 1 and event.created_at and player_events[i+1].created_at:
+                        time_in_zone = (player_events[i+1].created_at - event.created_at).total_seconds()
+                        zone_times[zone_key] += time_in_zone
+                    else:
+                        zone_times[zone_key] += 1  # Default 1 second
+
+            # Agility score (0-100)
+            # Based on: average speed, coverage area, sprint frequency
+            speed_component = min(average_speed / 10.0, 1.0)  # Normalize to 0-1
+            sprint_component = min(sprints / 50.0, 1.0)  # Normalize based on 50 sprints
+            coverage_component = min(total_distance / 3000.0, 1.0)  # Normalize based on 3000m
+
+            agility_score = (speed_component * 40 + sprint_component * 30 + coverage_component * 30) * 100
+
+            movement_stats[pid] = {
+                "player_id": pid,
+                "average_speed_ms": round(average_speed, 2),
+                "max_speed_ms": round(max_speed, 2),
+                "total_distance_meters": round(total_distance, 2),
+                "sprints": sprints,
+                "time_in_zones": {k: round(v, 2) for k, v in zone_times.items()},
+                "agility_score": round(agility_score, 2),
+                "positions_tracked": len(player_events)
+            }
+
+        return {
+            "match_id": match_id,
+            "movement_analysis": movement_stats,
+            "sprint_threshold_ms": sprint_threshold,
+            "court_dimensions": {
+                "length_meters": 23.77,
+                "width_meters": 10.97
+            }
+        }
+
     async def get_player_efficiency(
         self,
         player_id: str,
