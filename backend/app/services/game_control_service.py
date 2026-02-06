@@ -788,6 +788,201 @@ class GameControlService:
 
         return (False, None)
 
+    async def export_match_data(self, match_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Exporta todos os dados completos da partida
+
+        Critérios de aceite TT-33:
+        - [x] export_match_data() com match, events e statistics
+        - [x] Inclui todos os dados do match, eventos e estatísticas
+
+        Args:
+            match_id: ID da partida
+
+        Returns:
+            Dict com match, events, statistics ou None se não encontrado
+        """
+        try:
+            # Buscar partida
+            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
+            if not match:
+                match = await self.db.matches.find_one({"matchId": match_id})
+
+            if not match:
+                logger.warning("Match not found for export", match_id=match_id)
+                return None
+
+            # Buscar todos os eventos da partida
+            events_cursor = self.db.game_events.find({"match_id": match_id}).sort("timestamp", 1)
+            events = []
+            async for event in events_cursor:
+                event["_id"] = str(event["_id"])
+                events.append(event)
+
+            # Buscar todos os pontos
+            points_cursor = self.db.points.find({"match_id": match_id}).sort("timestamp", 1)
+            points = []
+            async for point in points_cursor:
+                point["_id"] = str(point["_id"])
+                points.append(point)
+
+            # Obter estatísticas
+            statistics = await self.get_match_statistics(match_id)
+
+            # Converter ObjectId para string
+            match["_id"] = str(match["_id"])
+
+            # Preparar dados completos
+            export_data = {
+                "match": match,
+                "events": events,
+                "points": points,
+                "statistics": statistics,
+                "export_timestamp": datetime.utcnow().isoformat()
+            }
+
+            logger.info(
+                "Match data exported",
+                match_id=match_id,
+                events_count=len(events),
+                points_count=len(points)
+            )
+
+            return export_data
+
+        except Exception as e:
+            logger.error("Error exporting match data", match_id=match_id, error=str(e))
+            return None
+
+    async def get_match_statistics(self, match_id: str) -> Dict[str, Any]:
+        """
+        Retorna estatísticas completas da partida
+
+        Critérios de aceite TT-33:
+        - [x] get_match_statistics() com info, players, score e events_count
+        - [x] Calculo de duração da partida (horas e minutos)
+
+        Args:
+            match_id: ID da partida
+
+        Returns:
+            Dict com estatísticas da partida
+        """
+        try:
+            # Buscar partida
+            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
+            if not match:
+                match = await self.db.matches.find_one({"matchId": match_id})
+
+            if not match:
+                return {}
+
+            game_state = match.get("game_state", {})
+
+            # Calcular duração da partida
+            duration_info = {}
+            started_at = game_state.get("started_at")
+            if started_at:
+                # Se partida está completa, usar ended_at
+                ended_at = game_state.get("ended_at") or datetime.utcnow()
+
+                # Calcular duração
+                duration = ended_at - started_at
+                duration_seconds = duration.total_seconds()
+                duration_hours = int(duration_seconds // 3600)
+                duration_minutes = int((duration_seconds % 3600) // 60)
+
+                duration_info = {
+                    "total_seconds": duration_seconds,
+                    "hours": duration_hours,
+                    "minutes": duration_minutes,
+                    "formatted": f"{duration_hours}h {duration_minutes}min"
+                }
+
+            # Contar eventos por tipo
+            events_count = {}
+            pipeline = [
+                {"$match": {"match_id": match_id}},
+                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
+            ]
+            async for result in self.db.game_events.aggregate(pipeline):
+                events_count[result["_id"]] = result["count"]
+
+            # Informações dos jogadores
+            player1_id = match.get("player1_id") or match.get("player1")
+            player2_id = match.get("player2_id") or match.get("player2")
+
+            # Estatísticas básicas
+            statistics = {
+                "info": {
+                    "match_id": match_id,
+                    "status": match.get("status", "unknown"),
+                    "started_at": started_at.isoformat() if started_at else None,
+                    "duration": duration_info,
+                    "best_of_sets": game_state.get("best_of_sets", 3)
+                },
+                "players": {
+                    "player1": {
+                        "id": str(player1_id),
+                        "sets": game_state.get("player1_sets", 0),
+                        "games": game_state.get("player1_games", 0),
+                        "points": game_state.get("player1_points", 0)
+                    },
+                    "player2": {
+                        "id": str(player2_id),
+                        "sets": game_state.get("player2_sets", 0),
+                        "games": game_state.get("player2_games", 0),
+                        "points": game_state.get("player2_points", 0)
+                    }
+                },
+                "score": {
+                    "current_set": game_state.get("current_set", 1),
+                    "current_game": game_state.get("current_game", 1),
+                    "server_player_id": game_state.get("server_player_id", "")
+                },
+                "events_count": events_count
+            }
+
+            return statistics
+
+        except Exception as e:
+            logger.error("Error getting match statistics", match_id=match_id, error=str(e))
+            return {}
+
+    async def get_recent_events(
+        self,
+        match_id: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Retorna eventos recentes da partida
+
+        Critérios de aceite TT-33:
+        - [x] get_recent_events() com limite configurável
+
+        Args:
+            match_id: ID da partida
+            limit: Número máximo de eventos a retornar (default: 10)
+
+        Returns:
+            Lista de eventos recentes
+        """
+        try:
+            events_cursor = self.db.game_events.find(
+                {"match_id": match_id}
+            ).sort("timestamp", -1).limit(limit)
+
+            events = []
+            async for event in events_cursor:
+                event["_id"] = str(event["_id"])
+                events.append(event)
+
+            return events
+
+        except Exception as e:
+            logger.error("Error getting recent events", match_id=match_id, error=str(e))
+            return []
+
 
 # Import asyncio for callback execution
 import asyncio

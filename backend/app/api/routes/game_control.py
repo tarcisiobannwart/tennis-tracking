@@ -169,6 +169,72 @@ async def get_event_types(current_user=Depends(get_current_user)):
     }
 
 
+@router.get("/export/{match_id}")
+async def export_match_data(
+    match_id: str,
+    current_user=Depends(get_current_user)
+):
+    """
+    Exporta dados completos da partida
+
+    Critérios de aceite TT-33:
+    - [x] Endpoint para exportar JSON completo com todas as estatísticas, pontos, eventos, scoring
+    """
+    service = GameControlService()
+
+    export_data = await service.export_match_data(match_id=match_id)
+
+    if not export_data:
+        raise HTTPException(status_code=404, detail="Partida não encontrada")
+
+    return export_data
+
+
+@router.get("/statistics/{match_id}")
+async def get_match_statistics(
+    match_id: str,
+    current_user=Depends(get_current_user)
+):
+    """
+    Retorna estatísticas da partida
+
+    Critérios de aceite TT-33:
+    - [x] Endpoint para get_match_statistics() com info, players, score e events_count
+    """
+    service = GameControlService()
+
+    statistics = await service.get_match_statistics(match_id=match_id)
+
+    if not statistics:
+        raise HTTPException(status_code=404, detail="Partida não encontrada")
+
+    return statistics
+
+
+@router.get("/events/recent/{match_id}")
+async def get_recent_events(
+    match_id: str,
+    limit: int = 10,
+    current_user=Depends(get_current_user)
+):
+    """
+    Retorna eventos recentes da partida
+
+    Critérios de aceite TT-33:
+    - [x] Endpoint para get_recent_events() com limite configurável
+    """
+    service = GameControlService()
+
+    events = await service.get_recent_events(match_id=match_id, limit=limit)
+
+    return {
+        "match_id": match_id,
+        "events": events,
+        "count": len(events),
+        "limit": limit
+    }
+
+
 @router.get("/health")
 async def health_check():
     """Health check do módulo de game control"""
