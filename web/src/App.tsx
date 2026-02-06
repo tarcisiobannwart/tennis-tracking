@@ -10,6 +10,7 @@ import Players from './pages/Players'
 import Analytics from './pages/Analytics'
 import Training from './pages/Training'
 import Login from './pages/Login'
+import Onboarding from './pages/Onboarding'
 
 function App() {
   const { theme } = useThemeStore()
@@ -23,6 +24,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/live" element={<LiveAnalysis />} />
