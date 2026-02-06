@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useThemeStore } from './stores/themeStore'
 import Layout from './components/layout/Layout'
+import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import LiveAnalysis from './pages/LiveAnalysis'
 import Matches from './pages/Matches'
@@ -23,16 +24,20 @@ function App() {
 
   return (
     <Routes>
+      {/* Public Pages */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/onboarding" element={<Onboarding />} />
+
+      {/* Protected Pages (App) */}
       <Route element={<Layout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/live" element={<LiveAnalysis />} />
-        <Route path="/matches" element={<Matches />} />
-        <Route path="/match/:id" element={<MatchDetail />} />
-        <Route path="/players" element={<Players />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/training" element={<Training />} />
+        <Route path="/app" element={<Dashboard />} />
+        <Route path="/app/live" element={<LiveAnalysis />} />
+        <Route path="/app/matches" element={<Matches />} />
+        <Route path="/app/match/:id" element={<MatchDetail />} />
+        <Route path="/app/players" element={<Players />} />
+        <Route path="/app/analytics" element={<Analytics />} />
+        <Route path="/app/training" element={<Training />} />
       </Route>
     </Routes>
   )
