@@ -436,3 +436,42 @@ async def get_trend_analysis(
     trends = await analytics_service.get_trend_analysis(match_id, player_id)
 
     return trends
+
+
+@router.get("/player-comparison/{match_id}")
+async def get_player_comparison_in_match(
+    match_id: str = Path(..., description="Match ID"),
+    player1_id: str = Query(..., description="First player ID"),
+    player2_id: str = Query(..., description="Second player ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Compare performance between two players in a match
+
+    Returns:
+    - radar_chart_data: Data for radar chart (serve, return, agility, consistency, mental)
+    - metrics_comparison: Direct comparison with leaders indicated
+    - strengths_weaknesses: Analysis of strengths and weaknesses for each player
+    """
+    logger.info("Comparing players in match", match_id=match_id, player1_id=player1_id, player2_id=player2_id)
+
+    # Verify match exists
+    match_service = MatchService(db)
+    match = await match_service.get_match(match_id)
+    if not match:
+        raise MatchNotFoundException(match_id)
+
+    # Verify both players exist
+    player_service = PlayerService(db)
+    player1 = await player_service.get_player(player1_id)
+    player2 = await player_service.get_player(player2_id)
+
+    if not player1:
+        raise PlayerNotFoundException(player1_id)
+    if not player2:
+        raise PlayerNotFoundException(player2_id)
+
+    analytics_service = AnalyticsService(db)
+    comparison = await analytics_service.get_player_comparison(match_id, player1_id, player2_id)
+
+    return comparison

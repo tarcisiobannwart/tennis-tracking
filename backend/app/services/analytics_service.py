@@ -879,6 +879,127 @@ class AnalyticsService:
             }
         }
 
+    async def get_player_comparison(
+        self,
+        match_id: str,
+        player1_id: str,
+        player2_id: str
+    ) -> Dict[str, Any]:
+        """
+        Compare performance between two players in a match
+
+        Returns:
+        - radar_chart_data: Data for radar chart visualization (serve, return, agility, consistency, mental)
+        - metrics_comparison: Direct comparison of key metrics
+        - strengths_weaknesses: Analysis of each player's strengths and weaknesses
+        """
+
+        # Get match
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {}
+
+        # Get efficiency metrics for both players
+        player1_efficiency = await self.get_player_efficiency(player1_id, match_id)
+        player2_efficiency = await self.get_player_efficiency(player2_id, match_id)
+
+        # Get movement analysis for both players
+        movement_analysis = await self.get_movement_analysis(match_id)
+        player1_movement = movement_analysis.get("movement_analysis", {}).get(player1_id, {})
+        player2_movement = movement_analysis.get("movement_analysis", {}).get(player2_id, {})
+
+        # Get trend analysis for clutch factor
+        trend_analysis = await self.get_trend_analysis(match_id)
+        player1_trends = trend_analysis.get("trend_analysis", {}).get(player1_id, {})
+        player2_trends = trend_analysis.get("trend_analysis", {}).get(player2_id, {})
+
+        # Radar chart data (normalized 0-100)
+        radar_chart_data = {
+            "player1": {
+                "player_id": player1_id,
+                "serve": player1_efficiency.get("first_serve_pct", 0),
+                "return": player1_efficiency.get("return_win_pct", 0),
+                "agility": player1_movement.get("agility_score", 0),
+                "consistency": player1_efficiency.get("consistency_score", 0),
+                "mental": player1_trends.get("clutch_factor", 0)
+            },
+            "player2": {
+                "player_id": player2_id,
+                "serve": player2_efficiency.get("first_serve_pct", 0),
+                "return": player2_efficiency.get("return_win_pct", 0),
+                "agility": player2_movement.get("agility_score", 0),
+                "consistency": player2_efficiency.get("consistency_score", 0),
+                "mental": player2_trends.get("clutch_factor", 0)
+            }
+        }
+
+        # Metrics comparison
+        metrics_comparison = {
+            "first_serve_pct": {
+                "player1": player1_efficiency.get("first_serve_pct", 0),
+                "player2": player2_efficiency.get("first_serve_pct", 0),
+                "leader": player1_id if player1_efficiency.get("first_serve_pct", 0) > player2_efficiency.get("first_serve_pct", 0) else player2_id
+            },
+            "return_win_pct": {
+                "player1": player1_efficiency.get("return_win_pct", 0),
+                "player2": player2_efficiency.get("return_win_pct", 0),
+                "leader": player1_id if player1_efficiency.get("return_win_pct", 0) > player2_efficiency.get("return_win_pct", 0) else player2_id
+            },
+            "consistency_score": {
+                "player1": player1_efficiency.get("consistency_score", 0),
+                "player2": player2_efficiency.get("consistency_score", 0),
+                "leader": player1_id if player1_efficiency.get("consistency_score", 0) > player2_efficiency.get("consistency_score", 0) else player2_id
+            },
+            "agility_score": {
+                "player1": player1_movement.get("agility_score", 0),
+                "player2": player2_movement.get("agility_score", 0),
+                "leader": player1_id if player1_movement.get("agility_score", 0) > player2_movement.get("agility_score", 0) else player2_id
+            },
+            "clutch_factor": {
+                "player1": player1_trends.get("clutch_factor", 0),
+                "player2": player2_trends.get("clutch_factor", 0),
+                "leader": player1_id if player1_trends.get("clutch_factor", 0) > player2_trends.get("clutch_factor", 0) else player2_id
+            },
+            "total_distance": {
+                "player1": player1_movement.get("total_distance_meters", 0),
+                "player2": player2_movement.get("total_distance_meters", 0),
+                "leader": player1_id if player1_movement.get("total_distance_meters", 0) > player2_movement.get("total_distance_meters", 0) else player2_id
+            }
+        }
+
+        # Strengths and weaknesses analysis
+        def analyze_strengths_weaknesses(radar_data, player_name):
+            scores = {k: v for k, v in radar_data.items() if k != "player_id"}
+            avg_score = sum(scores.values()) / len(scores) if scores else 0
+
+            strengths = [k for k, v in scores.items() if v > avg_score + 10]
+            weaknesses = [k for k, v in scores.items() if v < avg_score - 10]
+
+            return {
+                "strengths": strengths,
+                "weaknesses": weaknesses,
+                "average_score": round(avg_score, 2),
+                "top_attribute": max(scores, key=scores.get) if scores else None,
+                "weakest_attribute": min(scores, key=scores.get) if scores else None
+            }
+
+        strengths_weaknesses = {
+            "player1": analyze_strengths_weaknesses(radar_chart_data["player1"], "Player 1"),
+            "player2": analyze_strengths_weaknesses(radar_chart_data["player2"], "Player 2")
+        }
+
+        return {
+            "match_id": match_id,
+            "player1_id": player1_id,
+            "player2_id": player2_id,
+            "radar_chart_data": radar_chart_data,
+            "metrics_comparison": metrics_comparison,
+            "strengths_weaknesses": strengths_weaknesses
+        }
+
     async def get_trend_analysis(
         self,
         match_id: str,
