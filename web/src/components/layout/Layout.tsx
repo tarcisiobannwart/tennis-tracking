@@ -12,7 +12,7 @@ const Layout = () => {
   const hideSidebar = location.pathname === '/live'
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-900">
       {/* Sidebar */}
       {!hideSidebar && (
         <Sidebar />
@@ -22,14 +22,15 @@ const Layout = () => {
       <div
         className={cn(
           "flex flex-col transition-all duration-300",
-          !hideSidebar && sidebarOpen ? "ml-64" : !hideSidebar ? "ml-16" : "ml-0"
+          !hideSidebar && sidebarOpen ? "md:ml-64" : !hideSidebar ? "md:ml-16" : "ml-0",
+          !hideSidebar && "pb-16 md:pb-0" // Add padding bottom for mobile nav
         )}
       >
         {/* Header */}
         <Header />
 
         {/* Page content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6">
           <Outlet />
         </main>
       </div>
