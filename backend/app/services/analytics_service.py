@@ -672,6 +672,213 @@ class AnalyticsService:
             }
         }
 
+    async def get_momentum_analysis(self, match_id: str) -> Dict[str, Any]:
+        """Get momentum analysis for a match"""
+
+        # Get match
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {}
+
+        # Get points for the match ordered by time
+        points_query = select(Point).where(Point.match_id == match_id).order_by(Point.created_at)
+        points_result = await self.db.execute(points_query)
+        points = points_result.scalars().all()
+
+        player1_id = match.player1_id
+        player2_id = match.player2_id
+
+        # Calculate momentum over time
+        momentum_timeline = []
+        player1_streak = 0
+        player2_streak = 0
+        player1_points_total = 0
+        player2_points_total = 0
+        turning_points = []
+
+        for i, point in enumerate(points):
+            # Update point totals
+            if point.winner_player_id == player1_id:
+                player1_points_total += 1
+                player1_streak += 1
+                player2_streak = 0
+            elif point.winner_player_id == player2_id:
+                player2_points_total += 1
+                player2_streak += 1
+                player1_streak = 0
+
+            # Calculate momentum score (-100 to +100, positive = player1 advantage)
+            total_points = player1_points_total + player2_points_total
+            if total_points > 0:
+                momentum_score = ((player1_points_total - player2_points_total) / total_points) * 100
+            else:
+                momentum_score = 0
+
+            # Detect turning points (momentum swing > 20 points)
+            if len(momentum_timeline) > 0:
+                prev_momentum = momentum_timeline[-1]["momentum_score"]
+                momentum_change = abs(momentum_score - prev_momentum)
+                if momentum_change > 20:
+                    turning_points.append({
+                        "point_index": i,
+                        "point_id": point.id,
+                        "momentum_before": prev_momentum,
+                        "momentum_after": momentum_score,
+                        "change": momentum_change,
+                        "set_number": getattr(point, "set_number", None),
+                        "game_number": getattr(point, "game_number", None)
+                    })
+
+            momentum_timeline.append({
+                "point_index": i,
+                "point_id": point.id,
+                "momentum_score": round(momentum_score, 2),
+                "player1_points": player1_points_total,
+                "player2_points": player2_points_total,
+                "player1_streak": player1_streak,
+                "player2_streak": player2_streak,
+                "timestamp": point.created_at.isoformat() if point.created_at else None
+            })
+
+        # Calculate momentum phases
+        player1_dominant_phases = len([m for m in momentum_timeline if m["momentum_score"] > 30])
+        player2_dominant_phases = len([m for m in momentum_timeline if m["momentum_score"] < -30])
+        balanced_phases = len([m for m in momentum_timeline if -30 <= m["momentum_score"] <= 30])
+
+        return {
+            "match_id": match_id,
+            "player1_id": player1_id,
+            "player2_id": player2_id,
+            "momentum_timeline": momentum_timeline,
+            "turning_points": turning_points,
+            "momentum_phases": {
+                "player1_dominant": player1_dominant_phases,
+                "player2_dominant": player2_dominant_phases,
+                "balanced": balanced_phases
+            },
+            "final_momentum": momentum_timeline[-1]["momentum_score"] if momentum_timeline else 0,
+            "max_player1_momentum": max([m["momentum_score"] for m in momentum_timeline]) if momentum_timeline else 0,
+            "max_player2_momentum": min([m["momentum_score"] for m in momentum_timeline]) if momentum_timeline else 0
+        }
+
+    async def get_court_coverage_analysis(
+        self,
+        match_id: str,
+        player_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get court coverage analysis for a match"""
+
+        # Get match
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {}
+
+        # Get events (player positions) for the match
+        events_query = select(Event).where(Event.match_id == match_id)
+        events_result = await self.db.execute(events_query)
+        events = events_result.scalars().all()
+
+        player_ids = [match.player1_id, match.player2_id]
+        if player_id:
+            player_ids = [player_id]
+
+        coverage_stats = {}
+
+        for pid in player_ids:
+            # Filter events for this player
+            player_events = [e for e in events if e.player_id == pid and e.event_type == "position"]
+
+            # Calculate distance covered (sum of distances between consecutive positions)
+            total_distance = 0.0
+            positions = []
+
+            for i, event in enumerate(player_events):
+                x = getattr(event, "position_x", 0.0)
+                y = getattr(event, "position_y", 0.0)
+                positions.append({"x": x, "y": y})
+
+                if i > 0:
+                    prev_x = getattr(player_events[i-1], "position_x", 0.0)
+                    prev_y = getattr(player_events[i-1], "position_y", 0.0)
+                    distance = ((x - prev_x)**2 + (y - prev_y)**2)**0.5
+                    total_distance += distance
+
+            # Calculate area covered (convex hull approximation)
+            # For simplicity, calculate bounding box area
+            if positions:
+                x_coords = [p["x"] for p in positions]
+                y_coords = [p["y"] for p in positions]
+                area_covered = (max(x_coords) - min(x_coords)) * (max(y_coords) - min(y_coords))
+            else:
+                area_covered = 0.0
+
+            # Zone frequency (divide court into 9 zones)
+            zones = {
+                "left_baseline": 0,
+                "center_baseline": 0,
+                "right_baseline": 0,
+                "left_mid": 0,
+                "center_mid": 0,
+                "right_mid": 0,
+                "left_net": 0,
+                "center_net": 0,
+                "right_net": 0
+            }
+
+            for pos in positions:
+                x, y = pos["x"], pos["y"]
+                # Assuming court dimensions: x (0-23.77m), y (0-10.97m)
+                # Left/Center/Right based on y
+                if y < 3.66:
+                    horizontal = "left"
+                elif y < 7.31:
+                    horizontal = "center"
+                else:
+                    horizontal = "right"
+
+                # Baseline/Mid/Net based on x
+                if x < 7.92:
+                    vertical = "baseline"
+                elif x < 15.85:
+                    vertical = "mid"
+                else:
+                    vertical = "net"
+
+                zone_key = f"{horizontal}_{vertical}"
+                if zone_key in zones:
+                    zones[zone_key] += 1
+
+            # Most frequented zone
+            most_frequented_zone = max(zones, key=zones.get) if zones else None
+
+            coverage_stats[pid] = {
+                "player_id": pid,
+                "total_distance_meters": round(total_distance, 2),
+                "area_covered_sqm": round(area_covered, 2),
+                "total_positions_tracked": len(positions),
+                "zone_frequency": zones,
+                "most_frequented_zone": most_frequented_zone,
+                "average_position": {
+                    "x": sum(p["x"] for p in positions) / len(positions) if positions else 0,
+                    "y": sum(p["y"] for p in positions) / len(positions) if positions else 0
+                }
+            }
+
+        return {
+            "match_id": match_id,
+            "court_coverage": coverage_stats,
+            "court_dimensions": {
+                "length_meters": 23.77,
+                "width_meters": 10.97
+            }
+        }
+
     def _get_period_cutoff(self, period: str) -> datetime:
         """Get cutoff date for period filtering"""
 

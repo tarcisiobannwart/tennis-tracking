@@ -254,6 +254,13 @@ async def get_momentum_analysis(
 ):
     """
     Get momentum analysis for a match
+
+    Returns:
+    - Momentum timeline (point-by-point momentum score)
+    - Turning points (significant momentum shifts > 20 points)
+    - Momentum phases (player1 dominant, player2 dominant, balanced)
+    - Final momentum score
+    - Max momentum for each player
     """
     logger.info("Fetching momentum analysis", match_id=match_id)
 
@@ -277,6 +284,14 @@ async def get_court_coverage(
 ):
     """
     Get court coverage analysis for a match
+
+    Returns:
+    - Total distance covered (meters)
+    - Area covered (square meters)
+    - Zone frequency (9 zones: left/center/right x baseline/mid/net)
+    - Most frequented zone
+    - Average position on court
+    - Statistics per player or for specific player
     """
     logger.info("Fetching court coverage analysis", match_id=match_id, player_id=player_id)
 
