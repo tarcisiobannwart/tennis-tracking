@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.services.scoring_service import ScoringService
 from app.models.scoring import MatchFormat, ScoreUpdate
+from app.models.scoreboard import ScoreboardStyle
 from app.core.auth import get_current_user
 from app.models.user import User
 
@@ -171,6 +172,63 @@ async def get_match_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get match stats: {str(e)}"
+        )
+
+
+@router.get("/matches/{match_id}/scoreboard")
+async def get_scoreboard(
+    match_id: str,
+    player1_name: str,
+    player2_name: str,
+    style: ScoreboardStyle = ScoreboardStyle.TRADITIONAL,
+    player1_ranking: Optional[int] = None,
+    player2_ranking: Optional[int] = None,
+    player1_country: Optional[str] = None,
+    player2_country: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get visual scoreboard for match
+
+    Returns scoreboard with:
+    - Player names (auto-abbreviated: R. FEDERER)
+    - Current score (points, games, sets)
+    - Completed sets with tiebreak notation
+    - Serving indicator
+    - Configurable style (TRADITIONAL, MODERN, TV_BROADCAST, MOBILE, COMPACT)
+
+    Query params:
+    - player1_name: Full player name (e.g., "Roger Federer")
+    - player2_name: Full player name (e.g., "Rafael Nadal")
+    - style: Display style (optional, default: TRADITIONAL)
+    - player1_ranking: Player 1 ranking (optional)
+    - player2_ranking: Player 2 ranking (optional)
+    - player1_country: Player 1 country code (optional, e.g., "SUI")
+    - player2_country: Player 2 country code (optional, e.g., "ESP")
+    """
+    service = ScoringService()
+
+    try:
+        scoreboard = await service.get_scoreboard(
+            match_id=match_id,
+            player1_name=player1_name,
+            player2_name=player2_name,
+            style=style,
+            player1_ranking=player1_ranking,
+            player2_ranking=player2_ranking,
+            player1_country=player1_country,
+            player2_country=player2_country
+        )
+        return scoreboard
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get scoreboard: {str(e)}"
         )
 
 

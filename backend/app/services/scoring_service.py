@@ -13,6 +13,11 @@ from app.models.scoring import (
     SetScore,
     ScoreUpdate
 )
+from app.models.scoreboard import (
+    Scoreboard,
+    PlayerScoreDisplay,
+    ScoreboardStyle
+)
 from app.core.mongodb import get_database
 
 
@@ -225,3 +230,95 @@ class ScoringService:
         """Delete match score"""
         result = await self.collection.delete_one({"match_id": match_id})
         return result.deleted_count > 0
+
+    async def create_scoreboard(
+        self,
+        match_id: str,
+        player1_name: str,
+        player2_name: str,
+        player1_ranking: Optional[int] = None,
+        player2_ranking: Optional[int] = None,
+        player1_country: Optional[str] = None,
+        player2_country: Optional[str] = None,
+        style: ScoreboardStyle = ScoreboardStyle.TRADITIONAL
+    ) -> Scoreboard:
+        """
+        Create a scoreboard for visual display
+
+        Args:
+            match_id: Match ID
+            player1_name: Player 1 full name
+            player2_name: Player 2 full name
+            player1_ranking: Player 1 ranking (optional)
+            player2_ranking: Player 2 ranking (optional)
+            player1_country: Player 1 country code (optional)
+            player2_country: Player 2 country code (optional)
+            style: Scoreboard style
+
+        Returns:
+            Scoreboard object
+        """
+        # Get match score to extract player IDs
+        match_score = await self.get_match_score(match_id)
+        if not match_score:
+            raise ValueError(f"Match score not found for match_id: {match_id}")
+
+        # Create player displays
+        player1 = PlayerScoreDisplay(
+            player_id=match_score.player1_id,
+            full_name=player1_name,
+            ranking=player1_ranking,
+            country_code=player1_country
+        )
+
+        player2 = PlayerScoreDisplay(
+            player_id=match_score.player2_id,
+            full_name=player2_name,
+            ranking=player2_ranking,
+            country_code=player2_country
+        )
+
+        # Create scoreboard
+        scoreboard = Scoreboard(
+            match_id=match_id,
+            style=style,
+            player1=player1,
+            player2=player2,
+            match_format=match_score.format.value
+        )
+
+        # Update with current match state
+        score_display = await self.get_current_score_display(match_id)
+        scoreboard.update_from_match(score_display)
+
+        return scoreboard
+
+    async def get_scoreboard(
+        self,
+        match_id: str,
+        player1_name: str,
+        player2_name: str,
+        style: ScoreboardStyle = ScoreboardStyle.TRADITIONAL,
+        player1_ranking: Optional[int] = None,
+        player2_ranking: Optional[int] = None,
+        player1_country: Optional[str] = None,
+        player2_country: Optional[str] = None
+    ) -> dict:
+        """
+        Get scoreboard in display format
+
+        Returns:
+            Dict optimized for frontend rendering
+        """
+        scoreboard = await self.create_scoreboard(
+            match_id=match_id,
+            player1_name=player1_name,
+            player2_name=player2_name,
+            player1_ranking=player1_ranking,
+            player2_ranking=player2_ranking,
+            player1_country=player1_country,
+            player2_country=player2_country,
+            style=style
+        )
+
+        return scoreboard.to_display_dict()
