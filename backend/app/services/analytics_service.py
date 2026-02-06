@@ -879,6 +879,103 @@ class AnalyticsService:
             }
         }
 
+    async def get_player_efficiency(
+        self,
+        player_id: str,
+        match_id: Optional[str] = None,
+        period: str = "all"
+    ) -> Dict[str, Any]:
+        """
+        Calculate player efficiency and consistency metrics
+
+        Returns:
+        - first_serve_pct: Percentage of first serves in
+        - second_serve_pct: Percentage of second serves won
+        - return_win_pct: Percentage of return points won
+        - break_conversion: Break points converted percentage
+        - consistency_score: Overall consistency (0-100)
+        - unforced_error_ratio: Ratio of unforced errors to total points
+        """
+
+        # Base query for player points
+        points_query = select(Point).join(Match).where(
+            Match.id == Point.match_id,
+            or_(Match.player1_id == player_id, Match.player2_id == player_id)
+        )
+
+        # Filter by specific match if provided
+        if match_id:
+            points_query = points_query.where(Match.id == match_id)
+        elif period != "all":
+            cutoff_date = self._get_period_cutoff(period)
+            points_query = points_query.where(Match.created_at >= cutoff_date)
+
+        points_result = await self.db.execute(points_query)
+        points = points_result.scalars().all()
+
+        if not points:
+            return {
+                "player_id": player_id,
+                "first_serve_pct": 0.0,
+                "second_serve_pct": 0.0,
+                "return_win_pct": 0.0,
+                "break_conversion": 0.0,
+                "consistency_score": 0.0,
+                "unforced_error_ratio": 0.0
+            }
+
+        # First serve statistics
+        first_serves = [p for p in points if p.server_player_id == player_id and not p.second_serve]
+        first_serve_in = len([s for s in first_serves if s.first_serve_in])
+        first_serve_pct = (first_serve_in / len(first_serves) * 100) if first_serves else 0.0
+
+        # Second serve statistics
+        second_serves = [p for p in points if p.server_player_id == player_id and p.second_serve]
+        second_serve_won = len([s for s in second_serves if s.winner_player_id == player_id])
+        second_serve_pct = (second_serve_won / len(second_serves) * 100) if second_serves else 0.0
+
+        # Return statistics (points where opponent served)
+        return_points = [p for p in points if p.server_player_id != player_id and p.server_player_id is not None]
+        return_won = len([p for p in return_points if p.winner_player_id == player_id])
+        return_win_pct = (return_won / len(return_points) * 100) if return_points else 0.0
+
+        # Break point conversion (mock for now - would need break point tracking)
+        break_points_faced = len([p for p in points if getattr(p, "is_break_point", False)])
+        break_points_converted = len([
+            p for p in points
+            if getattr(p, "is_break_point", False) and p.winner_player_id == player_id
+        ])
+        break_conversion = (break_points_converted / break_points_faced * 100) if break_points_faced > 0 else 0.0
+
+        # Unforced errors ratio
+        total_points = len(points)
+        unforced_errors = len([
+            p for p in points
+            if p.outcome == "unforced_error" and getattr(p, "error_player_id", None) == player_id
+        ])
+        unforced_error_ratio = (unforced_errors / total_points) if total_points > 0 else 0.0
+
+        # Consistency score (0-100)
+        # Based on: low unforced errors, high first serve %, stable performance
+        error_component = max(0, 1 - (unforced_error_ratio * 2))  # Lower errors = higher score
+        serve_component = first_serve_pct / 100
+        return_component = return_win_pct / 100
+
+        consistency_score = (error_component * 40 + serve_component * 30 + return_component * 30) * 100
+
+        return {
+            "player_id": player_id,
+            "match_id": match_id,
+            "period": period,
+            "first_serve_pct": round(first_serve_pct, 2),
+            "second_serve_pct": round(second_serve_pct, 2),
+            "return_win_pct": round(return_win_pct, 2),
+            "break_conversion": round(break_conversion, 2),
+            "consistency_score": round(consistency_score, 2),
+            "unforced_error_ratio": round(unforced_error_ratio, 4),
+            "total_points_analyzed": total_points
+        }
+
     def _get_period_cutoff(self, period: str) -> datetime:
         """Get cutoff date for period filtering"""
 

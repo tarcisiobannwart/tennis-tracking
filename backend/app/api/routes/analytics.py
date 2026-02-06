@@ -336,3 +336,41 @@ async def get_performance_forecast(
     )
 
     return forecast
+
+
+@router.get("/player-efficiency/{player_id}")
+async def get_player_efficiency(
+    player_id: str = Path(..., description="Player ID"),
+    match_id: Optional[str] = Query(None, description="Specific match ID"),
+    period: str = Query("all", description="Time period: all, year, month, week"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get player efficiency and consistency metrics
+
+    Returns:
+    - first_serve_pct: Percentage of first serves in
+    - second_serve_pct: Percentage of second serves won
+    - return_win_pct: Percentage of return points won
+    - break_conversion: Break points converted percentage
+    - consistency_score: Overall consistency (0-100)
+    - unforced_error_ratio: Ratio of unforced errors to total points
+    """
+    logger.info("Fetching player efficiency", player_id=player_id, match_id=match_id, period=period)
+
+    # Verify player exists
+    player_service = PlayerService(db)
+    player = await player_service.get_player(player_id)
+    if not player:
+        raise PlayerNotFoundException(player_id)
+
+    if match_id:
+        match_service = MatchService(db)
+        match = await match_service.get_match(match_id)
+        if not match:
+            raise MatchNotFoundException(match_id)
+
+    analytics_service = AnalyticsService(db)
+    efficiency = await analytics_service.get_player_efficiency(player_id, match_id, period)
+
+    return efficiency

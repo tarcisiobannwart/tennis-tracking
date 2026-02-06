@@ -402,6 +402,76 @@ class GameControlService:
                     player_id=winner_player_id
                 )
 
+            # Detectar situações críticas (TT-32)
+            player1_id = match.get("player1_id") or match.get("player1")
+            player2_id = match.get("player2_id") or match.get("player2")
+
+            # Detectar break point
+            is_break_pt = self._is_break_point(
+                server_player_id=game_state.get("server_player_id", ""),
+                player1_id=str(player1_id),
+                player2_id=str(player2_id),
+                player1_points=game_state.get("player1_points", 0),
+                player2_points=game_state.get("player2_points", 0)
+            )
+
+            if is_break_pt:
+                await self._emit_event(
+                    match_id=match_id,
+                    event_type=GameEventTypeEnum.BREAK_POINT,
+                    metadata={
+                        "player1_points": game_state.get("player1_points", 0),
+                        "player2_points": game_state.get("player2_points", 0)
+                    }
+                )
+
+            # Detectar set point
+            is_set_pt, player_with_set_pt = self._is_set_point(
+                player1_id=str(player1_id),
+                player2_id=str(player2_id),
+                player1_games=game_state.get("player1_games", 0),
+                player2_games=game_state.get("player2_games", 0),
+                player1_points=game_state.get("player1_points", 0),
+                player2_points=game_state.get("player2_points", 0),
+                is_tiebreak=False  # TODO: detectar tiebreak
+            )
+
+            if is_set_pt:
+                await self._emit_event(
+                    match_id=match_id,
+                    event_type=GameEventTypeEnum.SET_POINT,
+                    player_id=player_with_set_pt,
+                    metadata={
+                        "player1_games": game_state.get("player1_games", 0),
+                        "player2_games": game_state.get("player2_games", 0)
+                    }
+                )
+
+            # Detectar match point
+            is_match_pt, player_with_match_pt = self._is_match_point(
+                player1_id=str(player1_id),
+                player2_id=str(player2_id),
+                player1_sets=game_state.get("player1_sets", 0),
+                player2_sets=game_state.get("player2_sets", 0),
+                player1_games=game_state.get("player1_games", 0),
+                player2_games=game_state.get("player2_games", 0),
+                player1_points=game_state.get("player1_points", 0),
+                player2_points=game_state.get("player2_points", 0),
+                best_of_sets=game_state.get("best_of_sets", 3),
+                is_tiebreak=False  # TODO: detectar tiebreak
+            )
+
+            if is_match_pt:
+                await self._emit_event(
+                    match_id=match_id,
+                    event_type=GameEventTypeEnum.MATCH_POINT,
+                    player_id=player_with_match_pt,
+                    metadata={
+                        "player1_sets": game_state.get("player1_sets", 0),
+                        "player2_sets": game_state.get("player2_sets", 0)
+                    }
+                )
+
             return GameControlResponse(
                 success=True,
                 message="Ponto registrado com sucesso",
@@ -545,6 +615,178 @@ class GameControlService:
         except Exception as e:
             logger.error("Error getting match state", match_id=match_id, error=str(e))
             return None
+
+    def _is_break_point(
+        self,
+        server_player_id: str,
+        player1_id: str,
+        player2_id: str,
+        player1_points: int,
+        player2_points: int
+    ) -> bool:
+        """
+        Detecta se a situação atual é break point
+
+        Critérios de aceite TT-32:
+        - [x] Verifica se jogador que NÃO está sacando pode ganhar o game
+        - [x] Considera advantage e deuce
+
+        Args:
+            server_player_id: ID do jogador sacando
+            player1_id: ID do player 1
+            player2_id: ID do player 2
+            player1_points: Pontos do player 1 no game atual
+            player2_points: Pontos do player 2 no game atual
+
+        Returns:
+            True se é break point, False caso contrário
+        """
+        # Determinar quem está recebendo
+        receiver_id = player2_id if server_player_id == player1_id else player1_id
+
+        # Determinar pontos do sacador e recebedor
+        if server_player_id == player1_id:
+            server_points = player1_points
+            receiver_points = player2_points
+        else:
+            server_points = player2_points
+            receiver_points = player1_points
+
+        # Break point ocorre quando:
+        # 1. Recebedor tem 40 e sacador tem menos (40-0, 40-15, 40-30)
+        # 2. Advantage para o recebedor (após deuce)
+
+        # Caso 1: 40 vs menos que 40 (receiver vencendo)
+        if receiver_points >= 40 and server_points < 40:
+            return True
+
+        # Caso 2: Advantage para receiver (ambos >= 40, receiver tem mais)
+        if receiver_points >= 40 and server_points >= 40 and receiver_points > server_points:
+            return True
+
+        return False
+
+    def _is_set_point(
+        self,
+        player1_id: str,
+        player2_id: str,
+        player1_games: int,
+        player2_games: int,
+        player1_points: int,
+        player2_points: int,
+        is_tiebreak: bool = False
+    ) -> tuple[bool, Optional[str]]:
+        """
+        Detecta se a situação atual é set point
+
+        Critérios de aceite TT-32:
+        - [x] Verifica se jogador pode ganhar o set
+        - [x] Considera advantage e deuce
+
+        Args:
+            player1_id: ID do player 1
+            player2_id: ID do player 2
+            player1_games: Games do player 1 no set atual
+            player2_games: Games do player 2 no set atual
+            player1_points: Pontos do player 1 no game atual
+            player2_points: Pontos do player 2 no game atual
+            is_tiebreak: Se está em tiebreak
+
+        Returns:
+            Tupla (is_set_point, player_id_with_set_point)
+        """
+        # Em tiebreak: primeiro a 7 pontos, com 2 de vantagem
+        if is_tiebreak:
+            # Player 1 tem set point no tiebreak
+            if player1_points >= 6 and player1_points >= player2_points + 1:
+                return (True, player1_id)
+            # Player 2 tem set point no tiebreak
+            if player2_points >= 6 and player2_points >= player1_points + 1:
+                return (True, player2_id)
+            return (False, None)
+
+        # Set point em game normal
+        # Player 1 pode fechar set (tem 5+ games e está com game point)
+        if player1_games >= 5:
+            # Caso 1: 5-qualquer coisa, player1 tem 40+ pontos
+            if player1_games >= 5 and player1_points >= 40:
+                # Verifica se player1 tem game point
+                if player1_points >= 40 and player2_points < 40:
+                    return (True, player1_id)
+                if player1_points > player2_points and player1_points >= 40 and player2_points >= 40:
+                    return (True, player1_id)
+
+        # Player 2 pode fechar set
+        if player2_games >= 5:
+            if player2_games >= 5 and player2_points >= 40:
+                if player2_points >= 40 and player1_points < 40:
+                    return (True, player2_id)
+                if player2_points > player1_points and player2_points >= 40 and player1_points >= 40:
+                    return (True, player2_id)
+
+        return (False, None)
+
+    def _is_match_point(
+        self,
+        player1_id: str,
+        player2_id: str,
+        player1_sets: int,
+        player2_sets: int,
+        player1_games: int,
+        player2_games: int,
+        player1_points: int,
+        player2_points: int,
+        best_of_sets: int = 3,
+        is_tiebreak: bool = False
+    ) -> tuple[bool, Optional[str]]:
+        """
+        Detecta se a situação atual é match point
+
+        Critérios de aceite TT-32:
+        - [x] Verifica se jogador pode ganhar a partida
+        - [x] Considera advantage e deuce
+
+        Args:
+            player1_id: ID do player 1
+            player2_id: ID do player 2
+            player1_sets: Sets do player 1
+            player2_sets: Sets do player 2
+            player1_games: Games do player 1 no set atual
+            player2_games: Games do player 2 no set atual
+            player1_points: Pontos do player 1 no game atual
+            player2_points: Pontos do player 2 no game atual
+            best_of_sets: Formato da partida (3 ou 5)
+            is_tiebreak: Se está em tiebreak
+
+        Returns:
+            Tupla (is_match_point, player_id_with_match_point)
+        """
+        # Calcular quantos sets necessários para vencer
+        sets_to_win = (best_of_sets // 2) + 1  # 2 para best_of_3, 3 para best_of_5
+
+        # Verificar se player1 está a 1 set de vencer a partida E tem set point
+        if player1_sets == sets_to_win - 1:
+            is_set_pt, player_with_set_pt = self._is_set_point(
+                player1_id, player2_id,
+                player1_games, player2_games,
+                player1_points, player2_points,
+                is_tiebreak
+            )
+            if is_set_pt and player_with_set_pt == player1_id:
+                return (True, player1_id)
+
+        # Verificar se player2 está a 1 set de vencer a partida E tem set point
+        if player2_sets == sets_to_win - 1:
+            is_set_pt, player_with_set_pt = self._is_set_point(
+                player1_id, player2_id,
+                player1_games, player2_games,
+                player1_points, player2_points,
+                is_tiebreak
+            )
+            if is_set_pt and player_with_set_pt == player2_id:
+                return (True, player2_id)
+
+        return (False, None)
 
 
 # Import asyncio for callback execution
