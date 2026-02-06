@@ -3,9 +3,11 @@ Event Service
 Detecta e classifica eventos automáticos da partida
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Callable
 from datetime import datetime
 from bson import ObjectId
+from enum import Enum
+import asyncio
 import structlog
 
 from app.core.mongodb import get_database
@@ -15,6 +17,19 @@ from app.schemas.game_control import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+class EventPriority(str, Enum):
+    """
+    Prioridade de eventos
+
+    Critérios de aceite TT-45:
+    - [x] EventPriority: LOW, NORMAL, HIGH, CRITICAL
+    """
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 class EventType:
@@ -59,10 +74,17 @@ class EventService:
     Critérios de aceite TT-44:
     - [x] analyze_point() classifica ponto em evento automaticamente
     - [x] _detect_situational_events() para break point, deuce, advantage
+
+    Critérios de aceite TT-45:
+    - [x] Sistema de prioridades (critical, high, medium, low)
+    - [x] register_event_callback() por EventType
+    - [x] Tratamento de erros em callbacks
     """
 
     def __init__(self):
         self.db = get_database()
+        # Callbacks por match_id -> event_type -> priority -> [callbacks]
+        self._callbacks: Dict[str, Dict[str, Dict[str, List[Callable]]]] = {}
 
     async def analyze_point(
         self,
@@ -422,3 +444,231 @@ class EventService:
         except Exception as e:
             logger.error("Error getting events by type", match_id=match_id, error=str(e))
             return []
+
+    def register_event_callback(
+        self,
+        match_id: str,
+        event_type: str,
+        callback: Callable,
+        priority: EventPriority = EventPriority.NORMAL
+    ) -> bool:
+        """
+        Registra um callback para um tipo de evento com prioridade
+
+        Critérios de aceite TT-45:
+        - [x] register_event_callback() por EventType
+        - [x] Permitir filtrar por prioridade
+
+        Args:
+            match_id: ID da partida
+            event_type: Tipo de evento
+            callback: Função callback
+            priority: Prioridade do evento (default: NORMAL)
+
+        Returns:
+            True se registrado com sucesso
+        """
+        try:
+            if match_id not in self._callbacks:
+                self._callbacks[match_id] = {}
+
+            if event_type not in self._callbacks[match_id]:
+                self._callbacks[match_id][event_type] = {}
+
+            if priority.value not in self._callbacks[match_id][event_type]:
+                self._callbacks[match_id][event_type][priority.value] = []
+
+            self._callbacks[match_id][event_type][priority.value].append(callback)
+
+            logger.info(
+                "Event callback registered",
+                match_id=match_id,
+                event_type=event_type,
+                priority=priority.value
+            )
+
+            return True
+
+        except Exception as e:
+            logger.error(
+                "Error registering callback",
+                match_id=match_id,
+                event_type=event_type,
+                error=str(e)
+            )
+            return False
+
+    def _get_event_priority(self, event_type: str) -> EventPriority:
+        """
+        Determina a prioridade automática de um evento
+
+        Critérios de aceite TT-45:
+        - [x] _get_event_priority() automática por tipo
+
+        Args:
+            event_type: Tipo de evento
+
+        Returns:
+            EventPriority correspondente
+        """
+        # CRITICAL: eventos que finalizam match ou set
+        if event_type in [EventType.MATCH_WON, EventType.SET_WON]:
+            return EventPriority.CRITICAL
+
+        # HIGH: situações críticas
+        if event_type in [
+            EventType.MATCH_POINT,
+            EventType.SET_POINT,
+            EventType.BREAK_POINT,
+            EventType.MEDICAL_TIMEOUT
+        ]:
+            return EventPriority.HIGH
+
+        # NORMAL: eventos de jogo
+        if event_type in [
+            EventType.ACE,
+            EventType.WINNER,
+            EventType.DOUBLE_FAULT,
+            EventType.GAME_WON,
+            EventType.DEUCE,
+            EventType.ADVANTAGE,
+            EventType.CHALLENGE
+        ]:
+            return EventPriority.NORMAL
+
+        # LOW: outros eventos
+        return EventPriority.LOW
+
+    async def _emit_event(
+        self,
+        match_id: str,
+        event_type: str,
+        player_id: Optional[str] = None,
+        state_before: Optional[GameStateSnapshot] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        min_priority: Optional[EventPriority] = None
+    ):
+        """
+        Emite um evento para callbacks registrados
+
+        Critérios de aceite TT-45:
+        - [x] Executar callbacks filtrados por prioridade
+        - [x] Tratamento de erros em callbacks
+
+        Args:
+            match_id: ID da partida
+            event_type: Tipo de evento
+            player_id: ID do jogador (opcional)
+            state_before: Estado antes do evento (opcional)
+            metadata: Metadados (opcional)
+            min_priority: Prioridade mínima para executar callbacks (opcional)
+        """
+        event_data = {
+            "match_id": match_id,
+            "event_type": event_type,
+            "player_id": player_id,
+            "timestamp": datetime.utcnow(),
+            "state_before": state_before.dict() if state_before else None,
+            "metadata": metadata or {}
+        }
+
+        # Determinar prioridade do evento
+        event_priority = self._get_event_priority(event_type)
+
+        # Executar callbacks (com tratamento de erros)
+        if match_id in self._callbacks:
+            if event_type in self._callbacks[match_id]:
+                # Ordem de execução: CRITICAL -> HIGH -> NORMAL -> LOW
+                priority_order = [
+                    EventPriority.CRITICAL,
+                    EventPriority.HIGH,
+                    EventPriority.NORMAL,
+                    EventPriority.LOW
+                ]
+
+                for priority in priority_order:
+                    # Se min_priority definido, pular prioridades menores
+                    if min_priority and self._priority_value(priority) < self._priority_value(min_priority):
+                        continue
+
+                    callbacks = self._callbacks[match_id][event_type].get(priority.value, [])
+
+                    for callback in callbacks:
+                        try:
+                            # Tentar executar callback
+                            if asyncio.iscoroutinefunction(callback):
+                                await callback(event_data)
+                            else:
+                                callback(event_data)
+
+                        except Exception as e:
+                            # Tratamento de erros em callbacks (não interrompe execução)
+                            logger.error(
+                                "Error executing callback",
+                                match_id=match_id,
+                                event_type=event_type,
+                                priority=priority.value,
+                                error=str(e)
+                            )
+
+    def _priority_value(self, priority: EventPriority) -> int:
+        """Retorna valor numérico da prioridade para comparação"""
+        priority_values = {
+            EventPriority.LOW: 1,
+            EventPriority.NORMAL: 2,
+            EventPriority.HIGH: 3,
+            EventPriority.CRITICAL: 4
+        }
+        return priority_values.get(priority, 0)
+
+    def unregister_callback(
+        self,
+        match_id: str,
+        event_type: str,
+        callback: Callable,
+        priority: Optional[EventPriority] = None
+    ) -> bool:
+        """
+        Remove um callback registrado
+
+        Args:
+            match_id: ID da partida
+            event_type: Tipo de evento
+            callback: Função callback
+            priority: Prioridade (opcional, remove de todas se None)
+
+        Returns:
+            True se removido com sucesso
+        """
+        try:
+            if match_id not in self._callbacks:
+                return False
+
+            if event_type not in self._callbacks[match_id]:
+                return False
+
+            # Se prioridade específica
+            if priority:
+                if priority.value in self._callbacks[match_id][event_type]:
+                    if callback in self._callbacks[match_id][event_type][priority.value]:
+                        self._callbacks[match_id][event_type][priority.value].remove(callback)
+                        return True
+            else:
+                # Remover de todas as prioridades
+                removed = False
+                for priority_key in self._callbacks[match_id][event_type]:
+                    if callback in self._callbacks[match_id][event_type][priority_key]:
+                        self._callbacks[match_id][event_type][priority_key].remove(callback)
+                        removed = True
+                return removed
+
+            return False
+
+        except Exception as e:
+            logger.error(
+                "Error unregistering callback",
+                match_id=match_id,
+                event_type=event_type,
+                error=str(e)
+            )
+            return False
