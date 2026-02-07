@@ -22,6 +22,28 @@ services:
       retries: 5
       start_period: 40s
 
+  # PostgreSQL Database
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tennis-tracking-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: tennis
+      POSTGRES_PASSWORD: tennis123
+      POSTGRES_DB: tennis_tracking
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tennis-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tennis -d tennis_tracking"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # Redis for caching and session management
   redis:
     image: redis:7-alpine
@@ -49,6 +71,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DATABASE_URL=postgresql+asyncpg://tennis:tennis123@postgres:5432/tennis_tracking
       - MONGODB_URL=mongodb://admin:tennis_admin_2024@mongodb:27017/tennis_tracking?authSource=admin
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -76,6 +99,8 @@ services:
       - uploads_data:/app/uploads
       - ./models:/app/models
     depends_on:
+      postgres:
+        condition: service_healthy
       mongodb:
         condition: service_healthy
       redis:
@@ -137,6 +162,7 @@ services:
     container_name: tennis-tracking-worker
     restart: always
     environment:
+      - DATABASE_URL=postgresql+asyncpg://tennis:tennis123@postgres:5432/tennis_tracking
       - MONGODB_URL=mongodb://admin:tennis_admin_2024@mongodb:27017/tennis_tracking?authSource=admin
       - REDIS_URL=redis://redis:6379
       - MODEL_PATH=/app/models
@@ -147,6 +173,8 @@ services:
       - uploads_data:/app/uploads
       - ./models:/app/models
     depends_on:
+      postgres:
+        condition: service_healthy
       mongodb:
         condition: service_healthy
       redis:
@@ -157,6 +185,8 @@ services:
 
 volumes:
   mongodb_data:
+    driver: local
+  postgres_data:
     driver: local
   redis_data:
     driver: local
