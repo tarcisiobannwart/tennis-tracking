@@ -1,0 +1,492 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:2:1-36:12
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:2:1-36:12
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:2:1-36:12
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:2:1-36:12
+MERGED from [androidx.hilt:hilt-navigation-compose:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b2a99e9f2683ee4ef002833a984e0175/transformed/hilt-navigation-compose-1.1.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.hilt:hilt-navigation:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f0aeafa71f29b4daf86fbe6615ee6b03/transformed/hilt-navigation-1.1.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.navigation:navigation-common:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/682732a745f8582b4da0216dfaf60f6a/transformed/navigation-common-2.7.6/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.navigation:navigation-runtime:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/275cf58dc736745e69c595429ebbc439/transformed/navigation-runtime-2.7.6/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.navigation:navigation-common-ktx:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bc41ed8e2f33580e2abed2ab2a5724de/transformed/navigation-common-ktx-2.7.6/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.navigation:navigation-runtime-ktx:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7e54d5f9406a8939d7c51ea547065c14/transformed/navigation-runtime-ktx-2.7.6/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.navigation:navigation-compose:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e881a5539564b9e5938c01714bfeba72/transformed/navigation-compose-2.7.6/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.material3:material3:1.1.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/884fd0863c0f22894d124cf06e0756c1/transformed/material3-1.1.2/AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.dagger:hilt-android:2.48.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bb9227cd448ed418fe1a369b48bc71ad/transformed/hilt-android-2.48.1/AndroidManifest.xml:16:1-19:12
+MERGED from [androidx.camera:camera-video:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b7a13df1337928304b994bb73816196f/transformed/camera-video-1.3.1/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.camera:camera-view:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a14a19cb39f81c64f739507682dba154/transformed/camera-view-1.3.1/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.camera:camera-lifecycle:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1096ca569e8743ad6077838bc8eb0866/transformed/camera-lifecycle-1.3.1/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:17:1-36:12
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:17:1-36:12
+MERGED from [androidx.appcompat:appcompat:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2d4b02ba384fd6df8af876b82d222505/transformed/appcompat-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.fragment:fragment:1.5.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5fe20a003d9b757c02253e6daad2e3f4/transformed/fragment-1.5.1/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/208cfad4827d154bd606087d0fb1269e/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:17:1-23:12
+MERGED from [androidx.core:core-ktx:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bd5e106fd6ab5c8d605ed7e0a5829726/transformed/core-ktx-1.12.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.material:material-ripple-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/de9fa0776a6f5ba09fe4364c7908f101/transformed/material-ripple-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.material:material-icons-core-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e7027c6754b8fad0094c7fad688fef19/transformed/material-icons-core-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.material:material-icons-extended-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6b46838c5015d2e700e8aabccc991846/transformed/material-icons-extended-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.material:material-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6a7321f587be1f68dc19e3fa05d421ee/transformed/material-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.animation:animation-core-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a0bc855bf7b3be83300e32830daf018d/transformed/animation-core-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.animation:animation-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7f5fad490557df36c952acadef1daf7d/transformed/animation-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.foundation:foundation-layout-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a2e83aad07e716b3153b29395d99fa94/transformed/foundation-layout-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.foundation:foundation-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a5f0917aa0a9165f90ed166e07a4c1a3/transformed/foundation-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-tooling-data-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/01ef61c8c36e7b9597e50914f8e43024/transformed/ui-tooling-data-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-unit-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/20ab4439deaefd52f0c82ad4a59b7904/transformed/ui-unit-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-geometry-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e34890ecbb1b887f04b6d0030f243ac2/transformed/ui-geometry-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-util-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2a2f57779b95149b07f292fcf3cf64b1/transformed/ui-util-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-text-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/688b2936d2198516da2253e3fcbc0ca4/transformed/ui-text-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-tooling-preview-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f294fdafdab8a250e4868def5366dafd/transformed/ui-tooling-preview-release/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:17:1-28:12
+MERGED from [androidx.compose.ui:ui-graphics-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/167e6756b315dc1ce86d46caa687598d/transformed/ui-graphics-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:17:1-28:12
+MERGED from [androidx.activity:activity:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6624339e205d42cba6865a65d2502d34/transformed/activity-1.8.2/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.appcompat:appcompat-resources:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/d0024e06cefe7867759ef8caf9e85616/transformed/appcompat-resources-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ea70a6cfe3926e9d9cb1753fb380a7a5/transformed/drawerlayout-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.loader:loader:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/97eba1910a175b4bf339abf103a33228/transformed/loader-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.viewpager:viewpager:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1c8fc1c6c06dbcdc154c766cc3aad8a6/transformed/viewpager-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.autofill:autofill:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ff694dd2f12c5465dad3c68522733c67/transformed/autofill-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/235ebb5f1a840d82d78d3e9867117b6b/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4fd28f417d0cbb719cdfc80e5ac81fdf/transformed/vectordrawable-1.1.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.customview:customview:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/39c72c4355e5bc0e79861535497d6dae/transformed/customview-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e1e623c4b37ef9d03cf3818fe75e3b06/transformed/lifecycle-livedata-core-ktx-2.7.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4242dccc9c42184933bf0d83e3cbf005/transformed/lifecycle-livedata-core-2.7.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1ecd50ea5a94b3c4104cea84f5b91ad2/transformed/lifecycle-runtime-2.7.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f3dbc019f585064fc0eafd7ed0910115/transformed/lifecycle-livedata-2.7.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/51623f3a7cd1eec5193b141d5fb81c31/transformed/savedstate-ktx-1.2.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate:1.2.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1a764d79450eef73307451a376d56daa/transformed/savedstate-1.2.1/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2a12b61e5b4832d29809df512911a4f5/transformed/lifecycle-viewmodel-savedstate-2.7.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ff56029e5482108f6f85fc63172b7a0c/transformed/lifecycle-viewmodel-ktx-2.7.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7aa40f0522267a505279af9cb9ec6a9f/transformed/lifecycle-viewmodel-2.7.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6dfb04acc85298103d49a9dff04052ac/transformed/lifecycle-runtime-ktx-2.7.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4ba910f7c17a33d13b7855d8f630f169/transformed/lifecycle-runtime-compose-2.7.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e779c72df842f40e64935af544692e00/transformed/lifecycle-viewmodel-compose-2.7.0/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.ui:ui-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ac3cc2edae021e55f1d00c7ae7571f03/transformed/ui-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity-ktx:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/919e6d495649f34d927e773319df75ee/transformed/activity-ktx-1.8.2/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity-compose:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/38e4d7e0282cd60f2124b1ab6cb96c05/transformed/activity-compose-1.8.2/AndroidManifest.xml:2:1-7:12
+MERGED from [com.github.pedroSG94.RootEncoder:library:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8289f4d0f2f303202cb0408d912c866e/transformed/library-2.4.3/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.datastore:datastore-preferences:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/aabc1537ce66a2099f0da0033907d4f4/transformed/datastore-preferences-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.annotation:annotation-experimental:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/c64b6de1888f429a433079ca89e7d832/transformed/annotation-experimental-1.3.1/AndroidManifest.xml:17:1-22:12
+MERGED from [com.github.pedroSG94.RootEncoder:encoder:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/d3faffd4178b1c45a97974e9a0e0ef22/transformed/encoder-2.4.3/AndroidManifest.xml:2:1-7:12
+MERGED from [com.github.pedroSG94.RootEncoder:rtmp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7bac45704576b6359740653ca1b63ba2/transformed/rtmp-2.4.3/AndroidManifest.xml:2:1-7:12
+MERGED from [com.github.pedroSG94.RootEncoder:rtsp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ef60ed5211f5c1380ae64b540d4b87f3/transformed/rtsp-2.4.3/AndroidManifest.xml:2:1-7:12
+MERGED from [com.github.pedroSG94.RootEncoder:udp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9d13f2b8e3c57e85b9f7c2accd8ec2c4/transformed/udp-2.4.3/AndroidManifest.xml:2:1-7:12
+MERGED from [com.github.pedroSG94.RootEncoder:srt:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/49884f049be3a7a92af12bf308b90243/transformed/srt-2.4.3/AndroidManifest.xml:17:1-22:12
+MERGED from [com.github.pedroSG94.RootEncoder:common:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e11c08ca32bd89b29f8d54e33b262e0a/transformed/common-2.4.3/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.datastore:datastore:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/514be03d9113d13da22dddad3954ba1a/transformed/datastore-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.compose.runtime:runtime-saveable-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/302c43fc5a23a364d138c296bca3686b/transformed/runtime-saveable-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.compose.runtime:runtime-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/34512542b411054f24b888ed95d4462b/transformed/runtime-release/AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.exifinterface:exifinterface:1.3.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7db52ebdf6bdd8ae70d8e2f93caade94/transformed/exifinterface-1.3.2/AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ecd89603916581eac4221323fd411a39/transformed/core-runtime-2.2.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/0c6da38d00fc2ee5d0a546902bcb32da/transformed/cursoradapter-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/99263e3d8852810e189c713ce35ee40b/transformed/interpolator-1.0.0/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b1a453becbff58b6ec5c6e10be81e26a/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:17:1-55:12
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.tracing:tracing:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1b0e16c74774b5d71d7135470413132b/transformed/tracing-1.0.0/AndroidManifest.xml:17:1-24:12
+MERGED from [com.google.dagger:dagger-lint-aar:2.48.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f089842539c07910ce055374f7f68a27/transformed/dagger-lint-aar-2.48.1/AndroidManifest.xml:16:1-19:12
+	package
+		INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+	xmlns:tools
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:3:5-51
+	android:versionCode
+		INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:2:11-69
+uses-feature#android.hardware.camera
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:5:5-84
+	android:required
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:5:58-81
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:5:19-57
+uses-feature#android.hardware.camera.autofocus
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:6:5-95
+	android:required
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:6:68-92
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:6:19-67
+uses-permission#android.permission.CAMERA
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:8:5-65
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:8:22-62
+uses-permission#android.permission.RECORD_AUDIO
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:9:5-71
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:9:22-68
+uses-permission#android.permission.INTERNET
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:10:5-67
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:10:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:11:5-79
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:11:22-76
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:12:5-77
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:12:22-74
+application
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:14:5-35:19
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:14:5-35:19
+MERGED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:23:5-34:19
+MERGED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:23:5-34:19
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:23:5-34:19
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:23:5-34:19
+MERGED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:22:5-26:19
+MERGED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:28:5-89
+MERGED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:28:5-89
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b1a453becbff58b6ec5c6e10be81e26a/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b1a453becbff58b6ec5c6e10be81e26a/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
+	android:extractNativeLibs
+		INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
+	android:supportsRtl
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:19:9-35
+	android:label
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:18:9-41
+	tools:targetApi
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:21:9-29
+	android:icon
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:17:9-43
+	android:allowBackup
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:16:9-35
+	android:theme
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:20:9-49
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:15:9-39
+activity#com.tennistrack.app.MainActivity
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:23:9-34:20
+	android:screenOrientation
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:27:13-51
+	android:launchMode
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:26:13-44
+	android:exported
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:25:13-36
+	android:configChanges
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:28:13-87
+	android:theme
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:29:13-53
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:24:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:30:13-33:29
+action#android.intent.action.MAIN
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:31:17-69
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:31:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:32:17-77
+	android:name
+		ADDED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml:32:27-74
+uses-sdk
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+MERGED from [androidx.hilt:hilt-navigation-compose:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b2a99e9f2683ee4ef002833a984e0175/transformed/hilt-navigation-compose-1.1.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.hilt:hilt-navigation-compose:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b2a99e9f2683ee4ef002833a984e0175/transformed/hilt-navigation-compose-1.1.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.hilt:hilt-navigation:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f0aeafa71f29b4daf86fbe6615ee6b03/transformed/hilt-navigation-1.1.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.hilt:hilt-navigation:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f0aeafa71f29b4daf86fbe6615ee6b03/transformed/hilt-navigation-1.1.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigation:navigation-common:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/682732a745f8582b4da0216dfaf60f6a/transformed/navigation-common-2.7.6/AndroidManifest.xml:20:5-44
+MERGED from [androidx.navigation:navigation-common:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/682732a745f8582b4da0216dfaf60f6a/transformed/navigation-common-2.7.6/AndroidManifest.xml:20:5-44
+MERGED from [androidx.navigation:navigation-runtime:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/275cf58dc736745e69c595429ebbc439/transformed/navigation-runtime-2.7.6/AndroidManifest.xml:20:5-44
+MERGED from [androidx.navigation:navigation-runtime:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/275cf58dc736745e69c595429ebbc439/transformed/navigation-runtime-2.7.6/AndroidManifest.xml:20:5-44
+MERGED from [androidx.navigation:navigation-common-ktx:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bc41ed8e2f33580e2abed2ab2a5724de/transformed/navigation-common-ktx-2.7.6/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigation:navigation-common-ktx:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bc41ed8e2f33580e2abed2ab2a5724de/transformed/navigation-common-ktx-2.7.6/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigation:navigation-runtime-ktx:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7e54d5f9406a8939d7c51ea547065c14/transformed/navigation-runtime-ktx-2.7.6/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigation:navigation-runtime-ktx:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7e54d5f9406a8939d7c51ea547065c14/transformed/navigation-runtime-ktx-2.7.6/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigation:navigation-compose:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e881a5539564b9e5938c01714bfeba72/transformed/navigation-compose-2.7.6/AndroidManifest.xml:5:5-44
+MERGED from [androidx.navigation:navigation-compose:2.7.6] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e881a5539564b9e5938c01714bfeba72/transformed/navigation-compose-2.7.6/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material3:material3:1.1.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/884fd0863c0f22894d124cf06e0756c1/transformed/material3-1.1.2/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.material3:material3:1.1.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/884fd0863c0f22894d124cf06e0756c1/transformed/material3-1.1.2/AndroidManifest.xml:20:5-44
+MERGED from [com.google.dagger:hilt-android:2.48.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bb9227cd448ed418fe1a369b48bc71ad/transformed/hilt-android-2.48.1/AndroidManifest.xml:18:3-42
+MERGED from [com.google.dagger:hilt-android:2.48.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bb9227cd448ed418fe1a369b48bc71ad/transformed/hilt-android-2.48.1/AndroidManifest.xml:18:3-42
+MERGED from [androidx.camera:camera-video:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b7a13df1337928304b994bb73816196f/transformed/camera-video-1.3.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.camera:camera-video:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b7a13df1337928304b994bb73816196f/transformed/camera-video-1.3.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.camera:camera-view:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a14a19cb39f81c64f739507682dba154/transformed/camera-view-1.3.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.camera:camera-view:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a14a19cb39f81c64f739507682dba154/transformed/camera-view-1.3.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.camera:camera-lifecycle:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1096ca569e8743ad6077838bc8eb0866/transformed/camera-lifecycle-1.3.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.camera:camera-lifecycle:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1096ca569e8743ad6077838bc8eb0866/transformed/camera-lifecycle-1.3.1/AndroidManifest.xml:5:5-44
+MERGED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:21:5-44
+MERGED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:21:5-44
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:21:5-44
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:21:5-44
+MERGED from [androidx.appcompat:appcompat:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2d4b02ba384fd6df8af876b82d222505/transformed/appcompat-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2d4b02ba384fd6df8af876b82d222505/transformed/appcompat-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.5.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5fe20a003d9b757c02253e6daad2e3f4/transformed/fragment-1.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.5.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5fe20a003d9b757c02253e6daad2e3f4/transformed/fragment-1.5.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/208cfad4827d154bd606087d0fb1269e/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:20:5-21:38
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/208cfad4827d154bd606087d0fb1269e/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:20:5-21:38
+MERGED from [androidx.core:core-ktx:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bd5e106fd6ab5c8d605ed7e0a5829726/transformed/core-ktx-1.12.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-ktx:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/bd5e106fd6ab5c8d605ed7e0a5829726/transformed/core-ktx-1.12.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-ripple-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/de9fa0776a6f5ba09fe4364c7908f101/transformed/material-ripple-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-ripple-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/de9fa0776a6f5ba09fe4364c7908f101/transformed/material-ripple-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-icons-core-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e7027c6754b8fad0094c7fad688fef19/transformed/material-icons-core-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-icons-core-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e7027c6754b8fad0094c7fad688fef19/transformed/material-icons-core-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-icons-extended-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6b46838c5015d2e700e8aabccc991846/transformed/material-icons-extended-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-icons-extended-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6b46838c5015d2e700e8aabccc991846/transformed/material-icons-extended-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6a7321f587be1f68dc19e3fa05d421ee/transformed/material-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.material:material-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6a7321f587be1f68dc19e3fa05d421ee/transformed/material-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-core-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a0bc855bf7b3be83300e32830daf018d/transformed/animation-core-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-core-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a0bc855bf7b3be83300e32830daf018d/transformed/animation-core-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7f5fad490557df36c952acadef1daf7d/transformed/animation-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.animation:animation-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7f5fad490557df36c952acadef1daf7d/transformed/animation-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-layout-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a2e83aad07e716b3153b29395d99fa94/transformed/foundation-layout-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-layout-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a2e83aad07e716b3153b29395d99fa94/transformed/foundation-layout-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a5f0917aa0a9165f90ed166e07a4c1a3/transformed/foundation-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.foundation:foundation-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a5f0917aa0a9165f90ed166e07a4c1a3/transformed/foundation-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-tooling-data-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/01ef61c8c36e7b9597e50914f8e43024/transformed/ui-tooling-data-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-tooling-data-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/01ef61c8c36e7b9597e50914f8e43024/transformed/ui-tooling-data-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-unit-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/20ab4439deaefd52f0c82ad4a59b7904/transformed/ui-unit-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-unit-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/20ab4439deaefd52f0c82ad4a59b7904/transformed/ui-unit-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-geometry-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e34890ecbb1b887f04b6d0030f243ac2/transformed/ui-geometry-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-geometry-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e34890ecbb1b887f04b6d0030f243ac2/transformed/ui-geometry-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-util-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2a2f57779b95149b07f292fcf3cf64b1/transformed/ui-util-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-util-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2a2f57779b95149b07f292fcf3cf64b1/transformed/ui-util-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-text-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/688b2936d2198516da2253e3fcbc0ca4/transformed/ui-text-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-text-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/688b2936d2198516da2253e3fcbc0ca4/transformed/ui-text-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-tooling-preview-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f294fdafdab8a250e4868def5366dafd/transformed/ui-tooling-preview-release/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-tooling-preview-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f294fdafdab8a250e4868def5366dafd/transformed/ui-tooling-preview-release/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-graphics-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/167e6756b315dc1ce86d46caa687598d/transformed/ui-graphics-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-graphics-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/167e6756b315dc1ce86d46caa687598d/transformed/ui-graphics-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6624339e205d42cba6865a65d2502d34/transformed/activity-1.8.2/AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6624339e205d42cba6865a65d2502d34/transformed/activity-1.8.2/AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/d0024e06cefe7867759ef8caf9e85616/transformed/appcompat-resources-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat-resources:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/d0024e06cefe7867759ef8caf9e85616/transformed/appcompat-resources-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ea70a6cfe3926e9d9cb1753fb380a7a5/transformed/drawerlayout-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.drawerlayout:drawerlayout:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ea70a6cfe3926e9d9cb1753fb380a7a5/transformed/drawerlayout-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/97eba1910a175b4bf339abf103a33228/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/97eba1910a175b4bf339abf103a33228/transformed/loader-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1c8fc1c6c06dbcdc154c766cc3aad8a6/transformed/viewpager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1c8fc1c6c06dbcdc154c766cc3aad8a6/transformed/viewpager-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.autofill:autofill:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ff694dd2f12c5465dad3c68522733c67/transformed/autofill-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.autofill:autofill:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ff694dd2f12c5465dad3c68522733c67/transformed/autofill-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/235ebb5f1a840d82d78d3e9867117b6b/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/235ebb5f1a840d82d78d3e9867117b6b/transformed/vectordrawable-animated-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4fd28f417d0cbb719cdfc80e5ac81fdf/transformed/vectordrawable-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4fd28f417d0cbb719cdfc80e5ac81fdf/transformed/vectordrawable-1.1.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/39c72c4355e5bc0e79861535497d6dae/transformed/customview-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.customview:customview:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/39c72c4355e5bc0e79861535497d6dae/transformed/customview-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e1e623c4b37ef9d03cf3818fe75e3b06/transformed/lifecycle-livedata-core-ktx-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e1e623c4b37ef9d03cf3818fe75e3b06/transformed/lifecycle-livedata-core-ktx-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4242dccc9c42184933bf0d83e3cbf005/transformed/lifecycle-livedata-core-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4242dccc9c42184933bf0d83e3cbf005/transformed/lifecycle-livedata-core-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1ecd50ea5a94b3c4104cea84f5b91ad2/transformed/lifecycle-runtime-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1ecd50ea5a94b3c4104cea84f5b91ad2/transformed/lifecycle-runtime-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f3dbc019f585064fc0eafd7ed0910115/transformed/lifecycle-livedata-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f3dbc019f585064fc0eafd7ed0910115/transformed/lifecycle-livedata-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/51623f3a7cd1eec5193b141d5fb81c31/transformed/savedstate-ktx-1.2.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/51623f3a7cd1eec5193b141d5fb81c31/transformed/savedstate-ktx-1.2.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1a764d79450eef73307451a376d56daa/transformed/savedstate-1.2.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1a764d79450eef73307451a376d56daa/transformed/savedstate-1.2.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2a12b61e5b4832d29809df512911a4f5/transformed/lifecycle-viewmodel-savedstate-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/2a12b61e5b4832d29809df512911a4f5/transformed/lifecycle-viewmodel-savedstate-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ff56029e5482108f6f85fc63172b7a0c/transformed/lifecycle-viewmodel-ktx-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ff56029e5482108f6f85fc63172b7a0c/transformed/lifecycle-viewmodel-ktx-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7aa40f0522267a505279af9cb9ec6a9f/transformed/lifecycle-viewmodel-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7aa40f0522267a505279af9cb9ec6a9f/transformed/lifecycle-viewmodel-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6dfb04acc85298103d49a9dff04052ac/transformed/lifecycle-runtime-ktx-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/6dfb04acc85298103d49a9dff04052ac/transformed/lifecycle-runtime-ktx-2.7.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4ba910f7c17a33d13b7855d8f630f169/transformed/lifecycle-runtime-compose-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4ba910f7c17a33d13b7855d8f630f169/transformed/lifecycle-runtime-compose-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e779c72df842f40e64935af544692e00/transformed/lifecycle-viewmodel-compose-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e779c72df842f40e64935af544692e00/transformed/lifecycle-viewmodel-compose-2.7.0/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ac3cc2edae021e55f1d00c7ae7571f03/transformed/ui-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.ui:ui-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ac3cc2edae021e55f1d00c7ae7571f03/transformed/ui-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/919e6d495649f34d927e773319df75ee/transformed/activity-ktx-1.8.2/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/919e6d495649f34d927e773319df75ee/transformed/activity-ktx-1.8.2/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-compose:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/38e4d7e0282cd60f2124b1ab6cb96c05/transformed/activity-compose-1.8.2/AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-compose:1.8.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/38e4d7e0282cd60f2124b1ab6cb96c05/transformed/activity-compose-1.8.2/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:library:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8289f4d0f2f303202cb0408d912c866e/transformed/library-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:library:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8289f4d0f2f303202cb0408d912c866e/transformed/library-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [androidx.datastore:datastore-preferences:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/aabc1537ce66a2099f0da0033907d4f4/transformed/datastore-preferences-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.datastore:datastore-preferences:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/aabc1537ce66a2099f0da0033907d4f4/transformed/datastore-preferences-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.annotation:annotation-experimental:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/c64b6de1888f429a433079ca89e7d832/transformed/annotation-experimental-1.3.1/AndroidManifest.xml:20:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/c64b6de1888f429a433079ca89e7d832/transformed/annotation-experimental-1.3.1/AndroidManifest.xml:20:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:encoder:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/d3faffd4178b1c45a97974e9a0e0ef22/transformed/encoder-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:encoder:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/d3faffd4178b1c45a97974e9a0e0ef22/transformed/encoder-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:rtmp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7bac45704576b6359740653ca1b63ba2/transformed/rtmp-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:rtmp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7bac45704576b6359740653ca1b63ba2/transformed/rtmp-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:rtsp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ef60ed5211f5c1380ae64b540d4b87f3/transformed/rtsp-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:rtsp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ef60ed5211f5c1380ae64b540d4b87f3/transformed/rtsp-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:udp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9d13f2b8e3c57e85b9f7c2accd8ec2c4/transformed/udp-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:udp:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9d13f2b8e3c57e85b9f7c2accd8ec2c4/transformed/udp-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:srt:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/49884f049be3a7a92af12bf308b90243/transformed/srt-2.4.3/AndroidManifest.xml:20:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:srt:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/49884f049be3a7a92af12bf308b90243/transformed/srt-2.4.3/AndroidManifest.xml:20:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:common:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e11c08ca32bd89b29f8d54e33b262e0a/transformed/common-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [com.github.pedroSG94.RootEncoder:common:2.4.3] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/e11c08ca32bd89b29f8d54e33b262e0a/transformed/common-2.4.3/AndroidManifest.xml:5:5-44
+MERGED from [androidx.datastore:datastore:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/514be03d9113d13da22dddad3954ba1a/transformed/datastore-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.datastore:datastore:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/514be03d9113d13da22dddad3954ba1a/transformed/datastore-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.compose.runtime:runtime-saveable-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/302c43fc5a23a364d138c296bca3686b/transformed/runtime-saveable-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-saveable-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/302c43fc5a23a364d138c296bca3686b/transformed/runtime-saveable-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/34512542b411054f24b888ed95d4462b/transformed/runtime-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.compose.runtime:runtime-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/34512542b411054f24b888ed95d4462b/transformed/runtime-release/AndroidManifest.xml:5:5-44
+MERGED from [androidx.exifinterface:exifinterface:1.3.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7db52ebdf6bdd8ae70d8e2f93caade94/transformed/exifinterface-1.3.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.exifinterface:exifinterface:1.3.2] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/7db52ebdf6bdd8ae70d8e2f93caade94/transformed/exifinterface-1.3.2/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ecd89603916581eac4221323fd411a39/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/ecd89603916581eac4221323fd411a39/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/0c6da38d00fc2ee5d0a546902bcb32da/transformed/cursoradapter-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/0c6da38d00fc2ee5d0a546902bcb32da/transformed/cursoradapter-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/99263e3d8852810e189c713ce35ee40b/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/99263e3d8852810e189c713ce35ee40b/transformed/interpolator-1.0.0/AndroidManifest.xml:20:5-44
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b1a453becbff58b6ec5c6e10be81e26a/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b1a453becbff58b6ec5c6e10be81e26a/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:21:5-44
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.tracing:tracing:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1b0e16c74774b5d71d7135470413132b/transformed/tracing-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.tracing:tracing:1.0.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/1b0e16c74774b5d71d7135470413132b/transformed/tracing-1.0.0/AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.dagger:dagger-lint-aar:2.48.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f089842539c07910ce055374f7f68a27/transformed/dagger-lint-aar-2.48.1/AndroidManifest.xml:18:3-42
+MERGED from [com.google.dagger:dagger-lint-aar:2.48.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/f089842539c07910ce055374f7f68a27/transformed/dagger-lint-aar-2.48.1/AndroidManifest.xml:18:3-42
+	android:targetSdkVersion
+		INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Volumes/DcokerSSD/DEVELOP/tennis-tracking/mobile/android/app/src/main/AndroidManifest.xml
+service#androidx.camera.core.impl.MetadataHolderService
+ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:24:9-33:19
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:29:9-33:78
+MERGED from [androidx.camera:camera-core:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/a81ae52fabe7f499b00d1cb803af224d/transformed/camera-core-1.3.1/AndroidManifest.xml:29:9-33:78
+	tools:node
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:29:13-31
+	android:enabled
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:26:13-36
+	android:exported
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:27:13-37
+	tools:ignore
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:28:13-75
+	android:name
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:25:13-75
+meta-data#androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER
+ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:30:13-32:89
+	android:value
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:32:17-86
+	android:name
+		ADDED from [androidx.camera:camera-camera2:1.3.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/98d8f0461b05c715105eabbad49b637b/transformed/camera-camera2-1.3.1/AndroidManifest.xml:31:17-103
+activity#androidx.compose.ui.tooling.PreviewActivity
+ADDED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:23:9-25:39
+	android:exported
+		ADDED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:25:13-36
+	android:name
+		ADDED from [androidx.compose.ui:ui-tooling-android:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/4cdcc9d6df494cd8ad7cf51ecf71e50c/transformed/ui-tooling-release/AndroidManifest.xml:24:13-71
+activity#androidx.activity.ComponentActivity
+ADDED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:23:9-25:39
+	android:exported
+		ADDED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:25:13-36
+	android:name
+		ADDED from [androidx.compose.ui:ui-test-manifest:1.6.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/5c76c312852fd4f91ae02bd117aef190/transformed/ui-test-manifest-1.6.0/AndroidManifest.xml:24:13-63
+provider#androidx.startup.InitializationProvider
+ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:26:9-30:34
+MERGED from [androidx.startup:startup-runtime:1.1.1] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/29b2627908fcc30be5ff1b444d642ec9/transformed/startup-runtime-1.1.1/AndroidManifest.xml:26:9-30:34
+	tools:node
+		ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:28:13-31
+	android:authorities
+		ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+	android:exported
+		ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+meta-data#androidx.emoji2.text.EmojiCompatInitializer
+ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/9fbf024b3d8d4887c8714f69da0fcfa4/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+permission#com.tennistrack.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
+uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+uses-permission#com.tennistrack.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.12.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/8e344cb5de3b078652b7eba8fe69eb69/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
+meta-data#androidx.lifecycle.ProcessLifecycleInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/b12d27587157a2e663cd45282d36b55f/transformed/lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
+meta-data#androidx.profileinstaller.ProfileInstallerInitializer
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+receiver#androidx.profileinstaller.ProfileInstallReceiver
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+	android:enabled
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+	android:permission
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+	android:directBootAware
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+intent-filter#action:name:androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+action#androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+intent-filter#action:name:androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+action#androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+intent-filter#action:name:androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+action#androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+intent-filter#action:name:androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+action#androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] /Volumes/DcokerSSD/.build-cache/gradle/caches/transforms-3/40e46317cb36dde7780d134ebc6418e5/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92

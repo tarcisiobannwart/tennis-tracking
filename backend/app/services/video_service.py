@@ -8,8 +8,6 @@ import aiofiles
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 from fastapi import UploadFile
 import structlog
 
@@ -41,8 +39,7 @@ class VideoAnalysisTask:
 class VideoService:
     """Service for video-related operations"""
 
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, db=None):
         self._tasks: Dict[str, VideoAnalysisTask] = {}
         self._ensure_directories()
 

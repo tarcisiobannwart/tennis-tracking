@@ -4,6 +4,8 @@ Subscriptions API routes
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
 from app.core.auth import get_current_active_user
 from app.core.config import settings
 from app.models.user import UserInDB
@@ -25,6 +27,7 @@ async def get_plans():
 @router.post("/checkout")
 async def create_checkout(
     data: CheckoutRequest,
+    db: AsyncSession = Depends(get_db),
     current_user: UserInDB = Depends(get_current_active_user),
 ):
     """Create Stripe checkout session"""
@@ -35,7 +38,8 @@ async def create_checkout(
         )
 
     url = await subscription_service.create_checkout_session(
-        user_id=str(current_user.id),
+        db=db,
+        user_id=current_user.id,
         user_email=current_user.email,
         plan=data.plan,
     )
@@ -51,10 +55,11 @@ async def create_checkout(
 
 @router.post("/portal")
 async def create_portal(
+    db: AsyncSession = Depends(get_db),
     current_user: UserInDB = Depends(get_current_active_user),
 ):
     """Create Stripe customer portal session"""
-    url = await subscription_service.create_portal_session(str(current_user.id))
+    url = await subscription_service.create_portal_session(db, current_user.id)
 
     if not url:
         raise HTTPException(
@@ -66,7 +71,7 @@ async def create_portal(
 
 
 @router.post("/webhook")
-async def stripe_webhook(request: Request):
+async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """Handle Stripe webhook events"""
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -85,5 +90,5 @@ async def stripe_webhook(request: Request):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
 
-    await subscription_service.handle_webhook_event(event)
+    await subscription_service.handle_webhook_event(db, event)
     return {"status": "ok"}

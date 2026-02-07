@@ -11,6 +11,7 @@ import uvicorn
 
 from app.core.config import settings
 from app.core.mongodb import connect_mongodb, close_mongodb
+from app.core.database import connect_db, disconnect_db
 from app.core.middleware import setup_rate_limiting
 from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training
 
@@ -20,6 +21,8 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     print("Starting Tennis Tracking API")
+    await connect_db()
+    print("Connected to PostgreSQL")
     await connect_mongodb()
     print("Connected to MongoDB")
 
@@ -29,6 +32,8 @@ async def lifespan(app: FastAPI):
     print("Shutting down Tennis Tracking API")
     await close_mongodb()
     print("Disconnected from MongoDB")
+    await disconnect_db()
+    print("Disconnected from PostgreSQL")
 
 
 # OpenAPI tag descriptions
