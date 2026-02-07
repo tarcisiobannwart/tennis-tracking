@@ -672,3 +672,118 @@ class EventService:
                 error=str(e)
             )
             return False
+
+    async def get_event_description(
+        self,
+        event_type: str,
+        event_data: Dict[str, Any]
+    ) -> str:
+        """
+        Gera descrição legível em português para um evento
+
+        Critérios de aceite TT-46:
+        - [x] Descrições em português para todos os tipos
+        - [x] Inclusão de dados específicos (velocidade da bola)
+        - [x] Nome do jogador na descrição
+
+        Args:
+            event_type: Tipo do evento
+            event_data: Dados do evento (player_id, metadata, etc)
+
+        Returns:
+            Descrição em português do evento
+        """
+        try:
+            player_id = event_data.get("player_id", "")
+            metadata = event_data.get("metadata", {})
+
+            # Buscar nome do jogador
+            player_name = "Jogador"
+            if player_id:
+                try:
+                    player = await self.db.players.find_one({"_id": ObjectId(player_id)})
+                    if not player:
+                        player = await self.db.players.find_one({"playerId": player_id})
+                    if player:
+                        player_name = player.get("name", "Jogador")
+                except:
+                    pass
+
+            # Gerar descrição baseada no tipo de evento
+            if event_type == EventType.ACE:
+                speed = metadata.get("ball_speed", None)
+                if speed:
+                    return f"Ace de {player_name} no primeiro saque ({speed} km/h)"
+                return f"Ace de {player_name}"
+
+            elif event_type == EventType.DOUBLE_FAULT:
+                return f"Dupla falta de {player_name}"
+
+            elif event_type == EventType.WINNER:
+                shot_type = metadata.get("shot_type", "")
+                if shot_type:
+                    return f"Winner de {player_name} ({shot_type})"
+                return f"Winner de {player_name}"
+
+            elif event_type == EventType.UNFORCED_ERROR:
+                return f"Erro não forçado de {player_name}"
+
+            elif event_type == EventType.FORCED_ERROR:
+                return f"Erro forçado de {player_name}"
+
+            elif event_type == EventType.BREAK_POINT:
+                return f"Break point contra {player_name}"
+
+            elif event_type == EventType.SET_POINT:
+                return f"Set point para {player_name}"
+
+            elif event_type == EventType.MATCH_POINT:
+                return f"Match point para {player_name}"
+
+            elif event_type == EventType.DEUCE:
+                return "Deuce no game"
+
+            elif event_type == EventType.ADVANTAGE:
+                return f"Vantagem para {player_name}"
+
+            elif event_type == EventType.TIEBREAK_START:
+                return "Início do tiebreak"
+
+            elif event_type == EventType.GAME_WON:
+                return f"Game conquistado por {player_name}"
+
+            elif event_type == EventType.SET_WON:
+                set_score = metadata.get("set_score", "")
+                if set_score:
+                    return f"Set vencido por {player_name} ({set_score})"
+                return f"Set vencido por {player_name}"
+
+            elif event_type == EventType.MATCH_WON:
+                final_score = metadata.get("final_score", "")
+                if final_score:
+                    return f"Partida vencida por {player_name} ({final_score})"
+                return f"Partida vencida por {player_name}"
+
+            elif event_type == EventType.CHALLENGE:
+                outcome = metadata.get("outcome", "")
+                if outcome == "successful":
+                    return f"Challenge bem-sucedido de {player_name}"
+                elif outcome == "unsuccessful":
+                    return f"Challenge sem sucesso de {player_name}"
+                return f"Challenge de {player_name}"
+
+            elif event_type == EventType.MEDICAL_TIMEOUT:
+                reason = metadata.get("reason", "")
+                if reason:
+                    return f"Timeout médico de {player_name} ({reason})"
+                return f"Timeout médico de {player_name}"
+
+            elif event_type == EventType.COACHING_TIMEOUT:
+                return f"Timeout de coaching de {player_name}"
+
+            else:
+                return f"Evento: {event_type}"
+
+        except Exception as e:
+            logger.error("Error generating event description", event_type=event_type, error=str(e))
+            return f"Evento: {event_type}"
