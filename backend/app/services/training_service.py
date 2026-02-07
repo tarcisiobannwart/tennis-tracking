@@ -15,6 +15,7 @@ from app.models.training import (
     TrainingDrillCreate,
     DrillTypeCreate,
 )
+from app.services.analytics_service import AnalyticsService
 
 logger = structlog.get_logger(__name__)
 
@@ -36,6 +37,9 @@ DRILL_SEED_DATA = [
 
 class TrainingService:
     """Service for training operations with MongoDB"""
+
+    def __init__(self):
+        self.analytics_service = AnalyticsService()
 
     async def seed_drill_types(self) -> int:
         """Seed default drill types if collection is empty"""
@@ -478,3 +482,285 @@ class TrainingService:
                     "intensity": s["intensity_level"],
                 })
         return data
+
+    async def get_player_recommendations(
+        self,
+        player_id: str,
+        focus_area: Optional[str] = None,
+        period: str = "month",
+    ) -> dict:
+        """
+        Gera recomendacoes personalizadas de treino com IA baseadas em historico de performance.
+
+        Args:
+            player_id: ID do jogador
+            focus_area: Area de foco especifica (serve, return, consistency, break_points, unforced_errors)
+            period: Periodo de analise (week, month, quarter, year)
+
+        Returns:
+            Dict com recomendacoes, exercicios sugeridos, plano semanal e insights de IA
+        """
+        logger.info("Gerando recomendacoes de treino", player_id=player_id, focus_area=focus_area)
+
+        # Obter recomendacoes baseadas em analytics/IA
+        ai_recommendations = await self.analytics_service.get_recommendations(
+            player_id=player_id,
+            period=period
+        )
+
+        # Se foi especificada uma area de foco, filtrar recomendacoes
+        if focus_area:
+            filtered_weaknesses = [
+                w for w in ai_recommendations.get("weaknesses", [])
+                if focus_area.lower() in w.get("area", "").lower()
+            ]
+            filtered_exercises = [
+                e for e in ai_recommendations.get("suggested_exercises", [])
+                if focus_area.lower() in e.get("focus", "").lower()
+            ]
+
+            if filtered_weaknesses:
+                ai_recommendations["weaknesses"] = filtered_weaknesses
+            if filtered_exercises:
+                ai_recommendations["suggested_exercises"] = filtered_exercises
+
+        # Mapear exercicios sugeridos para drill types existentes
+        drills = get_collection("drill_types")
+        available_drills = []
+        async for drill in drills.find({}):
+            available_drills.append(drill)
+
+        # Criar plano semanal de treinos
+        weekly_plan = self._generate_weekly_training_plan(
+            ai_recommendations,
+            available_drills,
+            focus_area
+        )
+
+        # Gerar insights adicionais
+        insights = self._generate_training_insights(ai_recommendations, focus_area)
+
+        return {
+            "player_id": player_id,
+            "focus_area": focus_area,
+            "analysis_period": period,
+            "weaknesses": ai_recommendations.get("weaknesses", []),
+            "strengths": ai_recommendations.get("strengths", []),
+            "suggested_exercises": ai_recommendations.get("suggested_exercises", []),
+            "focus_areas": ai_recommendations.get("focus_areas", []),
+            "improvement_plan": ai_recommendations.get("improvement_plan", {}),
+            "weekly_training_plan": weekly_plan,
+            "ai_insights": insights,
+            "priority_recommendation": ai_recommendations.get("priority_recommendation", "continue_current_training"),
+            "estimated_improvement_time": ai_recommendations.get("estimated_improvement_time", "4-6 weeks"),
+            "next_steps": ai_recommendations.get("next_steps", []),
+        }
+
+    def _generate_weekly_training_plan(
+        self,
+        recommendations: dict,
+        available_drills: list,
+        focus_area: Optional[str] = None,
+    ) -> dict:
+        """Gera um plano semanal de treinos baseado nas recomendacoes de IA"""
+
+        weaknesses = recommendations.get("weaknesses", [])
+        suggested_exercises = recommendations.get("suggested_exercises", [])
+
+        # Estrutura base do plano semanal
+        plan = {
+            "monday": {
+                "focus": "Tecnica e Fundamentos",
+                "duration_minutes": 90,
+                "drills": [],
+                "intensity": "medium",
+            },
+            "tuesday": {
+                "focus": "Condicionamento Fisico",
+                "duration_minutes": 60,
+                "drills": [],
+                "intensity": "high",
+            },
+            "wednesday": {
+                "focus": "Pratica Tatica",
+                "duration_minutes": 90,
+                "drills": [],
+                "intensity": "medium",
+            },
+            "thursday": {
+                "focus": "Recuperacao e Trabalho Mental",
+                "duration_minutes": 45,
+                "drills": [],
+                "intensity": "low",
+            },
+            "friday": {
+                "focus": "Pontos Fracos Identificados",
+                "duration_minutes": 90,
+                "drills": [],
+                "intensity": "high",
+            },
+            "saturday": {
+                "focus": "Simulacao de Partida",
+                "duration_minutes": 120,
+                "drills": [],
+                "intensity": "high",
+            },
+            "sunday": {
+                "focus": "Descanso ou Pratica Leve",
+                "duration_minutes": 30,
+                "drills": [],
+                "intensity": "low",
+            },
+        }
+
+        # Mapear areas fracas para categorias de drill
+        category_mapping = {
+            "serve": "serve",
+            "return": "return",
+            "consistency": "technique",
+            "unforced_errors": "tactical",
+            "break_points": "mental",
+            "footwork": "footwork",
+            "volley": "volley",
+        }
+
+        # Adicionar drills especificos para areas fracas
+        primary_weakness = weaknesses[0] if weaknesses else None
+
+        if primary_weakness:
+            weak_area = primary_weakness.get("area", "")
+            target_category = category_mapping.get(weak_area, "technique")
+
+            # Encontrar drills relevantes
+            relevant_drills = [
+                d for d in available_drills
+                if d.get("category") == target_category
+            ]
+
+            # Distribuir drills pela semana
+            if relevant_drills:
+                # Segunda: 2 drills de tecnica
+                plan["monday"]["drills"] = [
+                    {
+                        "drill_type_id": d["_id"],
+                        "name": d["name"],
+                        "duration_minutes": d.get("duration_minutes", 20),
+                        "category": d.get("category"),
+                    }
+                    for d in relevant_drills[:2]
+                ]
+
+                # Sexta: Foco nos pontos fracos (3 drills)
+                plan["friday"]["drills"] = [
+                    {
+                        "drill_type_id": d["_id"],
+                        "name": d["name"],
+                        "duration_minutes": d.get("duration_minutes", 20),
+                        "category": d.get("category"),
+                    }
+                    for d in relevant_drills[:3]
+                ]
+
+        # Terça: Fitness drills
+        fitness_drills = [d for d in available_drills if d.get("category") == "fitness"]
+        if fitness_drills:
+            plan["tuesday"]["drills"] = [
+                {
+                    "drill_type_id": d["_id"],
+                    "name": d["name"],
+                    "duration_minutes": d.get("duration_minutes", 15),
+                    "category": "fitness",
+                }
+                for d in fitness_drills[:2]
+            ]
+
+        # Quarta: Tactical drills
+        tactical_drills = [d for d in available_drills if d.get("category") == "tactical"]
+        if tactical_drills:
+            plan["wednesday"]["drills"] = [
+                {
+                    "drill_type_id": d["_id"],
+                    "name": d["name"],
+                    "duration_minutes": d.get("duration_minutes", 25),
+                    "category": "tactical",
+                }
+                for d in tactical_drills[:2]
+            ]
+
+        # Quinta: Mental drills
+        mental_drills = [d for d in available_drills if d.get("category") == "mental"]
+        if mental_drills:
+            plan["thursday"]["drills"] = [
+                {
+                    "drill_type_id": d["_id"],
+                    "name": d["name"],
+                    "duration_minutes": d.get("duration_minutes", 20),
+                    "category": "mental",
+                }
+                for d in mental_drills[:1]
+            ]
+
+        return plan
+
+    def _generate_training_insights(
+        self,
+        recommendations: dict,
+        focus_area: Optional[str] = None,
+    ) -> dict:
+        """Gera insights adicionais baseados nas recomendacoes de IA"""
+
+        weaknesses = recommendations.get("weaknesses", [])
+        strengths = recommendations.get("strengths", [])
+
+        insights = {
+            "summary": "",
+            "key_priorities": [],
+            "expected_outcomes": [],
+            "motivation_tips": [],
+        }
+
+        # Resumo geral
+        if weaknesses:
+            primary_weakness = weaknesses[0]["area"]
+            insights["summary"] = (
+                f"Analise identificou {len(weaknesses)} areas de melhoria. "
+                f"Prioridade principal: {primary_weakness}. "
+            )
+        else:
+            insights["summary"] = "Performance esta equilibrada. Foque em manter consistencia e evoluir taticamente."
+
+        if strengths:
+            insights["summary"] += f" Pontos fortes: {', '.join(strengths[:2])}."
+
+        # Prioridades-chave
+        for w in weaknesses[:3]:
+            insights["key_priorities"].append({
+                "area": w["area"],
+                "current": w["current_value"],
+                "target": w["target_value"],
+                "priority": w["severity"],
+            })
+
+        # Resultados esperados
+        if weaknesses:
+            insights["expected_outcomes"] = [
+                f"Melhoria de {weaknesses[0]['area']} em 10-15% nas proximas 2 semanas",
+                f"Alcançar meta de {weaknesses[0]['target_value']} em {weaknesses[0]['metric']} em 4-6 semanas",
+                "Aumento geral de consistencia e confianca em quadra",
+            ]
+        else:
+            insights["expected_outcomes"] = [
+                "Manter nivel atual de performance",
+                "Expandir repertorio tatico",
+                "Melhorar adaptabilidade em diferentes superficies",
+            ]
+
+        # Dicas de motivacao
+        insights["motivation_tips"] = [
+            "Foco em progresso incremental, nao perfeicao",
+            "Celebre pequenas vitorias em cada treino",
+            "Mantenha um diario de treino para acompanhar evolucao",
+            "Visualize sucessos antes de cada sessao",
+        ]
+
+        return insights

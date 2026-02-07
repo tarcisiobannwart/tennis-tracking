@@ -225,3 +225,13 @@ async def get_calendar(
     """Get training calendar for the current user"""
     user_id = current_user.get("_id") or current_user.get("id")
     return await training_service.get_calendar(user_id, start_date, end_date)
+
+
+@router.get("/recommendations/{player_id}")
+async def get_player_recommendations(
+    player_id: str = Path(..., description="ID do jogador"),
+    focus_area: Optional[str] = Query(None, description="Area de foco especifica (serve, return, consistency, etc)"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Gera recomendacoes personalizadas de treino com IA baseadas em historico de performance"""
+    return await training_service.get_player_recommendations(player_id, focus_area)
