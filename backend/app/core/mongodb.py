@@ -130,6 +130,20 @@ async def create_indexes():
         await sub_events.create_index("stripeEventId", unique=True)
         await sub_events.create_index("userId")
 
+        # Training sessions collection indexes
+        training_sessions = db.database.training_sessions
+        await training_sessions.create_index("user_id")
+        await training_sessions.create_index("status")
+        await training_sessions.create_index("scheduled_at")
+        await training_sessions.create_index([("user_id", 1), ("scheduled_at", -1)])
+        await training_sessions.create_index([("user_id", 1), ("status", 1)])
+
+        # Drill types collection indexes
+        drill_types = db.database.drill_types
+        await drill_types.create_index("category")
+        await drill_types.create_index("difficulty")
+        await drill_types.create_index("name", unique=True)
+
         logger.info("Database indexes created successfully")
 
     except Exception as e:

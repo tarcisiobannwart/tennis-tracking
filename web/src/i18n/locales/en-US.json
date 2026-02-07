@@ -322,6 +322,118 @@
     "serverError": "Server error. Please try again later.",
     "validationError": "Please check the information provided."
   },
+  "training": {
+    "title": "Training Center",
+    "subtitle": "Manage sessions, drills and track your progress",
+    "tabs": {
+      "sessions": "Sessions",
+      "drills": "Drills",
+      "progress": "Progress",
+      "calendar": "Calendar",
+      "recommendations": "AI Recommendations"
+    },
+    "sessions": {
+      "title": "Training Sessions",
+      "create": "New Session",
+      "empty": "No training sessions found",
+      "emptyDescription": "Create your first training session to get started",
+      "start": "Start",
+      "finish": "Finish",
+      "delete": "Delete",
+      "details": "Details",
+      "addDrill": "Add Drill",
+      "sessionTitle": "Session title",
+      "description": "Description",
+      "sessionType": "Session type",
+      "scheduledAt": "Scheduled date",
+      "coach": "Coach",
+      "objectives": "Objectives",
+      "focusAreas": "Focus areas",
+      "notes": "Notes",
+      "feedback": "Feedback",
+      "intensity": "Intensity",
+      "effort": "Effort",
+      "fatigue": "Fatigue",
+      "created": "Session created successfully!",
+      "started": "Session started!",
+      "finished": "Session finished!",
+      "deleted": "Session deleted!"
+    },
+    "types": {
+      "practice": "Practice",
+      "match_prep": "Match Prep",
+      "recovery": "Recovery",
+      "fitness": "Fitness",
+      "technique": "Technique",
+      "tactical": "Tactical"
+    },
+    "status": {
+      "planned": "Planned",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "drills": {
+      "title": "Drill Catalog",
+      "empty": "No drills found",
+      "categories": {
+        "technique": "Technique",
+        "fitness": "Fitness",
+        "tactical": "Tactical",
+        "serve": "Serve",
+        "return": "Return",
+        "volley": "Volley",
+        "footwork": "Footwork",
+        "mental": "Mental"
+      },
+      "difficulty": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "professional": "Professional"
+      },
+      "duration": "{{min}} min",
+      "equipment": "Equipment"
+    },
+    "progress": {
+      "title": "Progress",
+      "totalSessions": "Total Sessions",
+      "completed": "Completed",
+      "completionRate": "Completion Rate",
+      "totalTime": "Total Time",
+      "avgDuration": "Avg Duration",
+      "avgEffort": "Avg Effort",
+      "recentSessions": "Recent Sessions",
+      "byType": "By Type",
+      "period": "Period",
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "recommendations": {
+      "title": "AI Recommendations",
+      "nextSession": "Next Suggested Session",
+      "weakAreas": "Areas to Develop",
+      "suggestions": "Suggestions",
+      "weeklyPlan": "Weekly Plan",
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
+    },
+    "calendar": {
+      "title": "Training Calendar",
+      "planned": "Planned",
+      "inProgress": "In Progress",
+      "completed": "Completed"
+    }
+  },
   "footer": {
     "copyright": "© 2024 Tennis Tracking. All rights reserved.",
     "privacy": "Privacy",

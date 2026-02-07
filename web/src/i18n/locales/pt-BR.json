@@ -384,6 +384,118 @@
     "admin": "Admin",
     "member": "Membro"
   },
+  "training": {
+    "title": "Centro de Treinamento",
+    "subtitle": "Gerencie sessoes, exercicios e acompanhe sua evolucao",
+    "tabs": {
+      "sessions": "Sessoes",
+      "drills": "Exercicios",
+      "progress": "Progresso",
+      "calendar": "Calendario",
+      "recommendations": "Recomendacoes IA"
+    },
+    "sessions": {
+      "title": "Sessoes de Treino",
+      "create": "Nova Sessao",
+      "empty": "Nenhuma sessao de treino encontrada",
+      "emptyDescription": "Crie sua primeira sessao de treino para comecar",
+      "start": "Iniciar",
+      "finish": "Finalizar",
+      "delete": "Excluir",
+      "details": "Detalhes",
+      "addDrill": "Adicionar Exercicio",
+      "sessionTitle": "Titulo da sessao",
+      "description": "Descricao",
+      "sessionType": "Tipo de sessao",
+      "scheduledAt": "Data agendada",
+      "coach": "Treinador",
+      "objectives": "Objetivos",
+      "focusAreas": "Areas de foco",
+      "notes": "Anotacoes",
+      "feedback": "Feedback",
+      "intensity": "Intensidade",
+      "effort": "Esforco",
+      "fatigue": "Fadiga",
+      "created": "Sessao criada com sucesso!",
+      "started": "Sessao iniciada!",
+      "finished": "Sessao finalizada!",
+      "deleted": "Sessao excluida!"
+    },
+    "types": {
+      "practice": "Pratica",
+      "match_prep": "Prep. Partida",
+      "recovery": "Recuperacao",
+      "fitness": "Fitness",
+      "technique": "Tecnica",
+      "tactical": "Tatica"
+    },
+    "status": {
+      "planned": "Planejada",
+      "in_progress": "Em Andamento",
+      "completed": "Concluida",
+      "cancelled": "Cancelada"
+    },
+    "drills": {
+      "title": "Catalogo de Exercicios",
+      "empty": "Nenhum exercicio encontrado",
+      "categories": {
+        "technique": "Tecnica",
+        "fitness": "Fitness",
+        "tactical": "Tatica",
+        "serve": "Saque",
+        "return": "Devolucao",
+        "volley": "Voleio",
+        "footwork": "Movimentacao",
+        "mental": "Mental"
+      },
+      "difficulty": {
+        "beginner": "Iniciante",
+        "intermediate": "Intermediario",
+        "advanced": "Avancado",
+        "professional": "Profissional"
+      },
+      "duration": "{{min}} min",
+      "equipment": "Equipamento"
+    },
+    "progress": {
+      "title": "Progresso",
+      "totalSessions": "Total de Sessoes",
+      "completed": "Concluidas",
+      "completionRate": "Taxa de Conclusao",
+      "totalTime": "Tempo Total",
+      "avgDuration": "Duracao Media",
+      "avgEffort": "Esforco Medio",
+      "recentSessions": "Sessoes Recentes",
+      "byType": "Por Tipo",
+      "period": "Periodo",
+      "week": "Semana",
+      "month": "Mes",
+      "quarter": "Trimestre",
+      "year": "Ano"
+    },
+    "recommendations": {
+      "title": "Recomendacoes IA",
+      "nextSession": "Proxima Sessao Sugerida",
+      "weakAreas": "Areas a Desenvolver",
+      "suggestions": "Sugestoes",
+      "weeklyPlan": "Plano Semanal",
+      "days": {
+        "monday": "Segunda",
+        "tuesday": "Terca",
+        "wednesday": "Quarta",
+        "thursday": "Quinta",
+        "friday": "Sexta",
+        "saturday": "Sabado",
+        "sunday": "Domingo"
+      }
+    },
+    "calendar": {
+      "title": "Calendario de Treinos",
+      "planned": "Planejadas",
+      "inProgress": "Em Andamento",
+      "completed": "Concluidas"
+    }
+  },
   "footer": {
     "copyright": "© 2026 Tennis Tracking. Todos os direitos reservados.",
     "privacy": "Privacidade",

@@ -1,18 +1,14 @@
 """
-Training database models
+Training MongoDB models (Pydantic)
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, JSON, Float, Text
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-import uuid
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
+from datetime import datetime
 from enum import Enum
-
-from app.core.database import Base
 
 
 class DrillDifficulty(str, Enum):
-    """Drill difficulty enumeration"""
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
@@ -20,133 +16,170 @@ class DrillDifficulty(str, Enum):
 
 
 class SessionStatus(str, Enum):
-    """Training session status enumeration"""
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
 
-class DrillType(Base):
-    """Drill type model"""
-    __tablename__ = "drill_types"
-
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = Column(String(100), nullable=False, unique=True)
-    description = Column(Text, nullable=True)
-    category = Column(String(50), nullable=False)  # "technique", "fitness", "tactical", etc.
-    difficulty = Column(String(20), nullable=False)
-    duration_minutes = Column(Integer, nullable=True)
-    equipment_needed = Column(JSON, nullable=True)
-    instructions = Column(Text, nullable=True)
-
-    # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    # Relationships
-    training_drills = relationship("TrainingDrill", back_populates="drill_type")
-
-    def __repr__(self):
-        return f"<DrillType(id={self.id}, name={self.name}, category={self.category})>"
+class SessionType(str, Enum):
+    PRACTICE = "practice"
+    MATCH_PREP = "match_prep"
+    RECOVERY = "recovery"
+    FITNESS = "fitness"
+    TECHNIQUE = "technique"
+    TACTICAL = "tactical"
 
 
-class TrainingSession(Base):
-    """Training session model"""
-    __tablename__ = "training_sessions"
-
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    player_id = Column(String, ForeignKey("players.id"), nullable=False)
-
-    # Session details
-    title = Column(String(200), nullable=False)
-    description = Column(Text, nullable=True)
-    session_type = Column(String(50), nullable=False)  # "practice", "match_prep", "recovery", etc.
-
-    # Timing
-    scheduled_at = Column(DateTime(timezone=True), nullable=False)
-    started_at = Column(DateTime(timezone=True), nullable=True)
-    finished_at = Column(DateTime(timezone=True), nullable=True)
-    duration_minutes = Column(Integer, nullable=True)
-
-    # Status
-    status = Column(String(20), nullable=False, default=SessionStatus.PLANNED)
-
-    # Goals and objectives
-    objectives = Column(JSON, nullable=True)
-    focus_areas = Column(JSON, nullable=True)  # ["forehand", "serve", "footwork"]
-
-    # Coach information
-    coach_name = Column(String(100), nullable=True)
-    coach_notes = Column(Text, nullable=True)
-
-    # Performance metrics
-    intensity_level = Column(Integer, nullable=True)  # 1-10 scale
-    effort_rating = Column(Integer, nullable=True)  # 1-10 scale
-    fatigue_level = Column(Integer, nullable=True)  # 1-10 scale
-
-    # Video and analysis
-    video_file_path = Column(String(500), nullable=True)
-    analysis_data = Column(JSON, nullable=True)
-
-    # Notes and feedback
-    session_notes = Column(Text, nullable=True)
-    player_feedback = Column(Text, nullable=True)
-
-    # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    # Relationships
-    player = relationship("Player", back_populates="training_sessions")
-    drills = relationship(
-        "TrainingDrill",
-        back_populates="training_session",
-        cascade="all, delete-orphan"
-    )
-
-    def __repr__(self):
-        return f"<TrainingSession(id={self.id}, title={self.title}, status={self.status})>"
+class DrillCategory(str, Enum):
+    TECHNIQUE = "technique"
+    FITNESS = "fitness"
+    TACTICAL = "tactical"
+    SERVE = "serve"
+    RETURN = "return"
+    VOLLEY = "volley"
+    FOOTWORK = "footwork"
+    MENTAL = "mental"
 
 
-class TrainingDrill(Base):
-    """Individual drill within a training session"""
-    __tablename__ = "training_drills"
+# --- DrillType ---
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    training_session_id = Column(String, ForeignKey("training_sessions.id"), nullable=False)
-    drill_type_id = Column(String, ForeignKey("drill_types.id"), nullable=False)
+class DrillTypeBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    category: str
+    difficulty: str
+    duration_minutes: Optional[int] = None
+    equipment_needed: Optional[List[str]] = None
+    instructions: Optional[str] = None
 
-    # Drill execution
-    order_in_session = Column(Integer, nullable=False)
-    duration_minutes = Column(Integer, nullable=True)
-    repetitions = Column(Integer, nullable=True)
-    sets = Column(Integer, nullable=True)
 
-    # Performance metrics
-    success_rate = Column(Float, nullable=True)  # 0-100%
-    average_speed = Column(Float, nullable=True)
-    max_speed = Column(Float, nullable=True)
-    accuracy_score = Column(Float, nullable=True)  # 0-100%
+class DrillTypeCreate(DrillTypeBase):
+    pass
 
-    # Drill specific data
-    drill_data = Column(JSON, nullable=True)  # Custom metrics per drill type
 
-    # Timing
-    started_at = Column(DateTime(timezone=True), nullable=True)
-    finished_at = Column(DateTime(timezone=True), nullable=True)
+class DrillTypeInDB(DrillTypeBase):
+    id: Optional[str] = Field(None, alias="_id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
 
-    # Notes
-    notes = Column(Text, nullable=True)
-    coach_feedback = Column(Text, nullable=True)
+    class Config:
+        populate_by_name = True
 
-    # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
-    training_session = relationship("TrainingSession", back_populates="drills")
-    drill_type = relationship("DrillType", back_populates="training_drills")
+class DrillTypeResponse(DrillTypeBase):
+    id: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
-    def __repr__(self):
-        return f"<TrainingDrill(id={self.id}, session_id={self.training_session_id})>"
+
+# --- TrainingDrill ---
+
+class TrainingDrillBase(BaseModel):
+    drill_type_id: str
+    drill_name: Optional[str] = None
+    order_in_session: int = 0
+    duration_minutes: Optional[int] = None
+    repetitions: Optional[int] = None
+    sets: Optional[int] = None
+
+
+class TrainingDrillCreate(TrainingDrillBase):
+    pass
+
+
+class TrainingDrillInDB(TrainingDrillBase):
+    id: Optional[str] = None
+    success_rate: Optional[float] = None
+    average_speed: Optional[float] = None
+    max_speed: Optional[float] = None
+    accuracy_score: Optional[float] = None
+    drill_data: Optional[Dict[str, Any]] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    coach_feedback: Optional[str] = None
+
+
+class TrainingDrillResponse(TrainingDrillBase):
+    id: Optional[str] = None
+    success_rate: Optional[float] = None
+    accuracy_score: Optional[float] = None
+    drill_data: Optional[Dict[str, Any]] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+# --- TrainingSession ---
+
+class TrainingSessionBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    session_type: str = "practice"
+    scheduled_at: datetime
+    objectives: Optional[List[str]] = None
+    focus_areas: Optional[List[str]] = None
+    coach_name: Optional[str] = None
+
+
+class TrainingSessionCreate(TrainingSessionBase):
+    pass
+
+
+class TrainingSessionUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    session_type: Optional[str] = None
+    scheduled_at: Optional[datetime] = None
+    status: Optional[str] = None
+    objectives: Optional[List[str]] = None
+    focus_areas: Optional[List[str]] = None
+    coach_name: Optional[str] = None
+    coach_notes: Optional[str] = None
+    intensity_level: Optional[int] = None
+    effort_rating: Optional[int] = None
+    fatigue_level: Optional[int] = None
+    session_notes: Optional[str] = None
+    player_feedback: Optional[str] = None
+
+
+class TrainingSessionInDB(TrainingSessionBase):
+    id: Optional[str] = Field(None, alias="_id")
+    user_id: str
+    status: str = SessionStatus.PLANNED.value
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    duration_minutes: Optional[int] = None
+    coach_notes: Optional[str] = None
+    intensity_level: Optional[int] = None
+    effort_rating: Optional[int] = None
+    fatigue_level: Optional[int] = None
+    video_file_path: Optional[str] = None
+    analysis_data: Optional[Dict[str, Any]] = None
+    session_notes: Optional[str] = None
+    player_feedback: Optional[str] = None
+    drills: List[TrainingDrillInDB] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+
+
+class TrainingSessionResponse(TrainingSessionBase):
+    id: str
+    user_id: str
+    status: str
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    duration_minutes: Optional[int] = None
+    coach_notes: Optional[str] = None
+    intensity_level: Optional[int] = None
+    effort_rating: Optional[int] = None
+    fatigue_level: Optional[int] = None
+    session_notes: Optional[str] = None
+    player_feedback: Optional[str] = None
+    drills: List[TrainingDrillResponse] = []
+    created_at: datetime
+    updated_at: Optional[datetime] = None
