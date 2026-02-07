@@ -263,24 +263,59 @@ async def get_head_to_head(
 
 @router.get("/search/ranking")
 async def search_players_by_ranking(
-    min_ranking: Optional[int] = Query(None, description="Minimum ranking"),
-    max_ranking: Optional[int] = Query(None, description="Maximum ranking"),
+    min_ranking: Optional[int] = Query(None, ge=1, description="Minimum ranking"),
+    max_ranking: Optional[int] = Query(None, ge=1, description="Maximum ranking"),
+    country: Optional[str] = Query(None, description="Filter by country code (e.g., BRA, USA, ESP)"),
+    surface: Optional[str] = Query(None, description="Filter by surface (hard, clay, grass)"),
     limit: int = Query(50, ge=1, le=500, description="Number of players to return"),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Search players by ranking range
+    Search players by ranking range with combined filters
+
+    Critérios de aceite TT-51:
+    - [x] Busca por faixa de ranking (min_ranking, max_ranking)
+    - [x] Filtros combinados (país, superfície)
+    - [x] Paginação (limit)
+
+    Query parameters:
+    - min_ranking: Minimum ranking (optional)
+    - max_ranking: Maximum ranking (optional)
+    - country: Country code (optional)
+    - surface: Preferred surface (optional)
+    - limit: Maximum number of results (default 50, max 500)
+
+    Returns:
+    - List of players ordered by ranking
+    - If surface filter is used, includes surface-specific win rate
     """
-    logger.info("Searching players by ranking", min_ranking=min_ranking, max_ranking=max_ranking)
+    logger.info(
+        "Searching players by ranking",
+        min_ranking=min_ranking,
+        max_ranking=max_ranking,
+        country=country,
+        surface=surface
+    )
 
     player_service = PlayerService(db)
     players = await player_service.search_by_ranking(
         min_ranking=min_ranking,
         max_ranking=max_ranking,
+        country=country,
+        surface=surface,
         limit=limit
     )
 
-    return players
+    return {
+        "total": len(players),
+        "filters": {
+            "min_ranking": min_ranking,
+            "max_ranking": max_ranking,
+            "country": country,
+            "surface": surface
+        },
+        "players": players
+    }
 
 
 @router.get("/{player_id}/stats/detailed")
