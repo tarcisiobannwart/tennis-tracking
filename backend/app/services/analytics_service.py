@@ -1623,3 +1623,530 @@ class AnalyticsService:
             return now - timedelta(days=7)
         else:
             return datetime.min  # All time
+
+    async def predict_performance(
+        self,
+        player_id: str,
+        opponent_id: str,
+        surface: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Previsao de performance com IA usando dados historicos
+
+        Prevê probabilidade de vitoria, placar estimado e pontos fortes/fracos
+        contra o oponente especifico usando algoritmo baseado em estatisticas
+        (media ponderada de resultados recentes, win rate por superficie, head-to-head)
+
+        Args:
+            player_id: ID do jogador
+            opponent_id: ID do oponente
+            surface: Superficie da quadra (opcional)
+
+        Returns:
+            Dict com probabilidade de vitoria, placar estimado e insights
+        """
+
+        # Obter head-to-head historico
+        h2h = await self.get_head_to_head(player_id, opponent_id)
+
+        # Obter estatisticas gerais dos jogadores
+        player_stats = await self.get_player_statistics(player_id, period="all", surface=surface)
+        opponent_stats = await self.get_player_statistics(opponent_id, period="all", surface=surface)
+
+        # Obter estatisticas recentes (ultimos 30 dias)
+        player_recent = await self.get_player_statistics(player_id, period="month", surface=surface)
+        opponent_recent = await self.get_player_statistics(opponent_id, period="month", surface=surface)
+
+        # Calcular win rate por superficie se especificada
+        surface_factor = 0.5  # Neutro por padrao
+        if surface and h2h.get("surface_breakdown", {}).get(surface):
+            surface_data = h2h["surface_breakdown"][surface]
+            if surface_data["total"] > 0:
+                surface_factor = surface_data["player1_wins"] / surface_data["total"]
+
+        # Calcular probabilidade base no head-to-head
+        h2h_total = h2h.get("total_matches", 0)
+        h2h_factor = 0.5  # Neutro se nao houver historico
+        if h2h_total > 0:
+            h2h_factor = h2h.get("player1_wins", 0) / h2h_total
+            # Dar mais peso ao h2h se houver mais partidas
+            h2h_weight = min(h2h_total / 10.0, 0.4)  # Max 40% de peso
+        else:
+            h2h_weight = 0.0
+
+        # Calcular fator de forma recente (peso 30%)
+        recent_weight = 0.3
+        player_recent_pct = player_recent.win_percentage / 100 if player_recent.total_matches > 0 else 0.5
+        opponent_recent_pct = opponent_recent.win_percentage / 100 if opponent_recent.total_matches > 0 else 0.5
+        recent_factor = player_recent_pct / (player_recent_pct + opponent_recent_pct) if (player_recent_pct + opponent_recent_pct) > 0 else 0.5
+
+        # Calcular fator geral (peso restante)
+        general_weight = 1.0 - h2h_weight - recent_weight
+        player_general_pct = player_stats.win_percentage / 100 if player_stats.total_matches > 0 else 0.5
+        opponent_general_pct = opponent_stats.win_percentage / 100 if opponent_stats.total_matches > 0 else 0.5
+        general_factor = player_general_pct / (player_general_pct + opponent_general_pct) if (player_general_pct + opponent_general_pct) > 0 else 0.5
+
+        # Calcular probabilidade final (media ponderada)
+        win_probability = (
+            h2h_factor * h2h_weight +
+            recent_factor * recent_weight +
+            general_factor * general_weight
+        )
+
+        # Ajustar pela superficie se especificada
+        if surface and surface_factor != 0.5:
+            win_probability = (win_probability * 0.7) + (surface_factor * 0.3)
+
+        # Garantir que probabilidade fique entre 0 e 1
+        win_probability = max(0.1, min(0.9, win_probability))
+
+        # Estimar placar baseado na probabilidade
+        # Assumindo melhor de 3 sets
+        if win_probability >= 0.7:
+            estimated_score = "2-0"  # Vitoria dominante
+        elif win_probability >= 0.55:
+            estimated_score = "2-1"  # Vitoria apertada
+        elif win_probability >= 0.45:
+            estimated_score = "1-2"  # Derrota apertada
+        else:
+            estimated_score = "0-2"  # Derrota dominante
+
+        # Analisar pontos fortes e fracos contra o oponente
+        strengths = []
+        weaknesses = []
+
+        # Analise de saque
+        if player_stats.first_serve_percentage > opponent_stats.first_serve_percentage + 5:
+            strengths.append({
+                "aspect": "first_serve",
+                "description": f"Melhor percentual de primeiro saque ({player_stats.first_serve_percentage:.1f}% vs {opponent_stats.first_serve_percentage:.1f}%)",
+                "advantage": round(player_stats.first_serve_percentage - opponent_stats.first_serve_percentage, 1)
+            })
+        elif player_stats.first_serve_percentage < opponent_stats.first_serve_percentage - 5:
+            weaknesses.append({
+                "aspect": "first_serve",
+                "description": f"Percentual de primeiro saque inferior ({player_stats.first_serve_percentage:.1f}% vs {opponent_stats.first_serve_percentage:.1f}%)",
+                "disadvantage": round(opponent_stats.first_serve_percentage - player_stats.first_serve_percentage, 1)
+            })
+
+        # Analise de aces
+        player_ace_rate = player_stats.aces / player_stats.total_matches if player_stats.total_matches > 0 else 0
+        opponent_ace_rate = opponent_stats.aces / opponent_stats.total_matches if opponent_stats.total_matches > 0 else 0
+        if player_ace_rate > opponent_ace_rate * 1.5:
+            strengths.append({
+                "aspect": "aces",
+                "description": f"Maior capacidade de aces ({player_ace_rate:.1f} vs {opponent_ace_rate:.1f} por partida)",
+                "advantage": round(player_ace_rate - opponent_ace_rate, 1)
+            })
+
+        # Analise de double faults
+        player_df_rate = player_stats.double_faults / player_stats.total_matches if player_stats.total_matches > 0 else 0
+        opponent_df_rate = opponent_stats.double_faults / opponent_stats.total_matches if opponent_stats.total_matches > 0 else 0
+        if player_df_rate > opponent_df_rate * 1.3:
+            weaknesses.append({
+                "aspect": "double_faults",
+                "description": f"Maior taxa de duplas faltas ({player_df_rate:.1f} vs {opponent_df_rate:.1f} por partida)",
+                "disadvantage": round(player_df_rate - opponent_df_rate, 1)
+            })
+
+        # Analise de win rate geral
+        if player_stats.win_percentage > opponent_stats.win_percentage:
+            strengths.append({
+                "aspect": "win_rate",
+                "description": f"Melhor percentual geral de vitorias ({player_stats.win_percentage:.1f}% vs {opponent_stats.win_percentage:.1f}%)",
+                "advantage": round(player_stats.win_percentage - opponent_stats.win_percentage, 1)
+            })
+        else:
+            weaknesses.append({
+                "aspect": "win_rate",
+                "description": f"Percentual geral de vitorias inferior ({player_stats.win_percentage:.1f}% vs {opponent_stats.win_percentage:.1f}%)",
+                "disadvantage": round(opponent_stats.win_percentage - player_stats.win_percentage, 1)
+            })
+
+        # Analise de forma recente
+        if player_recent.total_matches > 0 and opponent_recent.total_matches > 0:
+            if player_recent.win_percentage > opponent_recent.win_percentage + 10:
+                strengths.append({
+                    "aspect": "recent_form",
+                    "description": f"Melhor forma recente ({player_recent.win_percentage:.1f}% vs {opponent_recent.win_percentage:.1f}% no ultimo mes)",
+                    "advantage": round(player_recent.win_percentage - opponent_recent.win_percentage, 1)
+                })
+            elif player_recent.win_percentage < opponent_recent.win_percentage - 10:
+                weaknesses.append({
+                    "aspect": "recent_form",
+                    "description": f"Forma recente inferior ({player_recent.win_percentage:.1f}% vs {opponent_recent.win_percentage:.1f}% no ultimo mes)",
+                    "disadvantage": round(opponent_recent.win_percentage - player_recent.win_percentage, 1)
+                })
+
+        # Intervalo de confianca baseado na quantidade de dados
+        total_data_points = h2h_total + player_stats.total_matches + opponent_stats.total_matches
+        if total_data_points > 50:
+            confidence = "high"
+            confidence_interval = [round(win_probability - 0.05, 3), round(win_probability + 0.05, 3)]
+        elif total_data_points > 20:
+            confidence = "medium"
+            confidence_interval = [round(win_probability - 0.1, 3), round(win_probability + 0.1, 3)]
+        else:
+            confidence = "low"
+            confidence_interval = [round(win_probability - 0.15, 3), round(win_probability + 0.15, 3)]
+
+        return {
+            "player_id": player_id,
+            "opponent_id": opponent_id,
+            "surface": surface,
+            "win_probability": round(win_probability, 3),
+            "estimated_score": estimated_score,
+            "confidence": confidence,
+            "confidence_interval": confidence_interval,
+            "strengths": strengths,
+            "weaknesses": weaknesses,
+            "head_to_head": {
+                "total_matches": h2h_total,
+                "player_wins": h2h.get("player1_wins", 0),
+                "opponent_wins": h2h.get("player2_wins", 0),
+                "recent_form": h2h.get("recent_form", [])[:5]
+            },
+            "factors": {
+                "head_to_head_weight": round(h2h_weight, 2),
+                "recent_form_weight": round(recent_weight, 2),
+                "general_stats_weight": round(general_weight, 2),
+                "surface_adjustment": round(surface_factor, 2) if surface else None
+            },
+            "metadata": {
+                "total_data_points": total_data_points,
+                "player_matches_analyzed": player_stats.total_matches,
+                "opponent_matches_analyzed": opponent_stats.total_matches
+            }
+        }
+
+    async def generate_match_insights(self, match_id: str) -> Dict[str, Any]:
+        """
+        Gera insights automaticos sobre uma partida usando analise de dados
+
+        Analisa a partida e gera insights textuais em portugues sobre:
+        - Dominancia de jogadores em sets/games
+        - Momentos decisivos
+        - Performance de saque/devolucao
+        - Estatisticas notaveis
+
+        Args:
+            match_id: ID da partida
+
+        Returns:
+            Dict com lista de insights ordenados por relevancia
+        """
+
+        # Obter dados da partida
+        match_query = select(Match).where(Match.id == match_id)
+        match_result = await self.db.execute(match_query)
+        match = match_result.scalar_one_or_none()
+
+        if not match:
+            return {
+                "match_id": match_id,
+                "insights": [],
+                "error": "Partida nao encontrada"
+            }
+
+        # Obter pontos da partida
+        points_query = select(Point).where(Point.match_id == match_id).order_by(Point.created_at)
+        points_result = await self.db.execute(points_query)
+        points = points_result.scalars().all()
+
+        if not points:
+            return {
+                "match_id": match_id,
+                "insights": [],
+                "error": "Nenhum ponto registrado para esta partida"
+            }
+
+        insights = []
+
+        # Obter IDs dos jogadores
+        player1_id = match.player1_id
+        player2_id = match.player2_id
+
+        # Obter nomes dos jogadores
+        player1_query = select(Player).where(Player.id == player1_id)
+        player1_result = await self.db.execute(player1_query)
+        player1 = player1_result.scalar_one_or_none()
+        player1_name = player1.name if player1 else "Jogador 1"
+
+        player2_query = select(Player).where(Player.id == player2_id)
+        player2_result = await self.db.execute(player2_query)
+        player2 = player2_result.scalar_one_or_none()
+        player2_name = player2.name if player2 else "Jogador 2"
+
+        # Insight 1: Resultado geral e dominancia
+        if match.status == "completed":
+            winner_id = player1_id if match.player1_sets > match.player2_sets else player2_id
+            winner_name = player1_name if winner_id == player1_id else player2_name
+            score = f"{match.player1_sets}-{match.player2_sets}"
+
+            if abs(match.player1_sets - match.player2_sets) >= 2:
+                insights.append({
+                    "category": "resultado",
+                    "relevance": 10,
+                    "text": f"{winner_name} venceu de forma dominante por {score} sets"
+                })
+            else:
+                insights.append({
+                    "category": "resultado",
+                    "relevance": 10,
+                    "text": f"{winner_name} venceu em partida equilibrada por {score} sets"
+                })
+
+        # Insight 2: Analise de primeiro saque
+        player1_serves = [p for p in points if p.server_player_id == player1_id and not p.second_serve]
+        player2_serves = [p for p in points if p.server_player_id == player2_id and not p.second_serve]
+
+        if player1_serves:
+            player1_first_in = len([s for s in player1_serves if s.first_serve_in])
+            player1_first_pct = (player1_first_in / len(player1_serves)) * 100
+
+            if player1_first_pct >= 75:
+                insights.append({
+                    "category": "saque",
+                    "relevance": 8,
+                    "text": f"{player1_name} teve excelente percentual de primeiro saque ({player1_first_pct:.0f}%)"
+                })
+            elif player1_first_pct <= 50:
+                insights.append({
+                    "category": "saque",
+                    "relevance": 7,
+                    "text": f"{player1_name} teve dificuldades no primeiro saque (apenas {player1_first_pct:.0f}%)"
+                })
+
+        if player2_serves:
+            player2_first_in = len([s for s in player2_serves if s.first_serve_in])
+            player2_first_pct = (player2_first_in / len(player2_serves)) * 100
+
+            if player2_first_pct >= 75:
+                insights.append({
+                    "category": "saque",
+                    "relevance": 8,
+                    "text": f"{player2_name} teve excelente percentual de primeiro saque ({player2_first_pct:.0f}%)"
+                })
+            elif player2_first_pct <= 50:
+                insights.append({
+                    "category": "saque",
+                    "relevance": 7,
+                    "text": f"{player2_name} teve dificuldades no primeiro saque (apenas {player2_first_pct:.0f}%)"
+                })
+
+        # Insight 3: Analise de devolucao de segundo saque
+        player1_return_2nd = [p for p in points if p.server_player_id == player2_id and p.second_serve]
+        player2_return_2nd = [p for p in points if p.server_player_id == player1_id and p.second_serve]
+
+        if player1_return_2nd:
+            player1_return_won = len([p for p in player1_return_2nd if p.winner_player_id == player1_id])
+            player1_return_pct = (player1_return_won / len(player1_return_2nd)) * 100
+
+            if player1_return_pct >= 60:
+                insights.append({
+                    "category": "devolucao",
+                    "relevance": 7,
+                    "text": f"{player1_name} foi efetivo na devolucao de segundo saque ({player1_return_pct:.0f}% de pontos ganhos)"
+                })
+            elif player1_return_pct <= 35:
+                insights.append({
+                    "category": "devolucao",
+                    "relevance": 6,
+                    "text": f"{player1_name} teve dificuldade na devolucao de segundo saque (apenas {player1_return_pct:.0f}% de pontos ganhos)"
+                })
+
+        if player2_return_2nd:
+            player2_return_won = len([p for p in player2_return_2nd if p.winner_player_id == player2_id])
+            player2_return_pct = (player2_return_won / len(player2_return_2nd)) * 100
+
+            if player2_return_pct >= 60:
+                insights.append({
+                    "category": "devolucao",
+                    "relevance": 7,
+                    "text": f"{player2_name} foi efetivo na devolucao de segundo saque ({player2_return_pct:.0f}% de pontos ganhos)"
+                })
+            elif player2_return_pct <= 35:
+                insights.append({
+                    "category": "devolucao",
+                    "relevance": 6,
+                    "text": f"{player2_name} teve dificuldade na devolucao de segundo saque (apenas {player2_return_pct:.0f}% de pontos ganhos)"
+                })
+
+        # Insight 4: Aces
+        player1_aces = len([p for p in points if p.server_player_id == player1_id and p.outcome == "ace"])
+        player2_aces = len([p for p in points if p.server_player_id == player2_id and p.outcome == "ace"])
+
+        if player1_aces >= 10:
+            insights.append({
+                "category": "saque",
+                "relevance": 7,
+                "text": f"{player1_name} sacou {player1_aces} aces na partida"
+            })
+
+        if player2_aces >= 10:
+            insights.append({
+                "category": "saque",
+                "relevance": 7,
+                "text": f"{player2_name} sacou {player2_aces} aces na partida"
+            })
+
+        # Insight 5: Duplas faltas
+        player1_dfs = len([p for p in points if p.server_player_id == player1_id and p.outcome == "double_fault"])
+        player2_dfs = len([p for p in points if p.server_player_id == player2_id and p.outcome == "double_fault"])
+
+        if player1_dfs >= 5:
+            insights.append({
+                "category": "saque",
+                "relevance": 6,
+                "text": f"{player1_name} cometeu {player1_dfs} duplas faltas, o que afetou seu desempenho"
+            })
+
+        if player2_dfs >= 5:
+            insights.append({
+                "category": "saque",
+                "relevance": 6,
+                "text": f"{player2_name} cometeu {player2_dfs} duplas faltas, o que afetou seu desempenho"
+            })
+
+        # Insight 6: Momentos decisivos (sequencias longas)
+        momentum_data = await self.get_momentum_analysis(match_id)
+        turning_points = momentum_data.get("turning_points", [])
+
+        if turning_points:
+            # Pegar o turning point mais significativo
+            most_significant = max(turning_points, key=lambda x: x.get("change", 0))
+
+            # Determinar quem ganhou momentum
+            momentum_after = most_significant.get("momentum_after", 0)
+            if momentum_after > 0:
+                momentum_player = player1_name
+            else:
+                momentum_player = player2_name
+
+            set_num = most_significant.get("set_number", "")
+            game_num = most_significant.get("game_number", "")
+
+            if set_num and game_num:
+                insights.append({
+                    "category": "momento_decisivo",
+                    "relevance": 9,
+                    "text": f"Momento decisivo no {game_num}º game do {set_num}º set quando {momentum_player} virou o momentum da partida"
+                })
+
+        # Insight 7: Analise de rally
+        rally_data = await self.get_rally_analysis(match_id)
+        avg_rally = rally_data.get("average_rally_length", 0)
+
+        if avg_rally >= 7:
+            insights.append({
+                "category": "rally",
+                "relevance": 5,
+                "text": f"Partida com rallies longos (media de {avg_rally:.1f} golpes por rally)"
+            })
+        elif avg_rally <= 3:
+            insights.append({
+                "category": "rally",
+                "relevance": 5,
+                "text": f"Partida rapida com rallies curtos (media de {avg_rally:.1f} golpes por rally)"
+            })
+
+        # Insight 8: Analise de sets
+        set_points_by_set = {}
+        for point in points:
+            set_num = getattr(point, "set_number", 1)
+            if set_num not in set_points_by_set:
+                set_points_by_set[set_num] = {"player1": 0, "player2": 0}
+
+            if point.winner_player_id == player1_id:
+                set_points_by_set[set_num]["player1"] += 1
+            elif point.winner_player_id == player2_id:
+                set_points_by_set[set_num]["player2"] += 1
+
+        for set_num, set_data in set_points_by_set.items():
+            total = set_data["player1"] + set_data["player2"]
+            if total > 0:
+                player1_pct = (set_data["player1"] / total) * 100
+                player2_pct = (set_data["player2"] / total) * 100
+
+                if player1_pct >= 65:
+                    insights.append({
+                        "category": "set",
+                        "relevance": 8,
+                        "text": f"{player1_name} dominou o {set_num}º set com {player1_pct:.0f}% dos pontos"
+                    })
+                elif player2_pct >= 65:
+                    insights.append({
+                        "category": "set",
+                        "relevance": 8,
+                        "text": f"{player2_name} dominou o {set_num}º set com {player2_pct:.0f}% dos pontos"
+                    })
+
+        # Insight 9: Pontos de break
+        break_points = [p for p in points if getattr(p, "is_break_point", False)]
+        if break_points:
+            player1_bp_faced = len([p for p in break_points if p.server_player_id == player1_id])
+            player1_bp_saved = len([p for p in break_points if p.server_player_id == player1_id and p.winner_player_id == player1_id])
+
+            if player1_bp_faced > 0:
+                player1_bp_saved_pct = (player1_bp_saved / player1_bp_faced) * 100
+                if player1_bp_saved_pct >= 70:
+                    insights.append({
+                        "category": "break_point",
+                        "relevance": 7,
+                        "text": f"{player1_name} salvou {player1_bp_saved_pct:.0f}% dos break points enfrentados ({player1_bp_saved}/{player1_bp_faced})"
+                    })
+                elif player1_bp_saved_pct <= 30:
+                    insights.append({
+                        "category": "break_point",
+                        "relevance": 7,
+                        "text": f"{player1_name} teve dificuldade em defender break points (salvou apenas {player1_bp_saved_pct:.0f}%)"
+                    })
+
+            player2_bp_faced = len([p for p in break_points if p.server_player_id == player2_id])
+            player2_bp_saved = len([p for p in break_points if p.server_player_id == player2_id and p.winner_player_id == player2_id])
+
+            if player2_bp_faced > 0:
+                player2_bp_saved_pct = (player2_bp_saved / player2_bp_faced) * 100
+                if player2_bp_saved_pct >= 70:
+                    insights.append({
+                        "category": "break_point",
+                        "relevance": 7,
+                        "text": f"{player2_name} salvou {player2_bp_saved_pct:.0f}% dos break points enfrentados ({player2_bp_saved}/{player2_bp_faced})"
+                    })
+                elif player2_bp_saved_pct <= 30:
+                    insights.append({
+                        "category": "break_point",
+                        "relevance": 7,
+                        "text": f"{player2_name} teve dificuldade em defender break points (salvou apenas {player2_bp_saved_pct:.0f}%)"
+                    })
+
+        # Insight 10: Duracao da partida
+        if match.duration_minutes and match.duration_minutes > 0:
+            if match.duration_minutes >= 180:
+                insights.append({
+                    "category": "duracao",
+                    "relevance": 6,
+                    "text": f"Partida epica com duracao de {match.duration_minutes} minutos ({match.duration_minutes // 60}h{match.duration_minutes % 60}min)"
+                })
+            elif match.duration_minutes <= 60:
+                insights.append({
+                    "category": "duracao",
+                    "relevance": 5,
+                    "text": f"Partida rapida com apenas {match.duration_minutes} minutos de duracao"
+                })
+
+        # Ordenar insights por relevancia (maior primeiro)
+        insights.sort(key=lambda x: x["relevance"], reverse=True)
+
+        # Limitar a 10 insights
+        insights = insights[:10]
+
+        return {
+            "match_id": match_id,
+            "player1_name": player1_name,
+            "player2_name": player2_name,
+            "total_insights": len(insights),
+            "insights": insights,
+            "categories": list(set([i["category"] for i in insights])),
+            "generated_at": datetime.utcnow().isoformat()
+        }
