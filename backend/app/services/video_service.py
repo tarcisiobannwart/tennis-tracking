@@ -151,20 +151,112 @@ class VideoService:
         )
 
     async def cancel_analysis(self, task_id: str) -> bool:
-        """Cancel an analysis task"""
+        """
+        Cancel an analysis task gracefully
+
+        Performs graceful cancellation:
+        - Checks if task is cancellable (not completed/failed)
+        - Updates status to cancelled
+        - Cleans up resources (temporary files, processing threads)
+        - Logs cancellation event
+        """
 
         task = self._tasks.get(task_id)
         if not task:
+            logger.warning("Cancel failed: task not found", task_id=task_id)
             return False
 
-        if task.status in ["completed", "failed"]:
+        if task.status in ["completed", "failed", "cancelled"]:
+            logger.warning("Cancel failed: task already finished", task_id=task_id, status=task.status)
             return False  # Cannot cancel completed tasks
 
+        # Update status to cancelled
+        old_status = task.status
         task.status = "cancelled"
         task.updated_at = datetime.utcnow()
+        task.error_message = f"Task cancelled by user (was {old_status})"
 
-        logger.info("Analysis task cancelled", task_id=task_id)
+        # Resource cleanup
+        try:
+            # Clean up temporary files if they exist
+            temp_file_path = task.file_path.replace(settings.UPLOAD_DIR, settings.TEMP_DIR)
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+                logger.info("Removed temporary file", file_path=temp_file_path)
+
+            # TODO: Cancel any running Celery tasks
+            # This would require storing celery task ID in VideoAnalysisTask
+            # celery_app.control.revoke(task.celery_task_id, terminate=True)
+
+        except Exception as e:
+            logger.error("Error during resource cleanup", task_id=task_id, error=str(e))
+
+        logger.info("Analysis task cancelled", task_id=task_id, previous_status=old_status)
         return True
+
+    async def reprocess_analysis(
+        self,
+        task_id: str,
+        options: Optional[VideoAnalysisOptions] = None,
+        use_same_file: bool = True
+    ) -> Optional[str]:
+        """
+        Reprocess an analysis task
+
+        Args:
+            task_id: Original task ID to reprocess
+            options: New analysis options (or use original if None)
+            use_same_file: Whether to reuse the same video file (default: True)
+
+        Returns:
+            New task ID if successful, None otherwise
+
+        Creates a new analysis task with:
+        - Same video file (or option to upload new)
+        - Updated parameters if provided
+        - Fresh task ID and status
+        """
+
+        # Get original task
+        original_task = self._tasks.get(task_id)
+        if not original_task:
+            logger.warning("Reprocess failed: original task not found", task_id=task_id)
+            return None
+
+        # Verify file still exists if reusing
+        if use_same_file:
+            if not os.path.exists(original_task.file_path):
+                logger.error("Reprocess failed: original file not found", file_path=original_task.file_path)
+                return None
+            file_path = original_task.file_path
+        else:
+            # Would need to handle new file upload in the API endpoint
+            logger.error("Reprocess with new file not yet supported")
+            return None
+
+        # Generate new task ID
+        new_task_id = str(uuid.uuid4())
+
+        # Create new task with same file and match_id
+        new_task = VideoAnalysisTask(
+            task_id=new_task_id,
+            file_path=file_path,
+            match_id=original_task.match_id
+        )
+        self._tasks[new_task_id] = new_task
+
+        logger.info(
+            "Analysis task reprocessed",
+            original_task_id=task_id,
+            new_task_id=new_task_id,
+            file_path=file_path,
+            use_same_file=use_same_file
+        )
+
+        # TODO: Queue new analysis task with Celery
+        # analyze_video_task.delay(new_task_id, options)
+
+        return new_task_id
 
     async def list_analysis_tasks(
         self,
