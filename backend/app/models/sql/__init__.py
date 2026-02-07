@@ -16,6 +16,9 @@ from app.models.sql.stream import Stream, StreamStatusEnum
 from app.models.sql.analysis import AnalysisTask, AnalysisStatusEnum
 from app.models.sql.player_stats import PlayerStats
 
+# TT-126: Modelo de embeddings de trajetórias com pgvector
+from app.models.sql.trajectory_embedding import TrajectoryEmbedding
+
 __all__ = [
     "User",
     "Organization",
@@ -30,4 +33,6 @@ __all__ = [
     "AnalysisTask",
     "AnalysisStatusEnum",
     "PlayerStats",
+    # TT-126
+    "TrajectoryEmbedding",
 ]
