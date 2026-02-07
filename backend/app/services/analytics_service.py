@@ -1384,6 +1384,232 @@ class AnalyticsService:
             "total_points_analyzed": total_points
         }
 
+    async def get_recommendations(
+        self,
+        player_id: str,
+        match_id: Optional[str] = None,
+        period: str = "month"
+    ) -> Dict[str, Any]:
+        """
+        Generate recommendations based on player analysis
+
+        Returns:
+        - weaknesses: List of identified weak areas
+        - suggested_exercises: Recommended drills and exercises
+        - focus_areas: Priority areas for improvement
+        - improvement_plan: Structured improvement plan
+        """
+
+        # Get player statistics
+        player_stats = await self.get_player_statistics(player_id, period)
+
+        # Get efficiency metrics
+        efficiency = await self.get_player_efficiency(player_id, match_id, period)
+
+        # Analyze specific match if provided
+        match_analysis = None
+        if match_id:
+            analytics = await self.get_match_performance_analytics(match_id, player_id)
+            if analytics:
+                match_analysis = analytics[0]
+
+        # Identify weaknesses based on stats
+        weaknesses = []
+        suggested_exercises = []
+        focus_areas = []
+
+        # Serve analysis
+        if efficiency.get("first_serve_pct", 0) < 60:
+            weaknesses.append({
+                "area": "serve",
+                "metric": "first_serve_percentage",
+                "current_value": efficiency.get("first_serve_pct", 0),
+                "target_value": 65,
+                "severity": "high"
+            })
+            suggested_exercises.extend([
+                {
+                    "name": "Target Serve Practice",
+                    "description": "Practice serves aiming at specific targets in service boxes",
+                    "duration_minutes": 30,
+                    "frequency": "daily",
+                    "focus": "serve_accuracy"
+                },
+                {
+                    "name": "Serve Consistency Drill",
+                    "description": "Hit 10 consecutive first serves in, gradually increase difficulty",
+                    "duration_minutes": 20,
+                    "frequency": "3x per week",
+                    "focus": "serve_consistency"
+                }
+            ])
+            focus_areas.append("serve_improvement")
+
+        # Return game analysis
+        if efficiency.get("return_win_pct", 0) < 35:
+            weaknesses.append({
+                "area": "return",
+                "metric": "return_win_percentage",
+                "current_value": efficiency.get("return_win_pct", 0),
+                "target_value": 40,
+                "severity": "high"
+            })
+            suggested_exercises.extend([
+                {
+                    "name": "Return Positioning Drill",
+                    "description": "Practice optimal positioning for returns, focus on split step timing",
+                    "duration_minutes": 25,
+                    "frequency": "4x per week",
+                    "focus": "return_positioning"
+                },
+                {
+                    "name": "Aggressive Return Practice",
+                    "description": "Practice taking returns early and redirecting with depth",
+                    "duration_minutes": 30,
+                    "frequency": "3x per week",
+                    "focus": "return_aggression"
+                }
+            ])
+            focus_areas.append("return_game")
+
+        # Consistency analysis
+        if efficiency.get("consistency_score", 0) < 60:
+            weaknesses.append({
+                "area": "consistency",
+                "metric": "consistency_score",
+                "current_value": efficiency.get("consistency_score", 0),
+                "target_value": 70,
+                "severity": "medium"
+            })
+            suggested_exercises.extend([
+                {
+                    "name": "Rally Consistency Drill",
+                    "description": "Hit 20+ ball rallies cross-court, focus on margin over net",
+                    "duration_minutes": 30,
+                    "frequency": "daily",
+                    "focus": "baseline_consistency"
+                },
+                {
+                    "name": "Target Zone Practice",
+                    "description": "Hit to specific zones with 80% success rate before moving to next",
+                    "duration_minutes": 25,
+                    "frequency": "4x per week",
+                    "focus": "shot_placement"
+                }
+            ])
+            focus_areas.append("consistency")
+
+        # Unforced errors analysis
+        if efficiency.get("unforced_error_ratio", 0) > 0.15:
+            weaknesses.append({
+                "area": "unforced_errors",
+                "metric": "unforced_error_ratio",
+                "current_value": efficiency.get("unforced_error_ratio", 0),
+                "target_value": 0.10,
+                "severity": "high"
+            })
+            suggested_exercises.extend([
+                {
+                    "name": "Patience Drill",
+                    "description": "Focus on high-percentage shots, avoid going for winners too early",
+                    "duration_minutes": 30,
+                    "frequency": "daily",
+                    "focus": "shot_selection"
+                },
+                {
+                    "name": "Pressure Point Practice",
+                    "description": "Simulate pressure situations and focus on smart shot selection",
+                    "duration_minutes": 25,
+                    "frequency": "3x per week",
+                    "focus": "mental_game"
+                }
+            ])
+            focus_areas.append("error_reduction")
+
+        # Break point conversion
+        if efficiency.get("break_conversion", 0) < 35:
+            weaknesses.append({
+                "area": "break_points",
+                "metric": "break_conversion",
+                "current_value": efficiency.get("break_conversion", 0),
+                "target_value": 40,
+                "severity": "medium"
+            })
+            suggested_exercises.extend([
+                {
+                    "name": "Clutch Point Practice",
+                    "description": "Practice high-pressure point scenarios with consequences",
+                    "duration_minutes": 30,
+                    "frequency": "3x per week",
+                    "focus": "mental_toughness"
+                }
+            ])
+            focus_areas.append("clutch_performance")
+
+        # Create improvement plan
+        improvement_plan = {
+            "short_term": {
+                "duration": "2 weeks",
+                "primary_focus": focus_areas[0] if focus_areas else "overall_game",
+                "key_exercises": suggested_exercises[:3],
+                "goals": [
+                    f"Reduce {weaknesses[0]['area']} weakness by 10%" if weaknesses else "Maintain current performance",
+                    "Complete recommended drills 4x per week",
+                    "Track progress in practice sessions"
+                ]
+            },
+            "medium_term": {
+                "duration": "1-2 months",
+                "primary_focus": "comprehensive_improvement",
+                "key_exercises": suggested_exercises,
+                "goals": [
+                    f"Achieve target values for {len(weaknesses)} identified weaknesses",
+                    "Increase consistency score above 70",
+                    "Improve match win percentage"
+                ]
+            },
+            "long_term": {
+                "duration": "3-6 months",
+                "primary_focus": "elite_performance",
+                "goals": [
+                    "Maintain first serve percentage above 65%",
+                    "Achieve return win percentage above 40%",
+                    "Reduce unforced errors below 10% of total points",
+                    "Convert 40%+ of break points"
+                ]
+            }
+        }
+
+        # Overall assessment
+        strengths = []
+        if efficiency.get("first_serve_pct", 0) >= 65:
+            strengths.append("Excellent first serve percentage")
+        if efficiency.get("return_win_pct", 0) >= 40:
+            strengths.append("Strong return game")
+        if efficiency.get("consistency_score", 0) >= 70:
+            strengths.append("High consistency")
+        if efficiency.get("break_conversion", 0) >= 40:
+            strengths.append("Good clutch performance")
+
+        return {
+            "player_id": player_id,
+            "analysis_period": period,
+            "match_id": match_id,
+            "weaknesses": weaknesses,
+            "strengths": strengths,
+            "suggested_exercises": suggested_exercises,
+            "focus_areas": focus_areas,
+            "improvement_plan": improvement_plan,
+            "priority_recommendation": weaknesses[0]["area"] if weaknesses else "continue_current_training",
+            "estimated_improvement_time": f"{len(weaknesses) * 2} weeks with consistent practice",
+            "next_steps": [
+                "Schedule practice sessions focusing on identified weaknesses",
+                "Track progress weekly using match statistics",
+                "Adjust training intensity based on improvement rate",
+                "Review recommendations monthly for updates"
+            ]
+        }
+
     def _get_period_cutoff(self, period: str) -> datetime:
         """Get cutoff date for period filtering"""
 
