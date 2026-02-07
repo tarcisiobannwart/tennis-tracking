@@ -22,6 +22,8 @@ import Settings from './pages/Settings'
 import Organization from './pages/Organization'
 import AcceptInvite from './pages/AcceptInvite'
 import PlayerProfile from './pages/PlayerProfile'
+import Rankings from './pages/Rankings'
+import RankingDetail from './pages/RankingDetail'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminSubscriptions from './pages/admin/AdminSubscriptions'
@@ -62,6 +64,8 @@ function App() {
         <Route path="/app/players" element={<Players />} />
         <Route path="/app/analytics" element={<Analytics />} />
         <Route path="/app/training" element={<Training />} />
+        <Route path="/app/rankings" element={<Rankings />} />
+        <Route path="/app/rankings/:id" element={<RankingDetail />} />
         <Route path="/app/profile" element={<Profile />} />
         <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/organization" element={<Organization />} />

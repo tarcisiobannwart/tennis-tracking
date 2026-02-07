@@ -10,6 +10,7 @@ import {
   Video,
   Target,
   Shield,
+  Medal,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -52,6 +53,11 @@ const Sidebar = () => {
       name: 'Treino',
       href: '/app/training',
       icon: Target,
+    },
+    {
+      name: 'Rankings',
+      href: '/app/rankings',
+      icon: Medal,
     },
   ]
 
