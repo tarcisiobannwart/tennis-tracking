@@ -12,12 +12,12 @@ from .detection.ball_detector import BallDetector
 from .detection.player_detector import PlayerDetector
 from .detection.court_detector import CourtDetector
 from .tracking.object_tracker import ObjectTracker
-from .models.tracknet import TrackNet
+from .models.tracknet import trackNet
 
 __all__ = [
     'BallDetector',
     'PlayerDetector',
     'CourtDetector',
     'ObjectTracker',
-    'TrackNet'
+    'trackNet'
 ]
