@@ -1,8 +1,24 @@
 """
-Database models for tennis tracking application
+Database models for tennis tracking application.
+
+Modelos Pydantic (schemas) sao importados dos arquivos originais.
+Modelos SQLAlchemy ORM sao importados do subpacote sql/.
 """
 
-# MongoDB models are imported as needed from their respective files
-# No SQLAlchemy models here
+# SQLAlchemy ORM models
+from app.models.sql import (
+    User,
+    Organization,
+    OrganizationInvite,
+    SubscriptionEvent,
+    ActivityLog,
+)
 
-__all__ = []
+__all__ = [
+    # SQLAlchemy ORM models
+    "User",
+    "Organization",
+    "OrganizationInvite",
+    "SubscriptionEvent",
+    "ActivityLog",
+]

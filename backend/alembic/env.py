@@ -16,8 +16,18 @@ from alembic import context
 from app.core.database import Base
 
 # Importar modelos SQLAlchemy para autogenerate
-# (adicionar imports conforme modelos forem criados)
-# from app.models import *
+from app.models.sql import (  # noqa: F401
+    User,
+    Organization,
+    OrganizationInvite,
+    SubscriptionEvent,
+    ActivityLog,
+    # TT-120: modelos de video, streams, analysis e player_stats
+    Video,
+    Stream,
+    AnalysisTask,
+    PlayerStats,
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
