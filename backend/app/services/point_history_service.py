@@ -4,15 +4,18 @@ Point history service for detailed point tracking and analysis
 
 from typing import Optional, List, Dict
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorDatabase
+import uuid
+
+from sqlalchemy import select, delete, and_, or_, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.point_history import (
     PointDetails,
     PointHistoryFilter,
     PointHistorySummary,
-    PointOutcome
+    PointOutcome,
+    PointHistory as PointHistoryORM,
 )
-from app.core.mongodb import get_database
 
 
 class PointHistoryService:
@@ -25,9 +28,8 @@ class PointHistoryService:
     - Generate statistics and summaries
     """
 
-    def __init__(self, db: Optional[AsyncIOMotorDatabase] = None):
-        self.db = db or get_database()
-        self.collection = self.db.get_collection("point_history")
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     async def create_point(self, point: PointDetails) -> PointDetails:
         """
@@ -39,18 +41,55 @@ class PointHistoryService:
         Returns:
             Created PointDetails
         """
-        point_dict = point.model_dump()
-        await self.collection.insert_one(point_dict)
+        point_orm = PointHistoryORM(
+            id=uuid.uuid4(),
+            match_id=point.match_id,
+            set_number=point.set_number,
+            game_number=point.game_number,
+            point_number=point.point_number,
+            score_before=point.score_before,
+            score_after=point.score_after,
+            set_score_before=point.set_score_before if hasattr(point, 'set_score_before') else None,
+            set_score_after=point.set_score_after if hasattr(point, 'set_score_after') else None,
+            server_player_id=point.server_player_id,
+            receiver_player_id=point.receiver_player_id,
+            point_winner_id=point.point_winner_id,
+            outcome=point.outcome.value,
+            winning_shot=point.winning_shot,
+            error_type=point.error_type,
+            rally_length=point.rally_length,
+            rally_duration=point.rally_duration,
+            is_first_serve=point.is_first_serve,
+            serve_speed=point.serve_speed,
+            serve_placement=point.serve_placement,
+            is_serve_in=point.is_serve_in,
+            is_break_point=point.is_break_point,
+            is_set_point=point.is_set_point,
+            is_match_point=point.is_match_point,
+            is_game_point=point.is_game_point,
+            timestamp=point.timestamp,
+            video_timestamp=point.video_timestamp,
+            court_position_data=point.court_position_data,
+            ball_trajectory_data=point.ball_trajectory_data,
+            notes=point.notes,
+        )
+
+        self.db.add(point_orm)
+        await self.db.flush()
+        await self.db.refresh(point_orm)
+
         return point
 
     async def get_point(self, point_id: str) -> Optional[PointDetails]:
         """Get point by ID"""
-        point_data = await self.collection.find_one({"point_id": point_id})
-        if not point_data:
+        stmt = select(PointHistoryORM).where(PointHistoryORM.id == uuid.UUID(point_id))
+        result = await self.db.execute(stmt)
+        point_orm = result.scalar_one_or_none()
+
+        if not point_orm:
             return None
 
-        point_data.pop("_id", None)
-        return PointDetails(**point_data)
+        return self._orm_to_pydantic(point_orm)
 
     async def get_points_by_match(self, match_id: str) -> List[PointDetails]:
         """
@@ -62,18 +101,18 @@ class PointHistoryService:
         Returns:
             List of PointDetails ordered by occurrence
         """
-        cursor = self.collection.find({"match_id": match_id}).sort([
-            ("set_number", 1),
-            ("game_number", 1),
-            ("point_number", 1)
-        ])
+        stmt = select(PointHistoryORM).where(
+            PointHistoryORM.match_id == match_id
+        ).order_by(
+            PointHistoryORM.set_number,
+            PointHistoryORM.game_number,
+            PointHistoryORM.point_number
+        )
 
-        points = []
-        async for point_data in cursor:
-            point_data.pop("_id", None)
-            points.append(PointDetails(**point_data))
+        result = await self.db.execute(stmt)
+        points = result.scalars().all()
 
-        return points
+        return [self._orm_to_pydantic(p) for p in points]
 
     async def get_points_by_player(
         self,
@@ -92,29 +131,29 @@ class PointHistoryService:
         Returns:
             List of PointDetails
         """
-        query = {"match_id": match_id}
+        stmt = select(PointHistoryORM).where(PointHistoryORM.match_id == match_id)
 
         if won_only:
-            query["point_winner_id"] = player_id
+            stmt = stmt.where(PointHistoryORM.point_winner_id == player_id)
         else:
             # Points where player was server or receiver
-            query["$or"] = [
-                {"server_player_id": player_id},
-                {"receiver_player_id": player_id}
-            ]
+            stmt = stmt.where(
+                or_(
+                    PointHistoryORM.server_player_id == player_id,
+                    PointHistoryORM.receiver_player_id == player_id
+                )
+            )
 
-        cursor = self.collection.find(query).sort([
-            ("set_number", 1),
-            ("game_number", 1),
-            ("point_number", 1)
-        ])
+        stmt = stmt.order_by(
+            PointHistoryORM.set_number,
+            PointHistoryORM.game_number,
+            PointHistoryORM.point_number
+        )
 
-        points = []
-        async for point_data in cursor:
-            point_data.pop("_id", None)
-            points.append(PointDetails(**point_data))
+        result = await self.db.execute(stmt)
+        points = result.scalars().all()
 
-        return points
+        return [self._orm_to_pydantic(p) for p in points]
 
     async def get_points_by_set(self, match_id: str, set_number: int) -> List[PointDetails]:
         """
@@ -127,20 +166,20 @@ class PointHistoryService:
         Returns:
             List of PointDetails
         """
-        cursor = self.collection.find({
-            "match_id": match_id,
-            "set_number": set_number
-        }).sort([
-            ("game_number", 1),
-            ("point_number", 1)
-        ])
+        stmt = select(PointHistoryORM).where(
+            and_(
+                PointHistoryORM.match_id == match_id,
+                PointHistoryORM.set_number == set_number
+            )
+        ).order_by(
+            PointHistoryORM.game_number,
+            PointHistoryORM.point_number
+        )
 
-        points = []
-        async for point_data in cursor:
-            point_data.pop("_id", None)
-            points.append(PointDetails(**point_data))
+        result = await self.db.execute(stmt)
+        points = result.scalars().all()
 
-        return points
+        return [self._orm_to_pydantic(p) for p in points]
 
     async def get_break_points(self, match_id: str) -> List[PointDetails]:
         """
@@ -152,21 +191,21 @@ class PointHistoryService:
         Returns:
             List of PointDetails for break points
         """
-        cursor = self.collection.find({
-            "match_id": match_id,
-            "is_break_point": True
-        }).sort([
-            ("set_number", 1),
-            ("game_number", 1),
-            ("point_number", 1)
-        ])
+        stmt = select(PointHistoryORM).where(
+            and_(
+                PointHistoryORM.match_id == match_id,
+                PointHistoryORM.is_break_point == True
+            )
+        ).order_by(
+            PointHistoryORM.set_number,
+            PointHistoryORM.game_number,
+            PointHistoryORM.point_number
+        )
 
-        points = []
-        async for point_data in cursor:
-            point_data.pop("_id", None)
-            points.append(PointDetails(**point_data))
+        result = await self.db.execute(stmt)
+        points = result.scalars().all()
 
-        return points
+        return [self._orm_to_pydantic(p) for p in points]
 
     async def get_points_by_outcome(
         self,
@@ -183,21 +222,21 @@ class PointHistoryService:
         Returns:
             List of PointDetails
         """
-        cursor = self.collection.find({
-            "match_id": match_id,
-            "outcome": outcome.value
-        }).sort([
-            ("set_number", 1),
-            ("game_number", 1),
-            ("point_number", 1)
-        ])
+        stmt = select(PointHistoryORM).where(
+            and_(
+                PointHistoryORM.match_id == match_id,
+                PointHistoryORM.outcome == outcome.value
+            )
+        ).order_by(
+            PointHistoryORM.set_number,
+            PointHistoryORM.game_number,
+            PointHistoryORM.point_number
+        )
 
-        points = []
-        async for point_data in cursor:
-            point_data.pop("_id", None)
-            points.append(PointDetails(**point_data))
+        result = await self.db.execute(stmt)
+        points = result.scalars().all()
 
-        return points
+        return [self._orm_to_pydantic(p) for p in points]
 
     async def query_points(self, filter: PointHistoryFilter) -> List[PointDetails]:
         """
@@ -209,49 +248,52 @@ class PointHistoryService:
         Returns:
             List of PointDetails matching filter
         """
-        query = {}
+        stmt = select(PointHistoryORM)
+
+        conditions = []
 
         if filter.match_id:
-            query["match_id"] = filter.match_id
+            conditions.append(PointHistoryORM.match_id == filter.match_id)
         if filter.set_number:
-            query["set_number"] = filter.set_number
+            conditions.append(PointHistoryORM.set_number == filter.set_number)
         if filter.outcome:
-            query["outcome"] = filter.outcome.value
+            conditions.append(PointHistoryORM.outcome == filter.outcome.value)
         if filter.is_break_point is not None:
-            query["is_break_point"] = filter.is_break_point
+            conditions.append(PointHistoryORM.is_break_point == filter.is_break_point)
         if filter.is_set_point is not None:
-            query["is_set_point"] = filter.is_set_point
+            conditions.append(PointHistoryORM.is_set_point == filter.is_set_point)
         if filter.is_match_point is not None:
-            query["is_match_point"] = filter.is_match_point
+            conditions.append(PointHistoryORM.is_match_point == filter.is_match_point)
 
         # Rally length range
-        if filter.min_rally_length is not None or filter.max_rally_length is not None:
-            query["rally_length"] = {}
-            if filter.min_rally_length is not None:
-                query["rally_length"]["$gte"] = filter.min_rally_length
-            if filter.max_rally_length is not None:
-                query["rally_length"]["$lte"] = filter.max_rally_length
+        if filter.min_rally_length is not None:
+            conditions.append(PointHistoryORM.rally_length >= filter.min_rally_length)
+        if filter.max_rally_length is not None:
+            conditions.append(PointHistoryORM.rally_length <= filter.max_rally_length)
 
         # Player filter
         if filter.player_id:
-            query["$or"] = [
-                {"server_player_id": filter.player_id},
-                {"receiver_player_id": filter.player_id},
-                {"point_winner_id": filter.player_id}
-            ]
+            conditions.append(
+                or_(
+                    PointHistoryORM.server_player_id == filter.player_id,
+                    PointHistoryORM.receiver_player_id == filter.player_id,
+                    PointHistoryORM.point_winner_id == filter.player_id
+                )
+            )
 
-        cursor = self.collection.find(query).sort([
-            ("set_number", 1),
-            ("game_number", 1),
-            ("point_number", 1)
-        ])
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
 
-        points = []
-        async for point_data in cursor:
-            point_data.pop("_id", None)
-            points.append(PointDetails(**point_data))
+        stmt = stmt.order_by(
+            PointHistoryORM.set_number,
+            PointHistoryORM.game_number,
+            PointHistoryORM.point_number
+        )
 
-        return points
+        result = await self.db.execute(stmt)
+        points = result.scalars().all()
+
+        return [self._orm_to_pydantic(p) for p in points]
 
     async def get_match_summary(self, match_id: str) -> PointHistorySummary:
         """
@@ -335,5 +377,42 @@ class PointHistoryService:
         Returns:
             Number of deleted points
         """
-        result = await self.collection.delete_many({"match_id": match_id})
-        return result.deleted_count
+        stmt = delete(PointHistoryORM).where(PointHistoryORM.match_id == match_id)
+        result = await self.db.execute(stmt)
+        await self.db.flush()
+        return result.rowcount
+
+    def _orm_to_pydantic(self, point_orm: PointHistoryORM) -> PointDetails:
+        """Convert ORM model to Pydantic model"""
+        return PointDetails(
+            point_id=str(point_orm.id),
+            match_id=point_orm.match_id,
+            set_number=point_orm.set_number,
+            game_number=point_orm.game_number,
+            point_number=point_orm.point_number,
+            score_before=point_orm.score_before or {},
+            score_after=point_orm.score_after or {},
+            set_score_before=point_orm.set_score_before or {},
+            set_score_after=point_orm.set_score_after or {},
+            server_player_id=point_orm.server_player_id,
+            receiver_player_id=point_orm.receiver_player_id,
+            point_winner_id=point_orm.point_winner_id,
+            outcome=PointOutcome(point_orm.outcome),
+            winning_shot=point_orm.winning_shot,
+            error_type=point_orm.error_type,
+            rally_length=point_orm.rally_length,
+            rally_duration=point_orm.rally_duration,
+            is_first_serve=point_orm.is_first_serve,
+            serve_speed=point_orm.serve_speed,
+            serve_placement=point_orm.serve_placement,
+            is_serve_in=point_orm.is_serve_in,
+            is_break_point=point_orm.is_break_point,
+            is_set_point=point_orm.is_set_point,
+            is_match_point=point_orm.is_match_point,
+            is_game_point=point_orm.is_game_point,
+            timestamp=point_orm.timestamp,
+            video_timestamp=point_orm.video_timestamp,
+            court_position_data=point_orm.court_position_data,
+            ball_trajectory_data=point_orm.ball_trajectory_data,
+            notes=point_orm.notes,
+        )

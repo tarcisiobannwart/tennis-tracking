@@ -1,5 +1,5 @@
 """
-Training service for MongoDB-based training session and drill management
+Training service for SQLAlchemy-based training session and drill management
 """
 
 from typing import List, Optional, Dict, Any
@@ -7,13 +7,19 @@ from datetime import datetime, timedelta
 import uuid
 import structlog
 
-from app.core.mongodb import get_collection
+from sqlalchemy import select, update, delete, and_, or_, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.training import (
     SessionStatus,
     TrainingSessionCreate,
     TrainingSessionUpdate,
     TrainingDrillCreate,
     DrillTypeCreate,
+    DrillType,
+    TrainingSession,
+    DrillCategory,
+    DrillDifficulty,
 )
 from app.services.analytics_service import AnalyticsService
 
@@ -36,30 +42,42 @@ DRILL_SEED_DATA = [
 
 
 class TrainingService:
-    """Service for training operations with MongoDB"""
+    """Service for training operations with SQLAlchemy"""
 
-    def __init__(self):
+    def __init__(self, db: AsyncSession):
+        self.db = db
         self.analytics_service = AnalyticsService()
 
     async def seed_drill_types(self) -> int:
         """Seed default drill types if collection is empty"""
-        drills = get_collection("drill_types")
-        count = await drills.count_documents({})
+        stmt = select(func.count()).select_from(DrillType)
+        result = await self.db.execute(stmt)
+        count = result.scalar()
+
         if count > 0:
             return count
 
         now = datetime.utcnow()
-        docs = []
+        drill_objs = []
         for d in DRILL_SEED_DATA:
-            docs.append({
-                "_id": str(uuid.uuid4()),
-                **d,
-                "created_at": now,
-                "updated_at": None,
-            })
-        await drills.insert_many(docs)
-        logger.info("Seeded drill types", count=len(docs))
-        return len(docs)
+            drill_objs.append(
+                DrillType(
+                    id=uuid.uuid4(),
+                    name=d["name"],
+                    description=d["description"],
+                    category=d["category"],
+                    difficulty=d["difficulty"],
+                    duration_minutes=d.get("duration_minutes"),
+                    equipment_needed=d.get("equipment_needed"),
+                    instructions=d.get("instructions"),
+                    created_at=now,
+                )
+            )
+
+        self.db.add_all(drill_objs)
+        await self.db.flush()
+        logger.info("Seeded drill types", count=len(drill_objs))
+        return len(drill_objs)
 
     async def get_drill_types(
         self,
@@ -68,61 +86,118 @@ class TrainingService:
         category: Optional[str] = None,
         difficulty: Optional[str] = None,
     ) -> List[dict]:
-        drills = get_collection("drill_types")
-        query: dict = {}
-        if category:
-            query["category"] = category
-        if difficulty:
-            query["difficulty"] = difficulty
+        stmt = select(DrillType)
 
-        cursor = drills.find(query).sort("name", 1).skip(skip).limit(limit)
-        results = []
-        async for doc in cursor:
-            doc["id"] = doc.pop("_id")
-            results.append(doc)
-        return results
+        conditions = []
+        if category:
+            conditions.append(DrillType.category == category)
+        if difficulty:
+            conditions.append(DrillType.difficulty == difficulty)
+
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
+
+        stmt = stmt.order_by(DrillType.name).offset(skip).limit(limit)
+
+        result = await self.db.execute(stmt)
+        drills = result.scalars().all()
+
+        return [
+            {
+                "id": str(drill.id),
+                "name": drill.name,
+                "description": drill.description,
+                "category": drill.category,
+                "difficulty": drill.difficulty,
+                "duration_minutes": drill.duration_minutes,
+                "equipment_needed": drill.equipment_needed,
+                "instructions": drill.instructions,
+                "created_at": drill.created_at,
+                "updated_at": drill.updated_at,
+            }
+            for drill in drills
+        ]
 
     async def create_drill_type(self, data: DrillTypeCreate) -> dict:
-        drills = get_collection("drill_types")
         now = datetime.utcnow()
-        doc = {
-            "_id": str(uuid.uuid4()),
-            **data.model_dump(),
-            "created_at": now,
-            "updated_at": None,
+        drill = DrillType(
+            id=uuid.uuid4(),
+            name=data.name,
+            description=data.description,
+            category=data.category,
+            difficulty=data.difficulty,
+            duration_minutes=data.duration_minutes,
+            equipment_needed=data.equipment_needed,
+            instructions=data.instructions,
+            created_at=now,
+        )
+
+        self.db.add(drill)
+        await self.db.flush()
+        await self.db.refresh(drill)
+
+        return {
+            "id": str(drill.id),
+            "name": drill.name,
+            "description": drill.description,
+            "category": drill.category,
+            "difficulty": drill.difficulty,
+            "duration_minutes": drill.duration_minutes,
+            "equipment_needed": drill.equipment_needed,
+            "instructions": drill.instructions,
+            "created_at": drill.created_at,
+            "updated_at": drill.updated_at,
         }
-        await drills.insert_one(doc)
-        doc["id"] = doc.pop("_id")
-        return doc
 
     # --- Training Sessions ---
 
     async def create_session(self, user_id: str, data: TrainingSessionCreate) -> dict:
-        sessions = get_collection("training_sessions")
         now = datetime.utcnow()
-        doc = {
-            "_id": str(uuid.uuid4()),
-            "user_id": user_id,
-            **data.model_dump(),
-            "scheduled_at": data.scheduled_at,
-            "status": SessionStatus.PLANNED.value,
-            "started_at": None,
-            "finished_at": None,
-            "duration_minutes": None,
-            "coach_notes": None,
-            "intensity_level": None,
-            "effort_rating": None,
-            "fatigue_level": None,
-            "session_notes": None,
-            "player_feedback": None,
-            "drills": [],
-            "created_at": now,
-            "updated_at": None,
+        session = TrainingSession(
+            id=uuid.uuid4(),
+            player_id=user_id,
+            title=data.title,
+            description=data.description,
+            session_type=data.session_type,
+            scheduled_at=data.scheduled_at,
+            objectives=data.objectives,
+            focus_areas=data.focus_areas,
+            coach_name=data.coach_name,
+            status=SessionStatus.PLANNED.value,
+            drills=[],
+            created_at=now,
+        )
+
+        self.db.add(session)
+        await self.db.flush()
+        await self.db.refresh(session)
+
+        logger.info("Training session created", session_id=str(session.id))
+
+        return {
+            "id": str(session.id),
+            "user_id": session.player_id,
+            "title": session.title,
+            "description": session.description,
+            "session_type": session.session_type,
+            "status": session.status,
+            "scheduled_at": session.scheduled_at,
+            "started_at": session.started_at,
+            "finished_at": session.finished_at,
+            "duration_minutes": session.duration_minutes,
+            "objectives": session.objectives,
+            "focus_areas": session.focus_areas,
+            "coach_name": session.coach_name,
+            "coach_notes": session.coach_notes,
+            "intensity_level": session.intensity_level,
+            "effort_rating": session.effort_rating,
+            "fatigue_level": session.fatigue_level,
+            "session_notes": session.session_notes,
+            "player_feedback": session.player_feedback,
+            "drills": session.drills or [],
+            "created_at": session.created_at,
+            "updated_at": session.updated_at,
         }
-        await sessions.insert_one(doc)
-        logger.info("Training session created", session_id=doc["_id"])
-        doc["id"] = doc.pop("_id")
-        return doc
 
     async def get_sessions(
         self,
@@ -132,101 +207,193 @@ class TrainingService:
         status: Optional[str] = None,
         session_type: Optional[str] = None,
     ) -> List[dict]:
-        sessions = get_collection("training_sessions")
-        query: dict = {"user_id": user_id}
-        if status:
-            query["status"] = status
-        if session_type:
-            query["session_type"] = session_type
+        stmt = select(TrainingSession).where(TrainingSession.player_id == user_id)
 
-        cursor = sessions.find(query).sort("scheduled_at", -1).skip(skip).limit(limit)
-        results = []
-        async for doc in cursor:
-            doc["id"] = doc.pop("_id")
-            results.append(doc)
-        return results
+        if status:
+            stmt = stmt.where(TrainingSession.status == status)
+        if session_type:
+            stmt = stmt.where(TrainingSession.session_type == session_type)
+
+        stmt = stmt.order_by(TrainingSession.scheduled_at.desc()).offset(skip).limit(limit)
+
+        result = await self.db.execute(stmt)
+        sessions = result.scalars().all()
+
+        return [
+            {
+                "id": str(session.id),
+                "user_id": session.player_id,
+                "title": session.title,
+                "description": session.description,
+                "session_type": session.session_type,
+                "status": session.status,
+                "scheduled_at": session.scheduled_at,
+                "started_at": session.started_at,
+                "finished_at": session.finished_at,
+                "duration_minutes": session.duration_minutes,
+                "objectives": session.objectives,
+                "focus_areas": session.focus_areas,
+                "coach_name": session.coach_name,
+                "coach_notes": session.coach_notes,
+                "intensity_level": session.intensity_level,
+                "effort_rating": session.effort_rating,
+                "fatigue_level": session.fatigue_level,
+                "session_notes": session.session_notes,
+                "player_feedback": session.player_feedback,
+                "drills": session.drills or [],
+                "created_at": session.created_at,
+                "updated_at": session.updated_at,
+            }
+            for session in sessions
+        ]
 
     async def get_session(self, session_id: str, user_id: str) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        doc = await sessions.find_one({"_id": session_id, "user_id": user_id})
-        if doc:
-            doc["id"] = doc.pop("_id")
-        return doc
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
+        )
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session:
+            return None
+
+        return {
+            "id": str(session.id),
+            "user_id": session.player_id,
+            "title": session.title,
+            "description": session.description,
+            "session_type": session.session_type,
+            "status": session.status,
+            "scheduled_at": session.scheduled_at,
+            "started_at": session.started_at,
+            "finished_at": session.finished_at,
+            "duration_minutes": session.duration_minutes,
+            "objectives": session.objectives,
+            "focus_areas": session.focus_areas,
+            "coach_name": session.coach_name,
+            "coach_notes": session.coach_notes,
+            "intensity_level": session.intensity_level,
+            "effort_rating": session.effort_rating,
+            "fatigue_level": session.fatigue_level,
+            "session_notes": session.session_notes,
+            "player_feedback": session.player_feedback,
+            "drills": session.drills or [],
+            "created_at": session.created_at,
+            "updated_at": session.updated_at,
+        }
 
     async def update_session(self, session_id: str, user_id: str, data: TrainingSessionUpdate) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
-        if not update_data:
-            return await self.get_session(session_id, user_id)
-
-        update_data["updated_at"] = datetime.utcnow()
-        result = await sessions.update_one(
-            {"_id": session_id, "user_id": user_id},
-            {"$set": update_data}
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
         )
-        if result.matched_count == 0:
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session:
             return None
+
+        update_data = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+
+        if update_data:
+            for key, value in update_data.items():
+                setattr(session, key, value)
+            session.updated_at = datetime.utcnow()
+            await self.db.flush()
+            await self.db.refresh(session)
+
         return await self.get_session(session_id, user_id)
 
     async def delete_session(self, session_id: str, user_id: str) -> bool:
-        sessions = get_collection("training_sessions")
-        result = await sessions.delete_one({"_id": session_id, "user_id": user_id})
-        return result.deleted_count > 0
+        stmt = delete(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
+        )
+        result = await self.db.execute(stmt)
+        await self.db.flush()
+        return result.rowcount > 0
 
     async def start_session(self, session_id: str, user_id: str) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        doc = await sessions.find_one({"_id": session_id, "user_id": user_id})
-        if not doc:
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
+        )
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session:
             return None
-        if doc["status"] != SessionStatus.PLANNED.value:
+        if session.status != SessionStatus.PLANNED.value:
             return None
 
         now = datetime.utcnow()
-        await sessions.update_one(
-            {"_id": session_id},
-            {"$set": {
-                "status": SessionStatus.IN_PROGRESS.value,
-                "started_at": now,
-                "updated_at": now,
-            }}
-        )
+        session.status = SessionStatus.IN_PROGRESS.value
+        session.started_at = now
+        session.updated_at = now
+
+        await self.db.flush()
         return await self.get_session(session_id, user_id)
 
     async def finish_session(self, session_id: str, user_id: str) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        doc = await sessions.find_one({"_id": session_id, "user_id": user_id})
-        if not doc:
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
+        )
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session:
             return None
-        if doc["status"] != SessionStatus.IN_PROGRESS.value:
+        if session.status != SessionStatus.IN_PROGRESS.value:
             return None
 
         now = datetime.utcnow()
         duration = None
-        if doc.get("started_at"):
-            duration = int((now - doc["started_at"]).total_seconds() / 60)
+        if session.started_at:
+            duration = int((now - session.started_at).total_seconds() / 60)
 
-        await sessions.update_one(
-            {"_id": session_id},
-            {"$set": {
-                "status": SessionStatus.COMPLETED.value,
-                "finished_at": now,
-                "duration_minutes": duration,
-                "updated_at": now,
-            }}
-        )
+        session.status = SessionStatus.COMPLETED.value
+        session.finished_at = now
+        session.duration_minutes = duration
+        session.updated_at = now
+
+        await self.db.flush()
         return await self.get_session(session_id, user_id)
 
     # --- Drills within Session ---
 
     async def add_drill_to_session(self, session_id: str, user_id: str, data: TrainingDrillCreate) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        doc = await sessions.find_one({"_id": session_id, "user_id": user_id})
-        if not doc:
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
+        )
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session:
             return None
 
         drill_doc = {
             "id": str(uuid.uuid4()),
-            **data.model_dump(),
+            "drill_type_id": data.drill_type_id,
+            "drill_name": data.drill_name,
+            "order_in_session": data.order_in_session,
+            "duration_minutes": data.duration_minutes,
+            "repetitions": data.repetitions,
+            "sets": data.sets,
             "success_rate": None,
             "accuracy_score": None,
             "drill_data": None,
@@ -235,56 +402,99 @@ class TrainingService:
             "notes": None,
             "coach_feedback": None,
         }
-        await sessions.update_one(
-            {"_id": session_id},
-            {"$push": {"drills": drill_doc}, "$set": {"updated_at": datetime.utcnow()}}
-        )
+
+        if session.drills is None:
+            session.drills = []
+
+        session.drills.append(drill_doc)
+        session.updated_at = datetime.utcnow()
+
+        # Force JSONB update
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(session, "drills")
+
+        await self.db.flush()
         return await self.get_session(session_id, user_id)
 
     async def update_drill_in_session(
         self, session_id: str, user_id: str, drill_id: str, updates: dict
     ) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        set_fields = {}
-        for key, val in updates.items():
-            set_fields[f"drills.$.{key}"] = val
-        set_fields["updated_at"] = datetime.utcnow()
-
-        await sessions.update_one(
-            {"_id": session_id, "user_id": user_id, "drills.id": drill_id},
-            {"$set": set_fields}
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
         )
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session or not session.drills:
+            return None
+
+        # Find and update drill
+        updated = False
+        for drill in session.drills:
+            if drill.get("id") == drill_id:
+                for key, val in updates.items():
+                    drill[key] = val
+                updated = True
+                break
+
+        if updated:
+            session.updated_at = datetime.utcnow()
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(session, "drills")
+            await self.db.flush()
+
         return await self.get_session(session_id, user_id)
 
     async def remove_drill_from_session(self, session_id: str, user_id: str, drill_id: str) -> Optional[dict]:
-        sessions = get_collection("training_sessions")
-        await sessions.update_one(
-            {"_id": session_id, "user_id": user_id},
-            {"$pull": {"drills": {"id": drill_id}}, "$set": {"updated_at": datetime.utcnow()}}
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.id == uuid.UUID(session_id),
+                TrainingSession.player_id == user_id
+            )
         )
+        result = await self.db.execute(stmt)
+        session = result.scalar_one_or_none()
+
+        if not session or not session.drills:
+            return None
+
+        session.drills = [d for d in session.drills if d.get("id") != drill_id]
+        session.updated_at = datetime.utcnow()
+
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(session, "drills")
+
+        await self.db.flush()
         return await self.get_session(session_id, user_id)
 
     # --- Progress & Analytics ---
 
     async def get_progress(self, user_id: str, period: str = "month") -> dict:
-        sessions = get_collection("training_sessions")
         cutoff = self._get_period_cutoff(period)
 
-        query = {"user_id": user_id, "scheduled_at": {"$gte": cutoff}}
-        docs = []
-        async for doc in sessions.find(query).sort("scheduled_at", -1):
-            docs.append(doc)
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.player_id == user_id,
+                TrainingSession.scheduled_at >= cutoff
+            )
+        ).order_by(TrainingSession.scheduled_at.desc())
 
-        total = len(docs)
-        completed = [d for d in docs if d["status"] == SessionStatus.COMPLETED.value]
-        total_duration = sum(d.get("duration_minutes", 0) or 0 for d in completed)
+        result = await self.db.execute(stmt)
+        sessions = result.scalars().all()
+
+        total = len(sessions)
+        completed = [s for s in sessions if s.status == SessionStatus.COMPLETED.value]
+        total_duration = sum(s.duration_minutes or 0 for s in completed)
 
         session_types: Dict[str, int] = {}
-        for d in docs:
-            st = d.get("session_type", "other")
+        for s in sessions:
+            st = s.session_type or "other"
             session_types[st] = session_types.get(st, 0) + 1
 
-        ratings = [d["effort_rating"] for d in docs if d.get("effort_rating")]
+        ratings = [s.effort_rating for s in sessions if s.effort_rating]
         avg_effort = sum(ratings) / len(ratings) if ratings else 0
 
         return {
@@ -298,13 +508,13 @@ class TrainingService:
             "average_effort_rating": round(avg_effort, 1),
             "recent_sessions": [
                 {
-                    "id": d.get("_id") or d.get("id"),
-                    "title": d["title"],
-                    "date": d["scheduled_at"].isoformat() if d.get("scheduled_at") else None,
-                    "status": d["status"],
-                    "duration": d.get("duration_minutes"),
+                    "id": str(s.id),
+                    "title": s.title,
+                    "date": s.scheduled_at.isoformat() if s.scheduled_at else None,
+                    "status": s.status,
+                    "duration": s.duration_minutes,
                 }
-                for d in docs[:5]
+                for s in list(sessions)[:5]
             ],
         }
 
@@ -314,53 +524,63 @@ class TrainingService:
         session_type: Optional[str] = None,
         period: str = "month",
     ) -> dict:
-        sessions = get_collection("training_sessions")
         cutoff = self._get_period_cutoff(period)
 
-        query: dict = {"user_id": user_id, "scheduled_at": {"$gte": cutoff}}
-        if session_type:
-            query["session_type"] = session_type
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.player_id == user_id,
+                TrainingSession.scheduled_at >= cutoff
+            )
+        )
 
-        docs = []
-        async for doc in sessions.find(query).sort("scheduled_at", 1):
-            docs.append(doc)
+        if session_type:
+            stmt = stmt.where(TrainingSession.session_type == session_type)
+
+        stmt = stmt.order_by(TrainingSession.scheduled_at)
+
+        result = await self.db.execute(stmt)
+        sessions = result.scalars().all()
 
         weekly: Dict[str, int] = {}
         focus_areas: Dict[str, int] = {}
-        for d in docs:
-            if d.get("scheduled_at"):
-                wk = d["scheduled_at"].strftime("%Y-W%U")
+
+        for s in sessions:
+            if s.scheduled_at:
+                wk = s.scheduled_at.strftime("%Y-W%U")
                 weekly[wk] = weekly.get(wk, 0) + 1
-            for area in (d.get("focus_areas") or []):
+            for area in (s.focus_areas or []):
                 focus_areas[area] = focus_areas.get(area, 0) + 1
 
-        completed = [d for d in docs if d["status"] == SessionStatus.COMPLETED.value]
+        completed = [s for s in sessions if s.status == SessionStatus.COMPLETED.value]
 
         return {
             "period": period,
             "session_type": session_type,
-            "total_sessions": len(docs),
+            "total_sessions": len(sessions),
             "completed_sessions": len(completed),
             "weekly_distribution": weekly,
             "focus_areas_frequency": focus_areas,
             "performance_metrics": {
-                "consistency": round(len(completed) / len(docs) * 100, 1) if docs else 0,
-                "improvement_trend": self._calc_trend(docs),
-                "intensity_data": self._calc_intensity(docs),
+                "consistency": round(len(completed) / len(sessions) * 100, 1) if sessions else 0,
+                "improvement_trend": self._calc_trend(sessions),
+                "intensity_data": self._calc_intensity(sessions),
             },
         }
 
     async def get_recommendations(self, user_id: str) -> dict:
-        sessions = get_collection("training_sessions")
         cutoff = datetime.utcnow() - timedelta(days=30)
 
-        docs = []
-        async for doc in sessions.find(
-            {"user_id": user_id, "scheduled_at": {"$gte": cutoff}}
-        ).sort("scheduled_at", -1).limit(10):
-            docs.append(doc)
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.player_id == user_id,
+                TrainingSession.scheduled_at >= cutoff
+            )
+        ).order_by(TrainingSession.scheduled_at.desc()).limit(10)
 
-        session_types = [d.get("session_type", "practice") for d in docs]
+        result = await self.db.execute(stmt)
+        sessions = result.scalars().all()
+
+        session_types = [s.session_type or "practice" for s in sessions]
         last_type = session_types[0] if session_types else "practice"
 
         suggestions = {
@@ -374,8 +594,8 @@ class TrainingService:
         next_type = suggestions.get(last_type, "practice")
 
         focus_counts: Dict[str, int] = {}
-        for d in docs:
-            for area in (d.get("focus_areas") or []):
+        for s in sessions:
+            for area in (s.focus_areas or []):
                 focus_counts[area] = focus_counts.get(area, 0) + 1
 
         all_areas = ["forehand", "backhand", "serve", "volley", "footwork", "return", "mental"]
@@ -384,7 +604,7 @@ class TrainingService:
         return {
             "next_session_type": next_type,
             "weak_areas": weak_areas[:3],
-            "total_recent": len(docs),
+            "total_recent": len(sessions),
             "suggestions": [
                 f"Foque em treinos de {next_type} na proxima sessao",
                 f"Areas menos praticadas: {', '.join(weak_areas[:3]) if weak_areas else 'nenhuma identificada'}",
@@ -407,29 +627,33 @@ class TrainingService:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> dict:
-        sessions = get_collection("training_sessions")
-
         start_dt = datetime.fromisoformat(start_date) if start_date else datetime.utcnow() - timedelta(days=30)
         end_dt = datetime.fromisoformat(end_date) if end_date else datetime.utcnow() + timedelta(days=30)
 
-        query = {
-            "user_id": user_id,
-            "scheduled_at": {"$gte": start_dt, "$lte": end_dt},
-        }
+        stmt = select(TrainingSession).where(
+            and_(
+                TrainingSession.player_id == user_id,
+                TrainingSession.scheduled_at >= start_dt,
+                TrainingSession.scheduled_at <= end_dt
+            )
+        ).order_by(TrainingSession.scheduled_at)
+
+        result = await self.db.execute(stmt)
+        sessions = result.scalars().all()
 
         events = []
-        async for doc in sessions.find(query).sort("scheduled_at", 1):
-            finished = doc.get("finished_at")
-            sched = doc.get("scheduled_at")
+        for session in sessions:
+            finished = session.finished_at
+            sched = session.scheduled_at
             events.append({
-                "id": str(doc["_id"]),
-                "title": doc["title"],
+                "id": str(session.id),
+                "title": session.title,
                 "start": sched.isoformat() if sched else None,
                 "end": (finished or (sched + timedelta(hours=2))).isoformat() if sched else None,
-                "type": doc.get("session_type"),
-                "status": doc["status"],
-                "coach": doc.get("coach_name"),
-                "description": doc.get("description"),
+                "type": session.session_type,
+                "status": session.status,
+                "coach": session.coach_name,
+                "description": session.description,
             })
 
         statuses = [e["status"] for e in events]
@@ -461,8 +685,8 @@ class TrainingService:
     def _calc_trend(self, sessions: list) -> str:
         if len(sessions) < 3:
             return "insufficient_data"
-        recent = [s.get("effort_rating") for s in sessions[-5:] if s.get("effort_rating")]
-        earlier = [s.get("effort_rating") for s in sessions[:-5] if s.get("effort_rating")]
+        recent = [s.effort_rating for s in sessions[-5:] if s.effort_rating]
+        earlier = [s.effort_rating for s in sessions[:-5] if s.effort_rating]
         if not recent or not earlier:
             return "insufficient_data"
         r_avg = sum(recent) / len(recent)
@@ -476,10 +700,10 @@ class TrainingService:
     def _calc_intensity(self, sessions: list) -> list:
         data = []
         for s in sessions:
-            if s.get("intensity_level") and s.get("scheduled_at"):
+            if s.intensity_level and s.scheduled_at:
                 data.append({
-                    "date": s["scheduled_at"].isoformat(),
-                    "intensity": s["intensity_level"],
+                    "date": s.scheduled_at.isoformat(),
+                    "intensity": s.intensity_level,
                 })
         return data
 
@@ -525,10 +749,9 @@ class TrainingService:
                 ai_recommendations["suggested_exercises"] = filtered_exercises
 
         # Mapear exercicios sugeridos para drill types existentes
-        drills = get_collection("drill_types")
-        available_drills = []
-        async for drill in drills.find({}):
-            available_drills.append(drill)
+        stmt = select(DrillType)
+        result = await self.db.execute(stmt)
+        available_drills = result.scalars().all()
 
         # Criar plano semanal de treinos
         weekly_plan = self._generate_weekly_training_plan(
@@ -634,7 +857,7 @@ class TrainingService:
             # Encontrar drills relevantes
             relevant_drills = [
                 d for d in available_drills
-                if d.get("category") == target_category
+                if d.category == target_category
             ]
 
             # Distribuir drills pela semana
@@ -642,10 +865,10 @@ class TrainingService:
                 # Segunda: 2 drills de tecnica
                 plan["monday"]["drills"] = [
                     {
-                        "drill_type_id": d["_id"],
-                        "name": d["name"],
-                        "duration_minutes": d.get("duration_minutes", 20),
-                        "category": d.get("category"),
+                        "drill_type_id": str(d.id),
+                        "name": d.name,
+                        "duration_minutes": d.duration_minutes or 20,
+                        "category": d.category,
                     }
                     for d in relevant_drills[:2]
                 ]
@@ -653,48 +876,48 @@ class TrainingService:
                 # Sexta: Foco nos pontos fracos (3 drills)
                 plan["friday"]["drills"] = [
                     {
-                        "drill_type_id": d["_id"],
-                        "name": d["name"],
-                        "duration_minutes": d.get("duration_minutes", 20),
-                        "category": d.get("category"),
+                        "drill_type_id": str(d.id),
+                        "name": d.name,
+                        "duration_minutes": d.duration_minutes or 20,
+                        "category": d.category,
                     }
                     for d in relevant_drills[:3]
                 ]
 
         # Terça: Fitness drills
-        fitness_drills = [d for d in available_drills if d.get("category") == "fitness"]
+        fitness_drills = [d for d in available_drills if d.category == "fitness"]
         if fitness_drills:
             plan["tuesday"]["drills"] = [
                 {
-                    "drill_type_id": d["_id"],
-                    "name": d["name"],
-                    "duration_minutes": d.get("duration_minutes", 15),
+                    "drill_type_id": str(d.id),
+                    "name": d.name,
+                    "duration_minutes": d.duration_minutes or 15,
                     "category": "fitness",
                 }
                 for d in fitness_drills[:2]
             ]
 
         # Quarta: Tactical drills
-        tactical_drills = [d for d in available_drills if d.get("category") == "tactical"]
+        tactical_drills = [d for d in available_drills if d.category == "tactical"]
         if tactical_drills:
             plan["wednesday"]["drills"] = [
                 {
-                    "drill_type_id": d["_id"],
-                    "name": d["name"],
-                    "duration_minutes": d.get("duration_minutes", 25),
+                    "drill_type_id": str(d.id),
+                    "name": d.name,
+                    "duration_minutes": d.duration_minutes or 25,
                     "category": "tactical",
                 }
                 for d in tactical_drills[:2]
             ]
 
         # Quinta: Mental drills
-        mental_drills = [d for d in available_drills if d.get("category") == "mental"]
+        mental_drills = [d for d in available_drills if d.category == "mental"]
         if mental_drills:
             plan["thursday"]["drills"] = [
                 {
-                    "drill_type_id": d["_id"],
-                    "name": d["name"],
-                    "duration_minutes": d.get("duration_minutes", 20),
+                    "drill_type_id": str(d.id),
+                    "name": d.name,
+                    "duration_minutes": d.duration_minutes or 20,
                     "category": "mental",
                 }
                 for d in mental_drills[:1]

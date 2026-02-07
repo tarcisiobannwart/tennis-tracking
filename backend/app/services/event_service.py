@@ -5,12 +5,15 @@ Detecta e classifica eventos automáticos da partida
 
 from typing import Optional, Dict, Any, List, Callable
 from datetime import datetime
-from bson import ObjectId
 from enum import Enum
 import asyncio
+import uuid
 import structlog
 
-from app.core.mongodb import get_database
+from sqlalchemy import select, and_, or_, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.event import GameEvent, EventType as ModelEventType
 from app.schemas.game_control import (
     PointTypeEnum,
     GameStateSnapshot
@@ -81,8 +84,8 @@ class EventService:
     - [x] Tratamento de erros em callbacks
     """
 
-    def __init__(self):
-        self.db = get_database()
+    def __init__(self, db: AsyncSession):
+        self.db = db
         # Callbacks por match_id -> event_type -> priority -> [callbacks]
         self._callbacks: Dict[str, Dict[str, Dict[str, List[Callable]]]] = {}
 
@@ -193,21 +196,24 @@ class EventService:
 
             # Detectar break point (usando lógica do game_control_service)
             # Buscar match para verificar servidor
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            from app.models.match import Match
+            stmt = select(Match).where(Match.id == match_id)
+            result = await self.db.execute(stmt)
+            match = result.scalar_one_or_none()
 
             if match:
-                game_state = match.get("game_state", {})
+                game_state = match.game_state or {}
                 server_player_id = game_state.get("server_player_id", "")
+                player1_id = str(match.player1_id)
+                player2_id = str(match.player2_id)
 
                 # Verificar se é break point
                 is_break_pt = self._is_break_point(
                     server_player_id=server_player_id,
                     player1_points=state_before.player1_points,
                     player2_points=state_before.player2_points,
-                    player1_id=str(match.get("player1_id") or match.get("player1")),
-                    player2_id=str(match.get("player2_id") or match.get("player2"))
+                    player1_id=player1_id,
+                    player2_id=player2_id
                 )
 
                 if is_break_pt:
@@ -235,11 +241,11 @@ class EventService:
                     events.append(EventType.SET_WON)
 
                 # Detectar match won (status completo)
-                match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-                if not match:
-                    match = await self.db.matches.find_one({"matchId": match_id})
+                stmt = select(Match).where(Match.id == match_id)
+                result = await self.db.execute(stmt)
+                match = result.scalar_one_or_none()
 
-                if match and match.get("status") == "completed":
+                if match and match.status == "completed":
                     events.append(EventType.MATCH_WON)
 
             return events
@@ -322,16 +328,27 @@ class EventService:
     ):
         """Salva um evento no banco de dados"""
         try:
-            event_data = {
-                "match_id": match_id,
-                "event_type": event_type,
-                "player_id": player_id,
-                "timestamp": datetime.utcnow(),
-                "state_before": state_before.dict() if state_before else None,
-                "metadata": metadata
-            }
+            # Mapear event_type para ModelEventType compatível
+            # Se o event_type não estiver no enum, usar POINT_SCORED como fallback
+            try:
+                model_event_type = ModelEventType[event_type.upper()]
+            except (KeyError, AttributeError):
+                model_event_type = ModelEventType.POINT_SCORED
 
-            await self.db.game_events.insert_one(event_data)
+            event = GameEvent(
+                id=uuid.uuid4(),
+                match_id=match_id,
+                event_type=model_event_type.value,
+                player_id=player_id,
+                event_data={
+                    "state_before": state_before.dict() if state_before else None,
+                    **metadata
+                },
+                timestamp=datetime.utcnow(),
+            )
+
+            self.db.add(event)
+            await self.db.flush()
 
         except Exception as e:
             logger.error("Error saving event", match_id=match_id, event_type=event_type, error=str(e))
@@ -356,16 +373,20 @@ class EventService:
             True se registrado com sucesso
         """
         try:
-            await self._save_event(
+            event = GameEvent(
+                id=uuid.uuid4(),
                 match_id=match_id,
-                event_type=EventType.CHALLENGE,
+                event_type=ModelEventType.CHALLENGE.value,
                 player_id=player_id,
-                state_before=None,
-                metadata={
+                event_data={
                     "call_challenged": call_challenged,
                     "outcome": outcome
-                }
+                },
+                timestamp=datetime.utcnow(),
             )
+
+            self.db.add(event)
+            await self.db.flush()
 
             logger.info("Challenge registered", match_id=match_id, player_id=player_id)
             return True
@@ -398,13 +419,17 @@ class EventService:
                 logger.warning("Invalid timeout type", timeout_type=timeout_type)
                 return False
 
-            await self._save_event(
+            event = GameEvent(
+                id=uuid.uuid4(),
                 match_id=match_id,
-                event_type=timeout_type,
+                event_type=ModelEventType.ERROR.value,  # Using ERROR as fallback
                 player_id=player_id or "",
-                state_before=None,
-                metadata={"reason": reason}
+                event_data={"timeout_type": timeout_type, "reason": reason},
+                timestamp=datetime.utcnow(),
             )
+
+            self.db.add(event)
+            await self.db.flush()
 
             logger.info("Timeout registered", match_id=match_id, timeout_type=timeout_type)
             return True
@@ -429,17 +454,27 @@ class EventService:
             Lista de eventos
         """
         try:
-            events_cursor = self.db.game_events.find({
-                "match_id": match_id,
-                "event_type": event_type
-            }).sort("timestamp", 1)
+            stmt = select(GameEvent).where(
+                and_(
+                    GameEvent.match_id == match_id,
+                    GameEvent.event_type == event_type
+                )
+            ).order_by(GameEvent.timestamp)
 
-            events = []
-            async for event in events_cursor:
-                event["_id"] = str(event["_id"])
-                events.append(event)
+            result = await self.db.execute(stmt)
+            events = result.scalars().all()
 
-            return events
+            return [
+                {
+                    "_id": str(event.id),
+                    "match_id": event.match_id,
+                    "event_type": event.event_type,
+                    "player_id": event.player_id,
+                    "timestamp": event.timestamp,
+                    "event_data": event.event_data,
+                }
+                for event in events
+            ]
 
         except Exception as e:
             logger.error("Error getting events by type", match_id=match_id, error=str(e))
@@ -701,11 +736,12 @@ class EventService:
             player_name = "Jogador"
             if player_id:
                 try:
-                    player = await self.db.players.find_one({"_id": ObjectId(player_id)})
-                    if not player:
-                        player = await self.db.players.find_one({"playerId": player_id})
+                    from app.models.player import Player
+                    stmt = select(Player).where(Player.id == player_id)
+                    result = await self.db.execute(stmt)
+                    player = result.scalar_one_or_none()
                     if player:
-                        player_name = player.get("name", "Jogador")
+                        player_name = player.name
                 except:
                     pass
 

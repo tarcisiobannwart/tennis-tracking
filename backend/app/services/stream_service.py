@@ -7,10 +7,11 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 import httpx
-from bson import ObjectId
+from sqlalchemy import select, update, delete, and_, or_, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.mongodb import get_database, get_collection
+from app.models.sql.stream import Stream, StreamStatusEnum
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +19,8 @@ logger = logging.getLogger(__name__)
 class StreamService:
     """Service for managing live camera streams"""
 
-    def __init__(self):
-        self.collection_name = "streams"
-
-    def _get_collection(self):
-        return get_collection(self.collection_name)
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     def _generate_stream_key(self) -> str:
         """Generate a unique stream key for RTMP authentication"""
@@ -49,50 +47,102 @@ class StreamService:
         device_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Create a new stream and return connection details"""
-        streams = self._get_collection()
         stream_key = self._generate_stream_key()
         urls = self._build_urls(stream_key)
 
-        stream_doc = {
-            "userId": user_id,
-            "matchId": match_id,
-            "cameraLabel": camera_label,
-            "streamKey": stream_key,
-            "rtmpUrl": urls["rtmp_url"],
-            "hlsUrl": urls["hls_url"],
-            "rtspUrl": urls["rtsp_url"],
-            "deviceInfo": device_info or {"platform": "unknown"},
-            "status": "waiting",
-            "isRecording": False,
-            "viewerCount": 0,
-            "startedAt": None,
-            "endedAt": None,
-            "createdAt": datetime.utcnow(),
-        }
+        stream = Stream(
+            user_id=uuid.UUID(user_id) if isinstance(user_id, str) else user_id,
+            match_id=match_id,
+            camera_label=camera_label,
+            stream_key=stream_key,
+            rtmp_url=urls["rtmp_url"],
+            hls_url=urls["hls_url"],
+            rtsp_url=urls["rtsp_url"],
+            device_info=device_info or {"platform": "unknown"},
+            status=StreamStatusEnum.WAITING.value,
+            is_recording=False,
+            viewer_count=0,
+        )
 
-        result = await streams.insert_one(stream_doc)
-        stream_doc["_id"] = str(result.inserted_id)
+        self.db.add(stream)
+        await self.db.flush()
+        await self.db.refresh(stream)
 
         logger.info(
-            "Stream created: %s (key: %s)", stream_doc["_id"], stream_key
+            "Stream created: %s (key: %s)", str(stream.id), stream_key
         )
-        return stream_doc
+
+        return {
+            "_id": str(stream.id),
+            "userId": str(stream.user_id),
+            "matchId": stream.match_id,
+            "cameraLabel": stream.camera_label,
+            "streamKey": stream.stream_key,
+            "rtmpUrl": stream.rtmp_url,
+            "hlsUrl": stream.hls_url,
+            "rtspUrl": stream.rtsp_url,
+            "deviceInfo": stream.device_info,
+            "status": stream.status,
+            "isRecording": stream.is_recording,
+            "viewerCount": stream.viewer_count,
+            "startedAt": stream.started_at,
+            "endedAt": stream.ended_at,
+            "createdAt": stream.created_at,
+        }
 
     async def get_stream(self, stream_id: str) -> Optional[Dict[str, Any]]:
         """Get stream by ID"""
-        streams = self._get_collection()
-        stream = await streams.find_one({"_id": ObjectId(stream_id)})
-        if stream:
-            stream["_id"] = str(stream["_id"])
-        return stream
+        stmt = select(Stream).where(Stream.id == uuid.UUID(stream_id))
+        result = await self.db.execute(stmt)
+        stream = result.scalar_one_or_none()
+
+        if not stream:
+            return None
+
+        return {
+            "_id": str(stream.id),
+            "userId": str(stream.user_id),
+            "matchId": stream.match_id,
+            "cameraLabel": stream.camera_label,
+            "streamKey": stream.stream_key,
+            "rtmpUrl": stream.rtmp_url,
+            "hlsUrl": stream.hls_url,
+            "rtspUrl": stream.rtsp_url,
+            "deviceInfo": stream.device_info,
+            "status": stream.status,
+            "isRecording": stream.is_recording,
+            "viewerCount": stream.viewer_count,
+            "startedAt": stream.started_at,
+            "endedAt": stream.ended_at,
+            "createdAt": stream.created_at,
+        }
 
     async def get_stream_by_key(self, stream_key: str) -> Optional[Dict[str, Any]]:
         """Get stream by stream key"""
-        streams = self._get_collection()
-        stream = await streams.find_one({"streamKey": stream_key})
-        if stream:
-            stream["_id"] = str(stream["_id"])
-        return stream
+        stmt = select(Stream).where(Stream.stream_key == stream_key)
+        result = await self.db.execute(stmt)
+        stream = result.scalar_one_or_none()
+
+        if not stream:
+            return None
+
+        return {
+            "_id": str(stream.id),
+            "userId": str(stream.user_id),
+            "matchId": stream.match_id,
+            "cameraLabel": stream.camera_label,
+            "streamKey": stream.stream_key,
+            "rtmpUrl": stream.rtmp_url,
+            "hlsUrl": stream.hls_url,
+            "rtspUrl": stream.rtsp_url,
+            "deviceInfo": stream.device_info,
+            "status": stream.status,
+            "isRecording": stream.is_recording,
+            "viewerCount": stream.viewer_count,
+            "startedAt": stream.started_at,
+            "endedAt": stream.ended_at,
+            "createdAt": stream.created_at,
+        }
 
     async def list_streams(
         self,
@@ -101,46 +151,85 @@ class StreamService:
         user_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """List streams with optional filters"""
-        streams = self._get_collection()
-        query: Dict[str, Any] = {}
+        stmt = select(Stream)
 
+        conditions = []
         if status:
-            query["status"] = status
+            conditions.append(Stream.status == status)
         if match_id:
-            query["matchId"] = match_id
+            conditions.append(Stream.match_id == match_id)
         if user_id:
-            query["userId"] = user_id
+            conditions.append(Stream.user_id == uuid.UUID(user_id))
 
-        cursor = streams.find(query).sort("createdAt", -1)
-        result = await cursor.to_list(100)
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
 
-        for stream in result:
-            stream["_id"] = str(stream["_id"])
+        stmt = stmt.order_by(Stream.created_at.desc()).limit(100)
 
-        return result
+        result = await self.db.execute(stmt)
+        streams = result.scalars().all()
+
+        return [
+            {
+                "_id": str(stream.id),
+                "userId": str(stream.user_id),
+                "matchId": stream.match_id,
+                "cameraLabel": stream.camera_label,
+                "streamKey": stream.stream_key,
+                "rtmpUrl": stream.rtmp_url,
+                "hlsUrl": stream.hls_url,
+                "rtspUrl": stream.rtsp_url,
+                "deviceInfo": stream.device_info,
+                "status": stream.status,
+                "isRecording": stream.is_recording,
+                "viewerCount": stream.viewer_count,
+                "startedAt": stream.started_at,
+                "endedAt": stream.ended_at,
+                "createdAt": stream.created_at,
+            }
+            for stream in streams
+        ]
 
     async def update_stream_status(
         self, stream_id: str, status: str
     ) -> Optional[Dict[str, Any]]:
         """Update stream status"""
-        streams = self._get_collection()
-        update_data: Dict[str, Any] = {"status": status}
+        stmt = select(Stream).where(Stream.id == uuid.UUID(stream_id))
+        result = await self.db.execute(stmt)
+        stream = result.scalar_one_or_none()
+
+        if not stream:
+            return None
+
+        stream.status = status
 
         if status == "live":
-            update_data["startedAt"] = datetime.utcnow()
+            stream.started_at = datetime.utcnow()
         elif status == "ended":
-            update_data["endedAt"] = datetime.utcnow()
+            stream.ended_at = datetime.utcnow()
 
-        result = await streams.find_one_and_update(
-            {"_id": ObjectId(stream_id)},
-            {"$set": update_data},
-            return_document=True,
-        )
+        await self.db.flush()
+        await self.db.refresh(stream)
 
-        if result:
-            result["_id"] = str(result["_id"])
-            logger.info("Stream %s status updated to %s", stream_id, status)
-        return result
+        logger.info("Stream %s status updated to %s", stream_id, status)
+
+        return {
+            "_id": str(stream.id),
+            "userId": str(stream.user_id),
+            "matchId": stream.match_id,
+            "cameraLabel": stream.camera_label,
+            "streamKey": stream.stream_key,
+            "rtmpUrl": stream.rtmp_url,
+            "hlsUrl": stream.hls_url,
+            "rtspUrl": stream.rtsp_url,
+            "deviceInfo": stream.device_info,
+            "status": stream.status,
+            "isRecording": stream.is_recording,
+            "viewerCount": stream.viewer_count,
+            "startedAt": stream.started_at,
+            "endedAt": stream.ended_at,
+            "createdAt": stream.created_at,
+        }
 
     async def end_stream(self, stream_id: str) -> Optional[Dict[str, Any]]:
         """End a stream"""
@@ -150,21 +239,41 @@ class StreamService:
         self, stream_id: str, is_recording: bool
     ) -> Optional[Dict[str, Any]]:
         """Toggle recording for a stream"""
-        streams = self._get_collection()
-        result = await streams.find_one_and_update(
-            {"_id": ObjectId(stream_id)},
-            {"$set": {"isRecording": is_recording}},
-            return_document=True,
-        )
-        if result:
-            result["_id"] = str(result["_id"])
-        return result
+        stmt = select(Stream).where(Stream.id == uuid.UUID(stream_id))
+        result = await self.db.execute(stmt)
+        stream = result.scalar_one_or_none()
+
+        if not stream:
+            return None
+
+        stream.is_recording = is_recording
+        await self.db.flush()
+        await self.db.refresh(stream)
+
+        return {
+            "_id": str(stream.id),
+            "userId": str(stream.user_id),
+            "matchId": stream.match_id,
+            "cameraLabel": stream.camera_label,
+            "streamKey": stream.stream_key,
+            "rtmpUrl": stream.rtmp_url,
+            "hlsUrl": stream.hls_url,
+            "rtspUrl": stream.rtsp_url,
+            "deviceInfo": stream.device_info,
+            "status": stream.status,
+            "isRecording": stream.is_recording,
+            "viewerCount": stream.viewer_count,
+            "startedAt": stream.started_at,
+            "endedAt": stream.ended_at,
+            "createdAt": stream.created_at,
+        }
 
     async def delete_stream(self, stream_id: str) -> bool:
         """Delete a stream"""
-        streams = self._get_collection()
-        result = await streams.delete_one({"_id": ObjectId(stream_id)})
-        return result.deleted_count > 0
+        stmt = delete(Stream).where(Stream.id == uuid.UUID(stream_id))
+        result = await self.db.execute(stmt)
+        await self.db.flush()
+        return result.rowcount > 0
 
     async def get_streams_for_match(
         self, match_id: str
@@ -206,5 +315,7 @@ class StreamService:
         return stream
 
 
-# Global service instance
-stream_service = StreamService()
+# Global service instance factory
+def get_stream_service(db: AsyncSession) -> StreamService:
+    """Factory function for stream service"""
+    return StreamService(db)
