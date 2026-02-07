@@ -389,3 +389,116 @@ class PlayerService:
             return now - timedelta(days=365)
         else:
             return datetime.min  # All time
+
+    async def get_player_by_username(self, username: str) -> Optional[Player]:
+        """
+        Get player by username for public profile
+
+        TT-129: Acessa perfil via /@username
+        """
+        # For now, players are users, so query users table
+        from app.models.sql.user import User
+        query = select(User).where(User.username == username, User.is_active == True)
+        result = await self.db.execute(query)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            return None
+
+        # Convert User to Player-like object for profile
+        # TODO: In future, separate Player model from User
+        return user
+
+    async def get_player_activity(self, player_id: str, months: int = 12) -> List[dict]:
+        """
+        Get player activity (matches per month) for activity chart
+
+        TT-129: Grafico de atividade 12 meses
+        """
+        from datetime import timedelta
+        from dateutil.relativedelta import relativedelta
+
+        now = datetime.utcnow()
+        start_date = now - relativedelta(months=months)
+
+        # Get matches in period
+        matches_query = select(Match).where(
+            or_(Match.player1_id == player_id, Match.player2_id == player_id),
+            Match.created_at >= start_date
+        )
+
+        matches_result = await self.db.execute(matches_query)
+        matches = matches_result.scalars().all()
+
+        # Group by month
+        activity_by_month = {}
+        for match in matches:
+            if match.created_at:
+                month_key = match.created_at.strftime("%Y-%m")
+                activity_by_month[month_key] = activity_by_month.get(month_key, 0) + 1
+
+        # Fill in missing months with 0
+        activity = []
+        current_date = start_date
+        while current_date <= now:
+            month_key = current_date.strftime("%Y-%m")
+            activity.append({
+                "month": month_key,
+                "matches": activity_by_month.get(month_key, 0)
+            })
+            current_date = current_date + relativedelta(months=1)
+
+        return activity
+
+    async def get_win_loss_by_type(self, player_id: str) -> dict:
+        """
+        Get win/loss statistics by match type
+
+        TT-129: Barras V/D por tipo (Simples, Duplas, Rankings, Torneios, Amistosos)
+        """
+        # Get all matches
+        matches_query = select(Match).where(
+            or_(Match.player1_id == player_id, Match.player2_id == player_id),
+            Match.status == "completed"
+        )
+
+        matches_result = await self.db.execute(matches_query)
+        matches = matches_result.scalars().all()
+
+        # Initialize stats by type
+        stats = {
+            "singles": {"wins": 0, "losses": 0},
+            "doubles": {"wins": 0, "losses": 0},
+            "ranking": {"wins": 0, "losses": 0},
+            "tournaments": {"wins": 0, "losses": 0},
+            "friendly": {"wins": 0, "losses": 0}
+        }
+
+        for match in matches:
+            # Determine if player won
+            if match.player1_id == player_id:
+                won = match.player1_sets > match.player2_sets
+            else:
+                won = match.player2_sets > match.player1_sets
+
+            # Categorize match type
+            match_type = getattr(match, "match_type", "friendly")
+            if match_type == "doubles":
+                category = "doubles"
+            elif match_type == "ranking":
+                category = "ranking"
+            elif match_type == "tournament":
+                category = "tournaments"
+            elif match_type == "singles":
+                category = "singles"
+            else:
+                category = "friendly"
+
+            # Update stats
+            if category in stats:
+                if won:
+                    stats[category]["wins"] += 1
+                else:
+                    stats[category]["losses"] += 1
+
+        return stats

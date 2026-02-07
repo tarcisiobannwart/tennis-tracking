@@ -353,3 +353,90 @@ async def get_player_detailed_stats(
     )
 
     return stats
+
+
+@router.get("/username/{username}", response_model=PlayerProfile)
+async def get_player_by_username(
+    username: str = Path(..., description="Player username"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get player profile by username for public profile page
+
+    TT-129: Perfil Social do Jogador
+    - Acessa perfil via /@username
+    - Retorna dados publicos do jogador com estatisticas
+    """
+    logger.info("Fetching player by username", username=username)
+
+    player_service = PlayerService(db)
+    player = await player_service.get_player_by_username(username)
+
+    if not player:
+        raise PlayerNotFoundException(username)
+
+    # Include stats automatically
+    analytics_service = AnalyticsService(db)
+    stats = await analytics_service.get_player_statistics(player.id)
+    player.stats = stats
+
+    return player
+
+
+@router.get("/{player_id}/activity", response_model=dict)
+async def get_player_activity(
+    player_id: str = Path(..., description="Player ID"),
+    months: int = Query(12, ge=1, le=24, description="Number of months to return"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get player activity chart data for the last N months
+
+    TT-129: Grafico de atividade 12 meses
+    - Retorna jogos por mes para chart de atividade
+    - Usado no perfil social
+    """
+    logger.info("Fetching player activity", player_id=player_id, months=months)
+
+    # Verify player exists
+    player_service = PlayerService(db)
+    player = await player_service.get_player(player_id)
+    if not player:
+        raise PlayerNotFoundException(player_id)
+
+    # Get activity data
+    activity = await player_service.get_player_activity(player_id, months)
+
+    return {
+        "player_id": player_id,
+        "months": months,
+        "activity": activity
+    }
+
+
+@router.get("/{player_id}/win-loss-by-type", response_model=dict)
+async def get_win_loss_by_type(
+    player_id: str = Path(..., description="Player ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get win/loss statistics by match type
+
+    TT-129: Barras V/D por tipo (Simples, Duplas, Rankings, Torneios, Amistosos)
+    - Retorna estatisticas de vitorias/derrotas por tipo de jogo
+    """
+    logger.info("Fetching win/loss by type", player_id=player_id)
+
+    # Verify player exists
+    player_service = PlayerService(db)
+    player = await player_service.get_player(player_id)
+    if not player:
+        raise PlayerNotFoundException(player_id)
+
+    # Get win/loss by type
+    stats = await player_service.get_win_loss_by_type(player_id)
+
+    return {
+        "player_id": player_id,
+        "stats": stats
+    }

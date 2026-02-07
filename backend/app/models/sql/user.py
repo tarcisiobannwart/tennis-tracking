@@ -95,6 +95,15 @@ class User(Base):
     language: Mapped[str] = mapped_column(String(10), default="pt-BR")
     preferences: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
+    # Perfil Social TT-129
+    avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    cover_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(20), nullable=True)  # male, female, other
+    height_cm: Mapped[int | None] = mapped_column(nullable=True)
+    laterality: Mapped[str | None] = mapped_column(String(20), nullable=True)  # right, left
+    backhand_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # one-handed, two-handed
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Subscription (JSONB para manter flexibilidade)
     subscription: Mapped[dict | None] = mapped_column(
         JSONB,

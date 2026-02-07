@@ -21,6 +21,7 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Organization from './pages/Organization'
 import AcceptInvite from './pages/AcceptInvite'
+import PlayerProfile from './pages/PlayerProfile'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminSubscriptions from './pages/admin/AdminSubscriptions'
@@ -44,6 +45,9 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onboarding" element={<Onboarding />} />
+
+      {/* Public Player Profile - accessible without auth */}
+      <Route path="/@:username" element={<PlayerProfile />} />
 
       {/* Protected Pages (App) */}
       <Route element={
