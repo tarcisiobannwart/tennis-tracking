@@ -20,13 +20,19 @@ import urllib.parse
 import base64
 import json
 import sys
+import os
 import argparse
 
-# Configuracao do Jira
-JIRA_EMAIL = "tarcisio@trademarketingforce.com"
-JIRA_TOKEN = ""
-JIRA_BASE_URL = "https://trademarketingforce.atlassian.net"
-PROJECT_KEY = "TT"
+# Configuracao do Jira (via variaveis de ambiente)
+JIRA_EMAIL = os.environ.get("JIRA_EMAIL", "tarcisio@trademarketingforce.com")
+JIRA_TOKEN = os.environ.get("JIRA_API_TOKEN", "")
+JIRA_BASE_URL = os.environ.get("JIRA_BASE_URL", "https://trademarketingforce.atlassian.net")
+PROJECT_KEY = os.environ.get("JIRA_PROJECT_KEY", "TT")
+
+if not JIRA_TOKEN:
+    print("ERRO: Variavel de ambiente JIRA_API_TOKEN nao definida.", file=sys.stderr)
+    print("Defina com: export JIRA_API_TOKEN='seu-token-aqui'", file=sys.stderr)
+    sys.exit(1)
 
 
 def get_auth_header():

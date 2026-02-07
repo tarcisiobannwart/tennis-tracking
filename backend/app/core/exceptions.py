@@ -8,8 +8,27 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError
 import structlog
 
+from app.core.database import async_session
+
 
 logger = structlog.get_logger(__name__)
+
+
+async def _report_error_to_jira(exc: Exception, request: Request) -> None:
+    """Reporta erro ao Jira de forma silenciosa (nunca propaga excecoes)."""
+    try:
+        from app.services.error_report_service import error_report_service
+        async with async_session() as db:
+            await error_report_service.report_exception(
+                db=db,
+                exc=exc,
+                request_path=str(request.url.path),
+                request_method=request.method,
+            )
+            await db.commit()
+    except Exception:
+        # Silencioso - nunca propaga erros do reporter
+        pass
 
 
 class TennisTrackingException(Exception):
@@ -122,6 +141,9 @@ async def sqlalchemy_exception_handler(
         error=str(exc)
     )
 
+    # Reportar ao Jira (silencioso)
+    await _report_error_to_jira(exc, request)
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -144,6 +166,9 @@ async def general_exception_handler(
         error=str(exc),
         exc_info=True
     )
+
+    # Reportar ao Jira (silencioso)
+    await _report_error_to_jira(exc, request)
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

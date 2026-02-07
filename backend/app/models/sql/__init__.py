@@ -19,6 +19,9 @@ from app.models.sql.player_stats import PlayerStats
 # TT-126: Modelo de embeddings de trajetórias com pgvector
 from app.models.sql.trajectory_embedding import TrajectoryEmbedding
 
+# Error reporting automatico
+from app.models.sql.error_report import ErrorReport, ErrorSourceEnum, ErrorReportStatusEnum
+
 __all__ = [
     "User",
     "Organization",
@@ -35,4 +38,8 @@ __all__ = [
     "PlayerStats",
     # TT-126
     "TrajectoryEmbedding",
+    # Error reporting
+    "ErrorReport",
+    "ErrorSourceEnum",
+    "ErrorReportStatusEnum",
 ]

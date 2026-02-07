@@ -1,0 +1,50 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Node
+node_modules/
+web/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Weights (large files)
+Yolov3/yolov3.weights
+WeightsTracknet/
+
+# Video I/O
+VideoInput/*.mp4
+VideoOutput/*.mp4
+
+# Docker
+*.pid
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml

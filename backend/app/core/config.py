@@ -90,6 +90,14 @@ class Settings(BaseSettings):
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 100
 
+    # Jira - Error Reporting
+    JIRA_BASE_URL: str = "https://trademarketingforce.atlassian.net"
+    JIRA_EMAIL: str = "tarcisio@trademarketingforce.com"
+    JIRA_API_TOKEN: str = ""
+    JIRA_PROJECT_KEY: str = "TT"
+    JIRA_ERROR_REPORT_ENABLED: bool = False
+    JIRA_ERROR_REPORT_RATE_LIMIT: int = 10  # max issues por hora
+
     # Logging
     LOG_LEVEL: str = "INFO"
 

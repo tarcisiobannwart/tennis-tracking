@@ -34,6 +34,9 @@ from app.models.training import DrillType, TrainingSession  # noqa: F401
 from app.models.event import GameEvent  # noqa: F401
 from app.models.point_history import PointHistory  # noqa: F401
 
+# Error reporting automatico
+from app.models.sql.error_report import ErrorReport  # noqa: F401
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

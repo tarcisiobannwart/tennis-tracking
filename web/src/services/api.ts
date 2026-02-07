@@ -1,6 +1,7 @@
 import axios, { AxiosResponse } from 'axios'
 import { ApiResponse, PaginatedResponse } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
+import { captureApiError } from '@/services/errorReporter'
 
 // Create axios instance with default config
 export const api = axios.create({
@@ -59,9 +60,14 @@ api.interceptors.response.use(
       window.location.href = '/login'
     }
 
-    // Handle network errors
+    // Handle network errors and 5xx - report to error tracking
+    const url = error.config?.url || 'unknown'
+    const method = error.config?.method || 'unknown'
     if (!error.response) {
       console.error('Network error:', error.message)
+      captureApiError(undefined, url, method, error.message || 'Network error')
+    } else if (error.response.status >= 500) {
+      captureApiError(error.response.status, url, method, error.response.data?.message || `HTTP ${error.response.status}`)
     }
 
     return Promise.reject(error)
