@@ -114,7 +114,7 @@ class Match(Base):
     )
 
     events = relationship(
-        "Event",
+        "GameEvent",
         back_populates="match",
         cascade="all, delete-orphan"
     )

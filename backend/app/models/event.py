@@ -1,18 +1,37 @@
 """
-Event database model for real-time match events
+Game Events SQLAlchemy model (2.0 style).
+
+Tabela: game_events - eventos de partida em tempo real.
+Usa PostgreSQL Enum para event_type e JSONB para event_data.
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, JSON, Float
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 import uuid
+from datetime import datetime
 from enum import Enum
+from typing import Optional
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum as PgEnum,
+    Float,
+    ForeignKey,
+    Index,
+    String,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from app.core.database import Base
 
 
+# ============================================================
+# Enums
+# ============================================================
+
 class EventType(str, Enum):
-    """Event type enumeration"""
+    """Tipos de evento de partida."""
     POINT_STARTED = "point_started"
     POINT_SCORED = "point_scored"
     GAME_WON = "game_won"
@@ -28,39 +47,77 @@ class EventType(str, Enum):
     CHALLENGE = "challenge"
 
 
-class Event(Base):
-    """Event model for tracking all match events"""
-    __tablename__ = "events"
+# ============================================================
+# SQLAlchemy ORM Model (2.0 style com mapped_column)
+# ============================================================
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    match_id = Column(String, ForeignKey("matches.id"), nullable=False)
-    point_id = Column(String, ForeignKey("points.id"), nullable=True)
+class GameEvent(Base):
+    """Tabela game_events - rastreamento de todos os eventos de partida."""
 
-    # Event details
-    event_type = Column(String(30), nullable=False)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    video_timestamp = Column(Float, nullable=True)  # Seconds from video start
+    __tablename__ = "game_events"
 
-    # Player involved (if applicable)
-    player_id = Column(String, ForeignKey("players.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    match_id: Mapped[str] = mapped_column(
+        String, ForeignKey("matches.id"), nullable=False
+    )
+    point_id: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("points.id"), nullable=True
+    )
 
-    # Event data
-    event_data = Column(JSON, nullable=True)
+    # Detalhes do evento
+    event_type: Mapped[str] = mapped_column(
+        PgEnum(EventType, name="event_type", create_type=True),
+        nullable=False,
+    )
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    video_timestamp: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True, comment="Segundos desde o inicio do video"
+    )
 
-    # Court coordinates (if applicable)
-    court_x = Column(Float, nullable=True)
-    court_y = Column(Float, nullable=True)
+    # Jogador envolvido (se aplicavel)
+    player_id: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("players.id"), nullable=True
+    )
 
-    # Additional metadata
-    confidence = Column(Float, nullable=True)  # AI/ML confidence score
-    manual_entry = Column(Boolean, default=False)  # Human vs automated entry
+    # Dados do evento como JSONB (flexivel para diferentes tipos)
+    event_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+
+    # Coordenadas na quadra (se aplicavel)
+    court_x: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    court_y: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # Metadados adicionais
+    confidence: Mapped[Optional[float]] = mapped_column(
+        Float, nullable=True, comment="Score de confianca do modelo AI/ML"
+    )
+    manual_entry: Mapped[bool] = mapped_column(
+        Boolean, default=False, comment="Entrada manual vs automatizada"
+    )
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
     # Relationships
     match = relationship("Match", back_populates="events")
     point = relationship("Point", back_populates="events")
 
-    def __repr__(self):
-        return f"<Event(id={self.id}, type={self.event_type}, timestamp={self.timestamp})>"
+    __table_args__ = (
+        Index("ix_game_events_match_id", "match_id"),
+        Index("ix_game_events_event_type", "event_type"),
+        Index("ix_game_events_player_id", "player_id"),
+        Index("ix_game_events_timestamp", "timestamp"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<GameEvent(id={self.id}, type={self.event_type}, timestamp={self.timestamp})>"
+
+
+# Alias para compatibilidade retroativa com imports existentes
+# (services que usam `from app.models.event import Event`)
+Event = GameEvent

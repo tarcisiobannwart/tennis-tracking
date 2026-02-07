@@ -87,7 +87,7 @@ class Point(Base):
     set = relationship("Set")
     game = relationship("Game", back_populates="points")
     events = relationship(
-        "Event",
+        "GameEvent",
         back_populates="point",
         cascade="all, delete-orphan"
     )

@@ -29,6 +29,11 @@ from app.models.sql import (  # noqa: F401
     PlayerStats,
 )
 
+# TT-121: modelos de training, game_events e point_history
+from app.models.training import DrillType, TrainingSession  # noqa: F401
+from app.models.event import GameEvent  # noqa: F401
+from app.models.point_history import PointHistory  # noqa: F401
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
