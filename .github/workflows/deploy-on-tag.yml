@@ -6,47 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Build and push Docker image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: tennis-tracking
-        IMAGE_TAG: ${{ github.ref_name }}
-      run: |
-        echo "Building image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-        docker build \
-          --platform linux/amd64 \
-          --build-arg IMAGE_TAG=$IMAGE_TAG \
-          --build-arg APP_VERSION=${IMAGE_TAG#v} \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-          .
-
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-        echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
   deploy:
-    needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
@@ -68,21 +28,21 @@ jobs:
 
           echo "=== Tennis Tracking - Deploy $IMAGE_TAG ==="
 
-          # Login no ECR
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 021301014509.dkr.ecr.us-east-1.amazonaws.com
-
-          # Pull nova imagem
-          docker pull 021301014509.dkr.ecr.us-east-1.amazonaws.com/tennis-tracking:$IMAGE_TAG
-
-          # Atualizar container
           cd /opt/tennis-tracking
 
-          # Definir imagem
-          export TT_IMAGE=021301014509.dkr.ecr.us-east-1.amazonaws.com/tennis-tracking:$IMAGE_TAG
+          # Guardar versao atual para rollback
+          CURRENT_VERSION=\$(git describe --tags --abbrev=0 2>/dev/null || echo "unknown")
+          echo "Versao atual: \$CURRENT_VERSION"
 
-          # Restart com nova imagem
-          docker compose -f docker-compose.server.yml down tennis-tracking-app || true
-          docker compose -f docker-compose.server.yml up -d
+          # Pull e checkout da tag
+          git fetch --all --tags
+          git checkout $IMAGE_TAG
+
+          # Parar containers
+          docker compose -f docker-compose.server.yml down || true
+
+          # Rebuild e iniciar
+          docker compose -f docker-compose.server.yml up -d --build
 
           # Aguardar inicializacao
           echo "Aguardando servicos..."

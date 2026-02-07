@@ -1,22 +1,17 @@
 # =============================================================================
 # Tennis Tracking - Docker Compose para Servidor de Producao
 # =============================================================================
-# Usa imagem do ECR e conecta ao PostgreSQL/Redis compartilhados
+# Build local via git pull + docker compose build
 #
 # Uso:
-#   1. Login no ECR:
-#      aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 021301014509.dkr.ecr.us-east-1.amazonaws.com
-#
-#   2. Deploy:
-#      docker compose -f docker-compose.server.yml up -d
-#
-#   3. Logs:
-#      docker compose -f docker-compose.server.yml logs -f
+#   git pull && docker compose -f docker-compose.server.yml up -d --build
 # =============================================================================
 
 services:
   tennis-tracking-app:
-    image: ${TT_IMAGE:-021301014509.dkr.ecr.us-east-1.amazonaws.com/tennis-tracking:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: tennis-tracking-app
     environment:
       # Modo de servico
@@ -86,7 +81,6 @@ services:
     labels:
       - "com.tt.project=tennis-tracking"
       - "com.tt.service=unified"
-      - "com.tt.description=Tennis Tracking - Analise de Partidas de Tenis"
 
   # Redis dedicado para Tennis Tracking
   tennis-tracking-redis:
