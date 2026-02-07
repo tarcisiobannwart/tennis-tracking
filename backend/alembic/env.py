@@ -1,5 +1,8 @@
 """
-Alembic environment configuration
+Alembic environment configuration para PostgreSQL async.
+
+Utiliza asyncpg como driver async e carrega a DATABASE_URL
+do config.py da aplicacao quando disponivel.
 """
 
 import asyncio
@@ -11,11 +14,21 @@ from alembic import context
 
 # Import your models here
 from app.core.database import Base
-from app.models import *
+
+# Importar modelos SQLAlchemy para autogenerate
+# (adicionar imports conforme modelos forem criados)
+# from app.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Sobrescrever sqlalchemy.url com DATABASE_URL do config da aplicacao
+try:
+    from app.core.config import settings
+    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+except ImportError:
+    pass  # Usa o valor do alembic.ini como fallback
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -25,11 +38,6 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = Base.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
 
 def run_migrations_offline() -> None:
@@ -42,7 +50,6 @@ def run_migrations_offline() -> None:
 
     Calls to context.execute() here emit the given string to the
     script output.
-
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -64,11 +71,11 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
+    """Run migrations in 'online' mode com engine async.
 
+    Cria um AsyncEngine e executa as migrations dentro
+    de uma conexao async.
     """
-
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -83,7 +90,6 @@ async def run_async_migrations() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-
     asyncio.run(run_async_migrations())
 
 

@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://admin:tennis_admin_2024@localhost:27017/tennis_tracking?authSource=admin"
     DATABASE_NAME: str = "tennis_tracking"
 
-    # Legacy SQLite (for migration)
-    DATABASE_URL: str = "sqlite+aiosqlite:///./tennis_tracking.db"
+    # PostgreSQL (asyncpg)
+    DATABASE_URL: str = "postgresql+asyncpg://tennis:tennis123@localhost:5432/tennis_tracking"
 
     # Redis (for caching and Celery)
     REDIS_URL: str = "redis://localhost:6379"

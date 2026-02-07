@@ -7,12 +7,13 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 
 # Database
-sqlalchemy==2.0.23
+sqlalchemy[asyncio]==2.0.23
 alembic==1.12.1
 asyncpg==0.29.0  # PostgreSQL async driver
+pgvector==0.2.4  # PostgreSQL vector extension
 aiosqlite==0.19.0  # SQLite async driver
-motor==3.3.2  # MongoDB async driver
-pymongo==4.6.1  # MongoDB driver
+motor==3.3.2  # MongoDB async driver (temporario - sera removido apos migracao)
+pymongo==4.6.1  # MongoDB driver (temporario - sera removido apos migracao)
 
 # Data validation and serialization
 pydantic==2.5.0
