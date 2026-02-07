@@ -1,0 +1,113 @@
+name: Deploy to Server on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build and push Docker image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: tennis-tracking
+        IMAGE_TAG: ${{ github.ref_name }}
+      run: |
+        echo "Building image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+        docker build \
+          --platform linux/amd64 \
+          --build-arg IMAGE_TAG=$IMAGE_TAG \
+          --build-arg APP_VERSION=${IMAGE_TAG#v} \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          .
+
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+        echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy-key.pem
+        chmod 400 ~/.ssh/deploy-key.pem
+        ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+    - name: Deploy to server
+      env:
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+        IMAGE_TAG: ${{ github.ref_name }}
+      run: |
+        ssh -i ~/.ssh/deploy-key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << ENDSSH
+          set -e
+
+          echo "=== Tennis Tracking - Deploy $IMAGE_TAG ==="
+
+          # Login no ECR
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 021301014509.dkr.ecr.us-east-1.amazonaws.com
+
+          # Pull nova imagem
+          docker pull 021301014509.dkr.ecr.us-east-1.amazonaws.com/tennis-tracking:$IMAGE_TAG
+
+          # Atualizar container
+          cd /opt/tennis-tracking
+
+          # Definir imagem
+          export TT_IMAGE=021301014509.dkr.ecr.us-east-1.amazonaws.com/tennis-tracking:$IMAGE_TAG
+
+          # Restart com nova imagem
+          docker compose -f docker-compose.server.yml down tennis-tracking-app || true
+          docker compose -f docker-compose.server.yml up -d
+
+          # Aguardar inicializacao
+          echo "Aguardando servicos..."
+          sleep 30
+
+          # Verificar health
+          if curl -sf http://localhost:5002/health > /dev/null 2>&1; then
+            echo "Deploy $IMAGE_TAG concluido com sucesso!"
+          else
+            echo "AVISO: Health check falhou, verificar logs"
+            docker compose -f docker-compose.server.yml logs --tail=50 tennis-tracking-app
+          fi
+
+          # Status
+          docker compose -f docker-compose.server.yml ps
+        ENDSSH
+
+    - name: Verify deployment
+      env:
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+      run: |
+        sleep 10
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://$SERVER_IP:5002/health 2>/dev/null || echo "000")
+        if [ "$response" = "200" ]; then
+          echo "Application is healthy (HTTP 200)"
+        else
+          echo "Health check returned HTTP $response - may still be starting"
+        fi

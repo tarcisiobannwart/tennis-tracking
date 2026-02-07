@@ -1,0 +1,123 @@
+# =============================================================================
+# Tennis Tracking - Docker Compose para Servidor de Producao
+# =============================================================================
+# Usa imagem do ECR e conecta ao PostgreSQL/Redis compartilhados
+#
+# Uso:
+#   1. Login no ECR:
+#      aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 021301014509.dkr.ecr.us-east-1.amazonaws.com
+#
+#   2. Deploy:
+#      docker compose -f docker-compose.server.yml up -d
+#
+#   3. Logs:
+#      docker compose -f docker-compose.server.yml logs -f
+# =============================================================================
+
+services:
+  tennis-tracking-app:
+    image: ${TT_IMAGE:-021301014509.dkr.ecr.us-east-1.amazonaws.com/tennis-tracking:latest}
+    container_name: tennis-tracking-app
+    environment:
+      # Modo de servico
+      - SERVICE_MODE=${SERVICE_MODE:-all}
+      - WORKERS=${WORKERS:-2}
+      - PORT=8000
+
+      # PostgreSQL (infra-postgres compartilhado)
+      - DATABASE_URL=${DATABASE_URL:-postgresql://tennis_user:tennis_pass@infra-postgres:5432/tennis_tracking}
+      - POSTGRES_URL=${POSTGRES_URL:-postgresql+asyncpg://tennis_user:tennis_pass@infra-postgres:5432/tennis_tracking}
+      - POSTGRES_HOST=${POSTGRES_HOST:-infra-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-tennis_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tennis_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-tennis_tracking}
+
+      # MongoDB (legado)
+      - MONGODB_URL=${MONGODB_URL:-mongodb://admin:tennis_admin_2024@tennis-tracking-mongodb:27017/tennis_tracking?authSource=admin}
+
+      # Redis
+      - REDIS_URL=${REDIS_URL:-redis://tennis-tracking-redis:6379/0}
+
+      # Ambiente
+      - ENVIRONMENT=production
+
+      # CORS
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://tennis.tarcisiobannwart.com,http://localhost}
+
+      # Seguranca
+      - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS:-24}
+
+      # Stripe
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+
+      # Email
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@tennistrack.app}
+      - FRONTEND_URL=${FRONTEND_URL:-https://tennis.tarcisiobannwart.com}
+
+      # Jira Error Reporting
+      - JIRA_BASE_URL=${JIRA_BASE_URL:-https://trademarketingforce.atlassian.net}
+      - JIRA_EMAIL=${JIRA_EMAIL:-}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN:-}
+      - JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY:-TT}
+      - JIRA_ERROR_REPORT_ENABLED=${JIRA_ERROR_REPORT_ENABLED:-true}
+
+      # Timezone
+      - TZ=America/Sao_Paulo
+    ports:
+      - "${APP_PORT:-5002}:80"
+    volumes:
+      - tt-data:/app/uploads
+      - tt-logs:/app/logs
+      - tt-output:/app/output
+    networks:
+      - infra-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.tt.project=tennis-tracking"
+      - "com.tt.service=unified"
+      - "com.tt.description=Tennis Tracking - Analise de Partidas de Tenis"
+
+  # Redis dedicado para Tennis Tracking
+  tennis-tracking-redis:
+    image: redis:7-alpine
+    container_name: tennis-tracking-redis
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
+    volumes:
+      - tt-redis-data:/data
+    networks:
+      - infra-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "com.tt.project=tennis-tracking"
+      - "com.tt.service=cache"
+
+volumes:
+  tt-data:
+    driver: local
+  tt-logs:
+    driver: local
+  tt-output:
+    driver: local
+  tt-redis-data:
+    driver: local
+
+networks:
+  infra-network:
+    external: true
+    name: docker_infra
