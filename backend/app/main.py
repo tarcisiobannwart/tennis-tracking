@@ -14,7 +14,7 @@ from app.core.mongodb import connect_mongodb, close_mongodb
 from app.core.database import connect_db, disconnect_db
 from app.core.middleware import setup_rate_limiting
 from app.core.exceptions import setup_exception_handlers
-from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training, trajectories, error_reports, players, rankings
+from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training, trajectories, error_reports, players, rankings, tournaments
 
 
 @asynccontextmanager
@@ -58,6 +58,7 @@ tags_metadata = [
     {"name": "Error Reports", "description": "Error reporting automatico com integracao Jira"},
     {"name": "Players", "description": "Perfis de jogadores, estatisticas e historico de jogos"},
     {"name": "Rankings", "description": "Sistema de rankings por local/clube com rodadas e classificatorias"},
+    {"name": "Tournaments", "description": "Sistema de torneios com inscricao online"},
 ]
 
 # Create FastAPI application
@@ -111,6 +112,7 @@ app.include_router(trajectories.router, prefix="/api/trajectories", tags=["Traje
 app.include_router(error_reports.router, prefix="/api/error-reports", tags=["Error Reports"])
 app.include_router(players.router, prefix="/api/players", tags=["Players"])
 app.include_router(rankings.router, prefix="/api/rankings", tags=["Rankings"])
+app.include_router(tournaments.router, prefix="/api/tournaments", tags=["Tournaments"])
 
 
 @app.get("/")

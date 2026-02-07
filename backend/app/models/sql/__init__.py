@@ -22,6 +22,17 @@ from app.models.sql.trajectory_embedding import TrajectoryEmbedding
 # Error reporting automatico
 from app.models.sql.error_report import ErrorReport, ErrorSourceEnum, ErrorReportStatusEnum
 
+# TT-132: Sistema de torneios
+from app.models.sql.tournament import (
+    Tournament,
+    TournamentCategory,
+    TournamentRegistration,
+    TournamentStatus,
+    TournamentType,
+    RegistrationStatus,
+    PaymentStatus,
+)
+
 __all__ = [
     "User",
     "Organization",
@@ -42,4 +53,12 @@ __all__ = [
     "ErrorReport",
     "ErrorSourceEnum",
     "ErrorReportStatusEnum",
+    # TT-132: Tournaments
+    "Tournament",
+    "TournamentCategory",
+    "TournamentRegistration",
+    "TournamentStatus",
+    "TournamentType",
+    "RegistrationStatus",
+    "PaymentStatus",
 ]
