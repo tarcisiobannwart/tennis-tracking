@@ -1,38 +1,79 @@
 """
 Admin service - metrics, user management
 """
-from datetime import datetime, timedelta
+import uuid
+from datetime import datetime
 from typing import Optional
-from app.core.mongodb import get_collection
+
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.sql.user import User
+from app.models.sql.video import Video
+from app.models.sql.subscription_event import SubscriptionEvent
 
 
 class AdminService:
     """Service for admin operations"""
 
-    async def get_dashboard_metrics(self) -> dict:
-        users = get_collection("users")
-        videos = get_collection("videos")
-
+    async def get_dashboard_metrics(self, db: AsyncSession) -> dict:
         now = datetime.utcnow()
         first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        total_users = await users.count_documents({})
-        new_users_month = await users.count_documents({"createdAt": {"$gte": first_of_month}})
-        active_users = await users.count_documents({"isActive": True})
-        total_videos = await videos.count_documents({})
+        # Total users
+        total_users_result = await db.execute(select(func.count()).select_from(User))
+        total_users = total_users_result.scalar() or 0
+
+        # New users this month
+        new_users_result = await db.execute(
+            select(func.count()).select_from(User).where(User.created_at >= first_of_month)
+        )
+        new_users_month = new_users_result.scalar() or 0
+
+        # Active users
+        active_users_result = await db.execute(
+            select(func.count()).select_from(User).where(User.is_active == True)
+        )
+        active_users = active_users_result.scalar() or 0
+
+        # Total videos
+        total_videos_result = await db.execute(select(func.count()).select_from(Video))
+        total_videos = total_videos_result.scalar() or 0
 
         # Subscription breakdown
-        rally_count = await users.count_documents({"subscription.plan": "rally"})
-        match_point_count = await users.count_documents({"subscription.plan": "match_point"})
-        grand_slam_count = await users.count_documents({"subscription.plan": "grand_slam"})
+        rally_result = await db.execute(
+            select(func.count()).select_from(User).where(User.subscription["plan"].astext == "rally")
+        )
+        rally_count = rally_result.scalar() or 0
+
+        match_point_result = await db.execute(
+            select(func.count()).select_from(User).where(User.subscription["plan"].astext == "match_point")
+        )
+        match_point_count = match_point_result.scalar() or 0
+
+        grand_slam_result = await db.execute(
+            select(func.count()).select_from(User).where(User.subscription["plan"].astext == "grand_slam")
+        )
+        grand_slam_count = grand_slam_result.scalar() or 0
 
         # MRR calculation
         mrr = (match_point_count * 9700 + grand_slam_count * 29700) / 100  # em reais
 
         # Role breakdown
-        admin_count = await users.count_documents({"role": "admin"})
-        coach_count = await users.count_documents({"role": "coach"})
-        player_count = await users.count_documents({"role": "player"})
+        admin_result = await db.execute(
+            select(func.count()).select_from(User).where(User.role == "admin")
+        )
+        admin_count = admin_result.scalar() or 0
+
+        coach_result = await db.execute(
+            select(func.count()).select_from(User).where(User.role == "coach")
+        )
+        coach_count = coach_result.scalar() or 0
+
+        player_result = await db.execute(
+            select(func.count()).select_from(User).where(User.role == "player")
+        )
+        player_count = player_result.scalar() or 0
 
         return {
             "totalUsers": total_users,
@@ -52,55 +93,70 @@ class AdminService:
             },
         }
 
-    async def update_user_role(self, user_id: str, role: str) -> bool:
-        users = get_collection("users")
-        result = await users.update_one(
-            {"_id": user_id},
-            {"$set": {"role": role, "updatedAt": datetime.utcnow()}}
-        )
-        return result.modified_count > 0
+    async def update_user_role(self, db: AsyncSession, user_id: uuid.UUID, role: str) -> bool:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
 
-    async def update_user_plan(self, user_id: str, plan: str) -> bool:
-        users = get_collection("users")
-        result = await users.update_one(
-            {"_id": user_id},
-            {"$set": {
-                "subscription.plan": plan,
-                "subscription.status": "active",
-                "updatedAt": datetime.utcnow(),
-            }}
-        )
-        return result.modified_count > 0
+        user.role = role
+        await db.flush()
+        return True
 
-    async def toggle_user_active(self, user_id: str, is_active: bool) -> bool:
-        users = get_collection("users")
-        result = await users.update_one(
-            {"_id": user_id},
-            {"$set": {"isActive": is_active, "updatedAt": datetime.utcnow()}}
-        )
-        return result.modified_count > 0
+    async def update_user_plan(self, db: AsyncSession, user_id: uuid.UUID, plan: str) -> bool:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
 
-    async def get_subscription_stats(self) -> dict:
-        users = get_collection("users")
-        sub_events = get_collection("subscription_events")
+        if not user.subscription:
+            user.subscription = {}
+        user.subscription["plan"] = plan
+        user.subscription["status"] = "active"
+        await db.flush()
+        return True
 
-        pipeline = [
-            {"$group": {
-                "_id": "$subscription.plan",
-                "count": {"$sum": 1},
-            }}
-        ]
+    async def toggle_user_active(self, db: AsyncSession, user_id: uuid.UUID, is_active: bool) -> bool:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+
+        user.is_active = is_active
+        await db.flush()
+        return True
+
+    async def get_subscription_stats(self, db: AsyncSession) -> dict:
+        # Plan breakdown using JSONB query
         plan_counts = {}
-        async for doc in users.aggregate(pipeline):
-            plan_counts[doc["_id"]] = doc["count"]
+        for plan in ["rally", "match_point", "grand_slam"]:
+            result = await db.execute(
+                select(func.count()).select_from(User).where(User.subscription["plan"].astext == plan)
+            )
+            plan_counts[plan] = result.scalar() or 0
 
-        recent_events = await sub_events.find({}).sort("createdAt", -1).limit(20).to_list(20)
-        for event in recent_events:
-            event["_id"] = str(event["_id"])
+        # Recent events
+        result = await db.execute(
+            select(SubscriptionEvent)
+            .order_by(SubscriptionEvent.created_at.desc())
+            .limit(20)
+        )
+        recent_events = result.scalars().all()
 
         return {
             "planBreakdown": plan_counts,
-            "recentEvents": recent_events,
+            "recentEvents": [
+                {
+                    "id": str(event.id),
+                    "user_id": str(event.user_id),
+                    "stripe_event_id": event.stripe_event_id,
+                    "event_type": event.event_type,
+                    "data": event.data,
+                    "processed": event.processed,
+                    "created_at": event.created_at.isoformat(),
+                }
+                for event in recent_events
+            ],
         }
 
 

@@ -1,26 +1,23 @@
 """
 Activity log service
 """
+import uuid
 from datetime import datetime
 from typing import Optional
-from app.core.mongodb import get_collection
+
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.sql.activity_log import ActivityLog
 
 
 class ActivityLogService:
     """Service for logging user activity"""
 
-    def __init__(self):
-        self._collection = None
-
-    @property
-    def collection(self):
-        if self._collection is None:
-            self._collection = get_collection("activity_logs")
-        return self._collection
-
     async def log(
         self,
-        user_id: str,
+        db: AsyncSession,
+        user_id: uuid.UUID,
         action: str,
         resource: str,
         resource_id: Optional[str] = None,
@@ -28,58 +25,70 @@ class ActivityLogService:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
     ):
-        await self.collection.insert_one({
-            "userId": user_id,
-            "action": action,
-            "resource": resource,
-            "resourceId": resource_id,
-            "details": details or {},
-            "ipAddress": ip_address,
-            "userAgent": user_agent,
-            "createdAt": datetime.utcnow(),
-        })
+        log_entry = ActivityLog(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            action=action,
+            resource=resource,
+            resource_id=resource_id,
+            details=details or {},
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+        db.add(log_entry)
+        await db.flush()
 
     async def get_user_logs(
         self,
-        user_id: str,
+        db: AsyncSession,
+        user_id: uuid.UUID,
         skip: int = 0,
         limit: int = 50,
         action: Optional[str] = None,
-    ) -> tuple[list, int]:
-        query = {"userId": user_id}
+    ) -> tuple[list[ActivityLog], int]:
+        query = select(ActivityLog).where(ActivityLog.user_id == user_id)
+
         if action:
-            query["action"] = action
+            query = query.where(ActivityLog.action == action)
 
-        total = await self.collection.count_documents(query)
-        cursor = self.collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
-        logs = await cursor.to_list(length=limit)
+        # Total count
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_query)
+        total = total_result.scalar() or 0
 
-        for log in logs:
-            log["_id"] = str(log["_id"])
+        # Paginated results
+        query = query.order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(query)
+        logs = result.scalars().all()
 
-        return logs, total
+        return list(logs), total
 
     async def get_all_logs(
         self,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 50,
         action: Optional[str] = None,
-        user_id: Optional[str] = None,
-    ) -> tuple[list, int]:
-        query = {}
+        user_id: Optional[uuid.UUID] = None,
+    ) -> tuple[list[ActivityLog], int]:
+        query = select(ActivityLog)
+
         if action:
-            query["action"] = action
+            query = query.where(ActivityLog.action == action)
         if user_id:
-            query["userId"] = user_id
+            query = query.where(ActivityLog.user_id == user_id)
 
-        total = await self.collection.count_documents(query)
-        cursor = self.collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
-        logs = await cursor.to_list(length=limit)
+        # Total count
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_query)
+        total = total_result.scalar() or 0
 
-        for log in logs:
-            log["_id"] = str(log["_id"])
+        # Paginated results
+        query = query.order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(query)
+        logs = result.scalars().all()
 
-        return logs, total
+        return list(logs), total
 
 
 activity_log_service = ActivityLogService()

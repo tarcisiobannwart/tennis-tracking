@@ -2,11 +2,16 @@
 Subscription service - Stripe integration
 """
 import logging
+import uuid
 from typing import Optional
 from datetime import datetime
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
-from app.core.mongodb import get_collection
+from app.models.sql.user import User
+from app.models.sql.subscription_event import SubscriptionEvent
 from app.models.subscription import PLAN_LIMITS
 
 logger = logging.getLogger(__name__)
@@ -39,7 +44,8 @@ class SubscriptionService:
 
     async def create_checkout_session(
         self,
-        user_id: str,
+        db: AsyncSession,
+        user_id: uuid.UUID,
         user_email: str,
         plan: str,
     ) -> Optional[str]:
@@ -52,23 +58,25 @@ class SubscriptionService:
         if not price_id:
             return None
 
-        users = get_collection("users")
-        user = await users.find_one({"_id": user_id})
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
 
         # Get or create Stripe customer
         customer_id = None
-        if user and user.get("subscription", {}).get("stripeCustomerId"):
-            customer_id = user["subscription"]["stripeCustomerId"]
+        if user.subscription and user.subscription.get("stripe_customer_id"):
+            customer_id = user.subscription["stripe_customer_id"]
         else:
             customer = self.stripe.Customer.create(
                 email=user_email,
-                metadata={"user_id": user_id},
+                metadata={"user_id": str(user_id)},
             )
             customer_id = customer.id
-            await users.update_one(
-                {"_id": user_id},
-                {"$set": {"subscription.stripeCustomerId": customer_id}}
-            )
+            if not user.subscription:
+                user.subscription = {}
+            user.subscription["stripe_customer_id"] = customer_id
+            await db.flush()
 
         plan_info = PLAN_LIMITS.get(plan, {})
         trial_days = plan_info.get("trial_days")
@@ -80,7 +88,7 @@ class SubscriptionService:
             "mode": "subscription",
             "success_url": f"{settings.FRONTEND_URL}/app/settings?tab=subscription&status=success",
             "cancel_url": f"{settings.FRONTEND_URL}/app/settings?tab=subscription&status=cancelled",
-            "metadata": {"user_id": user_id, "plan": plan},
+            "metadata": {"user_id": str(user_id), "plan": plan},
         }
 
         if trial_days:
@@ -91,17 +99,19 @@ class SubscriptionService:
         session = self.stripe.checkout.Session.create(**session_params)
         return session.url
 
-    async def create_portal_session(self, user_id: str) -> Optional[str]:
+    async def create_portal_session(self, db: AsyncSession, user_id: uuid.UUID) -> Optional[str]:
         """Create Stripe customer portal session, return URL"""
         if not self.stripe:
             return None
 
-        users = get_collection("users")
-        user = await users.find_one({"_id": user_id})
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
 
         customer_id = None
-        if user and user.get("subscription", {}).get("stripeCustomerId"):
-            customer_id = user["subscription"]["stripeCustomerId"]
+        if user.subscription and user.subscription.get("stripe_customer_id"):
+            customer_id = user.subscription["stripe_customer_id"]
 
         if not customer_id:
             return None
@@ -112,38 +122,61 @@ class SubscriptionService:
         )
         return session.url
 
-    async def handle_webhook_event(self, event: dict) -> bool:
+    async def handle_webhook_event(self, db: AsyncSession, event: dict) -> bool:
         """Process Stripe webhook event"""
         event_type = event.get("type", "")
         data = event.get("data", {}).get("object", {})
 
-        # Log event
-        sub_events = get_collection("subscription_events")
-        await sub_events.insert_one({
-            "stripeEventId": event.get("id"),
-            "eventType": event_type,
-            "data": data,
-            "processed": False,
-            "createdAt": datetime.utcnow(),
-        })
+        # Note: We need user_id to create SubscriptionEvent with FK
+        # For now, we'll try to extract user_id from metadata or subscription lookup
+        user_id_str = data.get("metadata", {}).get("user_id")
+        if not user_id_str:
+            # Try to find user by stripe_subscription_id
+            subscription_id = data.get("id") if event_type.startswith("customer.subscription") else data.get("subscription")
+            if subscription_id:
+                user_result = await db.execute(
+                    select(User).where(User.subscription["stripe_subscription_id"].astext == subscription_id)
+                )
+                user = user_result.scalar_one_or_none()
+                if user:
+                    user_id_str = str(user.id)
 
-        users = get_collection("users")
+        if user_id_str:
+            try:
+                user_id = uuid.UUID(user_id_str)
+                # Log event
+                event_log = SubscriptionEvent(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    stripe_event_id=event.get("id"),
+                    event_type=event_type,
+                    data=data,
+                    processed=False,
+                )
+                db.add(event_log)
+                await db.flush()
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid user_id for subscription event: {user_id_str}")
 
         if event_type == "checkout.session.completed":
-            user_id = data.get("metadata", {}).get("user_id")
+            user_id_meta = data.get("metadata", {}).get("user_id")
             plan = data.get("metadata", {}).get("plan")
             subscription_id = data.get("subscription")
 
-            if user_id and plan:
-                await users.update_one(
-                    {"_id": user_id},
-                    {"$set": {
-                        "subscription.plan": plan,
-                        "subscription.status": "active",
-                        "subscription.stripeSubscriptionId": subscription_id,
-                        "updatedAt": datetime.utcnow(),
-                    }}
-                )
+            if user_id_meta and plan:
+                try:
+                    user_uuid = uuid.UUID(user_id_meta)
+                    user_result = await db.execute(select(User).where(User.id == user_uuid))
+                    user = user_result.scalar_one_or_none()
+                    if user:
+                        if not user.subscription:
+                            user.subscription = {}
+                        user.subscription["plan"] = plan
+                        user.subscription["status"] = "active"
+                        user.subscription["stripe_subscription_id"] = subscription_id
+                        await db.flush()
+                except ValueError:
+                    pass
 
         elif event_type in ("customer.subscription.updated", "customer.subscription.created"):
             subscription_id = data.get("id")
@@ -153,54 +186,66 @@ class SubscriptionService:
             current_period_end = data.get("current_period_end")
             trial_end = data.get("trial_end")
 
-            user = await users.find_one({"subscription.stripeSubscriptionId": subscription_id})
+            user_result = await db.execute(
+                select(User).where(User.subscription["stripe_subscription_id"].astext == subscription_id)
+            )
+            user = user_result.scalar_one_or_none()
             if user:
-                update = {
-                    "subscription.status": status_val,
-                    "subscription.cancelAtPeriodEnd": cancel_at_period_end,
-                    "updatedAt": datetime.utcnow(),
-                }
+                if not user.subscription:
+                    user.subscription = {}
+                user.subscription["status"] = status_val
+                user.subscription["cancel_at_period_end"] = cancel_at_period_end
                 if current_period_start:
-                    update["subscription.currentPeriodStart"] = datetime.fromtimestamp(current_period_start)
+                    user.subscription["current_period_start"] = datetime.fromtimestamp(current_period_start).isoformat()
                 if current_period_end:
-                    update["subscription.currentPeriodEnd"] = datetime.fromtimestamp(current_period_end)
+                    user.subscription["current_period_end"] = datetime.fromtimestamp(current_period_end).isoformat()
                 if trial_end:
-                    update["subscription.trialEnd"] = datetime.fromtimestamp(trial_end)
-
-                await users.update_one({"_id": user["_id"]}, {"$set": update})
+                    user.subscription["trial_end"] = datetime.fromtimestamp(trial_end).isoformat()
+                await db.flush()
 
         elif event_type == "customer.subscription.deleted":
             subscription_id = data.get("id")
-            user = await users.find_one({"subscription.stripeSubscriptionId": subscription_id})
+            user_result = await db.execute(
+                select(User).where(User.subscription["stripe_subscription_id"].astext == subscription_id)
+            )
+            user = user_result.scalar_one_or_none()
             if user:
-                await users.update_one(
-                    {"_id": user["_id"]},
-                    {"$set": {
-                        "subscription.plan": "rally",
-                        "subscription.status": "canceled",
-                        "subscription.stripeSubscriptionId": None,
-                        "subscription.cancelAtPeriodEnd": False,
-                        "updatedAt": datetime.utcnow(),
-                    }}
-                )
+                if not user.subscription:
+                    user.subscription = {}
+                user.subscription["plan"] = "rally"
+                user.subscription["status"] = "canceled"
+                user.subscription["stripe_subscription_id"] = None
+                user.subscription["cancel_at_period_end"] = False
+                await db.flush()
 
         elif event_type == "invoice.payment_failed":
             subscription_id = data.get("subscription")
-            user = await users.find_one({"subscription.stripeSubscriptionId": subscription_id})
+            user_result = await db.execute(
+                select(User).where(User.subscription["stripe_subscription_id"].astext == subscription_id)
+            )
+            user = user_result.scalar_one_or_none()
             if user:
-                await users.update_one(
-                    {"_id": user["_id"]},
-                    {"$set": {
-                        "subscription.status": "past_due",
-                        "updatedAt": datetime.utcnow(),
-                    }}
-                )
+                if not user.subscription:
+                    user.subscription = {}
+                user.subscription["status"] = "past_due"
+                await db.flush()
 
         # Mark event as processed
-        await sub_events.update_one(
-            {"stripeEventId": event.get("id")},
-            {"$set": {"processed": True}}
-        )
+        if user_id_str:
+            try:
+                await db.execute(
+                    select(SubscriptionEvent).where(SubscriptionEvent.stripe_event_id == event.get("id"))
+                )
+                # Update processed flag
+                event_result = await db.execute(
+                    select(SubscriptionEvent).where(SubscriptionEvent.stripe_event_id == event.get("id"))
+                )
+                event_obj = event_result.scalar_one_or_none()
+                if event_obj:
+                    event_obj.processed = True
+                    await db.flush()
+            except Exception as e:
+                logger.warning(f"Failed to mark event as processed: {e}")
 
         return True
 

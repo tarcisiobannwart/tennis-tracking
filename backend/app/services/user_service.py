@@ -2,175 +2,193 @@
 User service - CRUD, password management, profile
 """
 import secrets
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional
-from bson import ObjectId
 
-from app.core.mongodb import get_collection
+from sqlalchemy import select, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.auth import get_password_hash, verify_password
-from app.models.user import UserCreate, UserUpdate, UserSubscription, SubscriptionPlan
+from app.models.sql.user import User, SubscriptionPlan, SubscriptionStatus
+from app.models.sql.video import Video
+from app.models.user import UserCreate, UserUpdate, UserSubscription
 
 
 class UserService:
     """Service for user management"""
 
-    def __init__(self):
-        self._collection = None
+    async def get_by_id(self, db: AsyncSession, user_id: uuid.UUID) -> Optional[User]:
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
 
-    @property
-    def collection(self):
-        if self._collection is None:
-            self._collection = get_collection("users")
-        return self._collection
+    async def get_by_email(self, db: AsyncSession, email: str) -> Optional[User]:
+        result = await db.execute(select(User).where(User.email == email))
+        return result.scalar_one_or_none()
 
-    async def get_by_id(self, user_id: str) -> Optional[dict]:
-        return await self.collection.find_one({"_id": user_id})
+    async def get_by_username(self, db: AsyncSession, username: str) -> Optional[User]:
+        result = await db.execute(select(User).where(User.username == username))
+        return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[dict]:
-        return await self.collection.find_one({"email": email})
-
-    async def get_by_username(self, username: str) -> Optional[dict]:
-        return await self.collection.find_one({"username": username})
-
-    async def create(self, user_data: UserCreate) -> dict:
-        user_dict = user_data.dict()
-        user_dict["password"] = get_password_hash(user_data.password)
-        user_dict["createdAt"] = datetime.utcnow()
-        user_dict["updatedAt"] = datetime.utcnow()
-        user_dict["emailVerified"] = False
-        user_dict["subscription"] = UserSubscription().dict()
-
-        result = await self.collection.insert_one(user_dict)
-        user_dict["_id"] = str(result.inserted_id)
-        return user_dict
-
-    async def update(self, user_id: str, update_data: dict) -> Optional[dict]:
-        update_data["updatedAt"] = datetime.utcnow()
-        await self.collection.update_one(
-            {"_id": user_id},
-            {"$set": update_data}
+    async def create(self, db: AsyncSession, user_data: UserCreate) -> User:
+        user = User(
+            id=uuid.uuid4(),
+            email=user_data.email,
+            username=user_data.username,
+            full_name=user_data.full_name,
+            password=get_password_hash(user_data.password),
+            role=user_data.role if hasattr(user_data, 'role') else "viewer",
+            is_active=True,
+            email_verified=False,
+            subscription={
+                "plan": SubscriptionPlan.RALLY.value,
+                "status": SubscriptionStatus.ACTIVE.value,
+                "stripe_customer_id": None,
+                "stripe_subscription_id": None,
+                "current_period_start": None,
+                "current_period_end": None,
+                "cancel_at_period_end": False,
+                "trial_end": None,
+            },
         )
-        return await self.get_by_id(user_id)
+        db.add(user)
+        await db.flush()
+        await db.refresh(user)
+        return user
 
-    async def change_password(self, user_id: str, current_password: str, new_password: str) -> bool:
-        user = await self.get_by_id(user_id)
-        if not user:
-            return False
-        if not verify_password(current_password, user["password"]):
-            return False
-        await self.collection.update_one(
-            {"_id": user_id},
-            {"$set": {
-                "password": get_password_hash(new_password),
-                "updatedAt": datetime.utcnow()
-            }}
-        )
-        return True
-
-    async def create_password_reset_token(self, email: str) -> Optional[str]:
-        user = await self.get_by_email(email)
+    async def update(self, db: AsyncSession, user_id: uuid.UUID, update_data: dict) -> Optional[User]:
+        user = await self.get_by_id(db, user_id)
         if not user:
             return None
-        token = secrets.token_urlsafe(32)
-        await self.collection.update_one(
-            {"_id": user["_id"]},
-            {"$set": {
-                "passwordResetToken": token,
-                "passwordResetExpires": datetime.utcnow() + timedelta(hours=1)
-            }}
-        )
-        return token
 
-    async def reset_password(self, token: str, new_password: str) -> bool:
-        user = await self.collection.find_one({
-            "passwordResetToken": token,
-            "passwordResetExpires": {"$gt": datetime.utcnow()}
-        })
+        for key, value in update_data.items():
+            if hasattr(user, key):
+                setattr(user, key, value)
+
+        await db.flush()
+        await db.refresh(user)
+        return user
+
+    async def change_password(self, db: AsyncSession, user_id: uuid.UUID, current_password: str, new_password: str) -> bool:
+        user = await self.get_by_id(db, user_id)
         if not user:
             return False
-        await self.collection.update_one(
-            {"_id": user["_id"]},
-            {"$set": {
-                "password": get_password_hash(new_password),
-                "passwordResetToken": None,
-                "passwordResetExpires": None,
-                "updatedAt": datetime.utcnow()
-            }}
-        )
+        if not verify_password(current_password, user.password):
+            return False
+
+        user.password = get_password_hash(new_password)
+        await db.flush()
         return True
 
-    async def create_email_verification_token(self, user_id: str) -> str:
+    async def create_password_reset_token(self, db: AsyncSession, email: str) -> Optional[str]:
+        user = await self.get_by_email(db, email)
+        if not user:
+            return None
+
         token = secrets.token_urlsafe(32)
-        await self.collection.update_one(
-            {"_id": user_id},
-            {"$set": {"emailVerificationToken": token}}
-        )
+        user.password_reset_token = token
+        user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+        await db.flush()
         return token
 
-    async def verify_email(self, token: str) -> bool:
-        user = await self.collection.find_one({"emailVerificationToken": token})
+    async def reset_password(self, db: AsyncSession, token: str, new_password: str) -> bool:
+        result = await db.execute(
+            select(User).where(
+                User.password_reset_token == token,
+                User.password_reset_expires > datetime.utcnow()
+            )
+        )
+        user = result.scalar_one_or_none()
         if not user:
             return False
-        await self.collection.update_one(
-            {"_id": user["_id"]},
-            {"$set": {
-                "emailVerified": True,
-                "emailVerificationToken": None,
-                "updatedAt": datetime.utcnow()
-            }}
-        )
+
+        user.password = get_password_hash(new_password)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        await db.flush()
         return True
 
-    async def update_subscription(self, user_id: str, subscription: dict) -> Optional[dict]:
-        await self.collection.update_one(
-            {"_id": user_id},
-            {"$set": {
-                "subscription": subscription,
-                "updatedAt": datetime.utcnow()
-            }}
-        )
-        return await self.get_by_id(user_id)
+    async def create_email_verification_token(self, db: AsyncSession, user_id: uuid.UUID) -> Optional[str]:
+        user = await self.get_by_id(db, user_id)
+        if not user:
+            return None
 
-    async def get_video_count_this_month(self, user_id: str) -> int:
-        videos = get_collection("videos")
+        token = secrets.token_urlsafe(32)
+        user.email_verification_token = token
+        await db.flush()
+        return token
+
+    async def verify_email(self, db: AsyncSession, token: str) -> bool:
+        result = await db.execute(
+            select(User).where(User.email_verification_token == token)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+
+        user.email_verified = True
+        user.email_verification_token = None
+        await db.flush()
+        return True
+
+    async def update_subscription(self, db: AsyncSession, user_id: uuid.UUID, subscription: dict) -> Optional[User]:
+        user = await self.get_by_id(db, user_id)
+        if not user:
+            return None
+
+        user.subscription = subscription
+        await db.flush()
+        await db.refresh(user)
+        return user
+
+    async def get_video_count_this_month(self, db: AsyncSession, user_id: uuid.UUID) -> int:
         now = datetime.utcnow()
         first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        count = await videos.count_documents({
-            "userId": user_id,
-            "uploadedAt": {"$gte": first_of_month}
-        })
-        return count
+
+        result = await db.execute(
+            select(func.count()).select_from(Video).where(
+                Video.user_id == user_id,
+                Video.uploaded_at >= first_of_month
+            )
+        )
+        return result.scalar() or 0
 
     async def list_users(
         self,
+        db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
         role: Optional[str] = None,
         plan: Optional[str] = None,
         search: Optional[str] = None
-    ) -> tuple[list, int]:
-        query = {}
+    ) -> tuple[list[User], int]:
+        query = select(User)
+
         if role:
-            query["role"] = role
+            query = query.where(User.role == role)
         if plan:
-            query["subscription.plan"] = plan
+            # JSONB query para subscription.plan
+            query = query.where(User.subscription["plan"].astext == plan)
         if search:
-            query["$or"] = [
-                {"username": {"$regex": search, "$options": "i"}},
-                {"email": {"$regex": search, "$options": "i"}},
-                {"fullName": {"$regex": search, "$options": "i"}},
-            ]
+            query = query.where(
+                or_(
+                    User.username.ilike(f"%{search}%"),
+                    User.email.ilike(f"%{search}%"),
+                    User.full_name.ilike(f"%{search}%")
+                )
+            )
 
-        total = await self.collection.count_documents(query)
-        cursor = self.collection.find(query).sort("createdAt", -1).skip(skip).limit(limit)
-        users = await cursor.to_list(length=limit)
+        # Total count
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_query)
+        total = total_result.scalar() or 0
 
-        for user in users:
-            user["_id"] = str(user["_id"])
-            user.pop("password", None)
-            user.pop("refreshToken", None)
+        # Paginated results
+        query = query.order_by(User.created_at.desc()).offset(skip).limit(limit)
+        result = await db.execute(query)
+        users = result.scalars().all()
 
-        return users, total
+        return list(users), total
 
 
 user_service = UserService()
