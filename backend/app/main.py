@@ -12,7 +12,7 @@ import uvicorn
 from app.core.config import settings
 from app.core.mongodb import connect_mongodb, close_mongodb
 from app.core.middleware import setup_rate_limiting
-from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history
+from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events
 
 
 @asynccontextmanager
@@ -46,6 +46,7 @@ tags_metadata = [
     {"name": "Scoring", "description": "Sistema de pontuacao ATP/WTA com regras oficiais"},
     {"name": "Game Control", "description": "Controle de jogo em tempo real (start, pause, resume, pontos, eventos)"},
     {"name": "Point History", "description": "Historico detalhado de pontos com analise de momentos criticos"},
+    {"name": "Events", "description": "Eventos de jogo (aces, break points, estatisticas e historico)"},
 ]
 
 # Create FastAPI application
@@ -90,6 +91,7 @@ app.include_router(organizations.router, prefix="/api/organizations", tags=["Org
 app.include_router(scoring.router, prefix="/api", tags=["Scoring"])
 app.include_router(game_control.router, prefix="/api/game-control", tags=["Game Control"])
 app.include_router(point_history.router, prefix="/api", tags=["Point History"])
+app.include_router(events.router, prefix="/api", tags=["Events"])
 
 
 @app.get("/")
