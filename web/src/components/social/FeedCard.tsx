@@ -5,7 +5,7 @@
  * comentarios expandiveis e compartilhamento.
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Heart,
   MessageCircle,
@@ -14,11 +14,13 @@ import {
   MoreVertical,
   Trash2,
   Loader2,
+  Send,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { MatchResultCard } from './MatchResultCard'
-import { FeedPost, ReactionType } from '@/services/socialFeedService'
+import { FeedPost, ReactionType, FeedComment, getPostComments, addComment } from '@/services/socialFeedService'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,8 +51,64 @@ export const FeedCard: React.FC<FeedCardProps> = ({
   const [showComments, setShowComments] = useState(false)
   const [hasLiked, setHasLiked] = useState(false)
   const [hasCheered, setHasCheered] = useState(false)
+  const [comments, setComments] = useState<FeedComment[]>([])
+  const [isLoadingComments, setIsLoadingComments] = useState(false)
+  const [newCommentText, setNewCommentText] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [commentsPage, setCommentsPage] = useState(1)
+  const [hasMoreComments, setHasMoreComments] = useState(false)
 
   const isOwnPost = currentUserId === post.user_id
+
+  // Load comments when comments section is opened
+  useEffect(() => {
+    if (showComments && comments.length === 0) {
+      loadComments()
+    }
+  }, [showComments])
+
+  const loadComments = async (page = 1) => {
+    setIsLoadingComments(true)
+    try {
+      const response = await getPostComments(post.id, { page, limit: 10 })
+      if (page === 1) {
+        setComments(response.data)
+      } else {
+        setComments((prev) => [...prev, ...response.data])
+      }
+      setCommentsPage(page)
+      // Check if there are more comments (assuming API returns less than limit when no more)
+      setHasMoreComments(response.data.length === 10)
+    } catch (error) {
+      console.error('Failed to load comments:', error)
+    } finally {
+      setIsLoadingComments(false)
+    }
+  }
+
+  const handleAddComment = async () => {
+    if (!newCommentText.trim() || isSubmittingComment) return
+
+    setIsSubmittingComment(true)
+    try {
+      const newComment = await addComment(post.id, newCommentText.trim())
+      setComments((prev) => [newComment, ...prev])
+      setNewCommentText('')
+      // Update the comments count in the post
+      post.comments_count += 1
+    } catch (error) {
+      console.error('Failed to add comment:', error)
+    } finally {
+      setIsSubmittingComment(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleAddComment()
+    }
+  }
 
   const handleReaction = (reactionType: ReactionType) => {
     const currentReaction = hasLiked ? 'like' : hasCheered ? 'cheer' : null
@@ -291,10 +349,97 @@ export const FeedCard: React.FC<FeedCardProps> = ({
 
         {/* Comments section (expandable) */}
         {showComments && (
-          <div className="mt-4 pt-4 border-t border-slate-700">
-            <div className="text-sm text-slate-400">
-              Comentarios aparecerao aqui
+          <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
+            {/* Add comment input */}
+            <div className="flex gap-2">
+              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 flex-shrink-0">
+                U
+              </div>
+              <div className="flex-1 flex gap-2">
+                <Input
+                  placeholder="Adicionar um comentário..."
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isSubmittingComment}
+                  className="flex-1"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAddComment}
+                  disabled={!newCommentText.trim() || isSubmittingComment}
+                  className="px-3"
+                >
+                  {isSubmittingComment ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
             </div>
+
+            {/* Comments list */}
+            {isLoadingComments && comments.length === 0 ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                <span className="ml-2 text-sm text-slate-400">Carregando comentários...</span>
+              </div>
+            ) : comments.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-slate-400">
+                  Nenhum comentário ainda. Seja o primeiro a comentar!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 flex-shrink-0">
+                      U
+                    </div>
+                    <div className="flex-1 bg-slate-800/50 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-semibold text-slate-200">
+                          Usuário
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(comment.created_at).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-300">{comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Load more button */}
+                {hasMoreComments && (
+                  <div className="text-center pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => loadComments(commentsPage + 1)}
+                      disabled={isLoadingComments}
+                      className="text-slate-400 hover:text-slate-200"
+                    >
+                      {isLoadingComments ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Carregando...
+                        </>
+                      ) : (
+                        'Carregar mais comentários'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
