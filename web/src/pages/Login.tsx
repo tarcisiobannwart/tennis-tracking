@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useNavigate, Navigate, Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
@@ -24,8 +24,7 @@ const Login = () => {
   // Redirect if already authenticated
   if (isAuthenticated) {
     const from = (location.state as any)?.from?.pathname || '/app'
-    navigate(from, { replace: true })
-    return null
+    return <Navigate to={from} replace />
   }
 
   const handleLogin = async (e: React.FormEvent) => {
