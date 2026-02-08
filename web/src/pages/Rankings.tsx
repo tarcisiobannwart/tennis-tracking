@@ -12,84 +12,14 @@ import {
   TrendingDown,
   Minus,
   Plus,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Chip } from '@/components/ui/chip'
 import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations'
-
-// Mock data para desenvolvimento
-const mockRankings = [
-  {
-    id: '1',
-    name: 'Ranking Clube Paulistano 2026',
-    description: 'Ranking oficial do clube para o ano de 2026',
-    ranking_type: 'round_robin',
-    status: 'active',
-    venue: 'Clube Paulistano',
-    location: 'São Paulo, SP',
-    current_round: 3,
-    total_rounds: 8,
-    total_participants: 16,
-    my_position: 5,
-    my_stats: {
-      points: 15.5,
-      matches_played: 6,
-      matches_won: 4,
-      matches_lost: 2,
-      win_rate: 66.7,
-      position_history: [8, 7, 6, 5],
-    },
-    start_date: '2026-01-15',
-    end_date: '2026-06-30',
-  },
-  {
-    id: '2',
-    name: 'Torneio Desafio Verão',
-    description: 'Sistema de desafio para todos os níveis',
-    ranking_type: 'challenge',
-    status: 'active',
-    venue: 'Centro Esportivo',
-    location: 'Rio de Janeiro, RJ',
-    current_round: 1,
-    total_rounds: null,
-    total_participants: 24,
-    my_position: 12,
-    my_stats: {
-      points: 8.0,
-      matches_played: 3,
-      matches_won: 2,
-      matches_lost: 1,
-      win_rate: 66.7,
-      position_history: [15, 13, 12],
-    },
-    start_date: '2026-02-01',
-    end_date: '2026-03-31',
-  },
-  {
-    id: '3',
-    name: 'Ranking Iniciantes 2026',
-    description: 'Ranking exclusivo para iniciantes',
-    ranking_type: 'round_robin',
-    status: 'completed',
-    venue: 'Academia Tennis Pro',
-    location: 'Campinas, SP',
-    current_round: 4,
-    total_rounds: 4,
-    total_participants: 12,
-    my_position: 3,
-    my_stats: {
-      points: 22.0,
-      matches_played: 8,
-      matches_won: 7,
-      matches_lost: 1,
-      win_rate: 87.5,
-      position_history: [6, 5, 4, 3],
-    },
-    start_date: '2026-01-10',
-    end_date: '2026-02-05',
-  },
-]
+import { useRankings } from '@/hooks/useRankingData'
 
 type StatusFilter = 'all' | 'active' | 'inactive' | 'completed'
 type TypeFilter = 'all' | 'round_robin' | 'challenge'
@@ -100,19 +30,25 @@ const Rankings = () => {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [showFilters, setShowFilters] = useState(false)
 
-  // Filter rankings
+  // Fetch rankings from API
+  const { data, isLoading, isError, error, refetch } = useRankings({
+    my_rankings: true,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    ranking_type: typeFilter === 'all' ? undefined : typeFilter,
+  })
+
+  // Filter rankings based on search
   const filteredRankings = useMemo(() => {
-    return mockRankings.filter(ranking => {
+    if (!data?.data) return []
+
+    return data.data.filter(ranking => {
       const matchesSearch =
         ranking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ranking.location.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesStatus = statusFilter === 'all' || ranking.status === statusFilter
-      const matchesType = typeFilter === 'all' || ranking.ranking_type === typeFilter
-
-      return matchesSearch && matchesStatus && matchesType
+      return matchesSearch
     })
-  }, [searchTerm, statusFilter, typeFilter])
+  }, [data, searchTerm])
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -239,10 +175,44 @@ const Rankings = () => {
           </CardContent>
         </Card>
 
+        {/* Loading State */}
+        {isLoading && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Loader2 className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-spin" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Carregando rankings...
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Por favor, aguarde enquanto buscamos seus rankings
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error State */}
+        {isError && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Erro ao carregar rankings
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                {error instanceof Error ? error.message : 'Ocorreu um erro inesperado'}
+              </p>
+              <Button onClick={() => refetch()}>
+                Tentar Novamente
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rankings List */}
-        <StaggerContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredRankings.map((ranking) => {
+        {!isLoading && !isError && (
+          <StaggerContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredRankings.map((ranking) => {
               const statusConfig = getStatusConfig(ranking.status)
               const typeConfig = getTypeConfig(ranking.ranking_type)
               const positionTrend = getPositionTrend(ranking.my_stats?.position_history || [])
@@ -395,12 +365,13 @@ const Rankings = () => {
                   </Link>
                 </StaggerItem>
               )
-            })}
-          </div>
-        </StaggerContainer>
+              })}
+            </div>
+          </StaggerContainer>
+        )}
 
         {/* Empty State */}
-        {filteredRankings.length === 0 && (
+        {!isLoading && !isError && filteredRankings.length === 0 && (
           <Card>
             <CardContent className="p-12 text-center">
               <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
