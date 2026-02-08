@@ -1,107 +1,109 @@
 import { useState } from 'react'
-import { Search, Plus, Users, Trophy, TrendingUp, Target } from 'lucide-react'
+import { Search, Plus, Users, Trophy, TrendingUp, Target, Loader2, AlertCircle, UserX } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations'
-
-// Mock data - in real app this would come from API
-const playersData = [
-  {
-    id: '1',
-    name: 'Rafael Nadal',
-    country: 'ESP',
-    ranking: 1,
-    age: 37,
-    height: 185,
-    weight: 85,
-    playingHand: 'left',
-    backhand: 'two-handed',
-    profileImage: '/api/players/1/photo',
-    statistics: {
-      matchesPlayed: 45,
-      matchesWon: 39,
-      winPercentage: 86.7,
-      acesPerMatch: 5.2,
-      doubleFaultsPerMatch: 2.1,
-      firstServePercentage: 68.5,
-      firstServeWonPercentage: 75.8,
-      secondServeWonPercentage: 58.3,
-      breakPointsSaved: 65.2,
-      returnPointsWon: 32.1,
-      netPointsWon: 71.4
-    }
-  },
-  {
-    id: '2',
-    name: 'Novak Djokovic',
-    country: 'SRB',
-    ranking: 2,
-    age: 36,
-    height: 188,
-    weight: 77,
-    playingHand: 'right',
-    backhand: 'two-handed',
-    profileImage: '/api/players/2/photo',
-    statistics: {
-      matchesPlayed: 42,
-      matchesWon: 37,
-      winPercentage: 88.1,
-      acesPerMatch: 7.8,
-      doubleFaultsPerMatch: 1.9,
-      firstServePercentage: 65.2,
-      firstServeWonPercentage: 73.1,
-      secondServeWonPercentage: 56.8,
-      breakPointsSaved: 68.7,
-      returnPointsWon: 34.5,
-      netPointsWon: 69.2
-    }
-  },
-  {
-    id: '3',
-    name: 'Carlos Alcaraz',
-    country: 'ESP',
-    ranking: 3,
-    age: 20,
-    height: 183,
-    weight: 74,
-    playingHand: 'right',
-    backhand: 'two-handed',
-    profileImage: '/api/players/3/photo',
-    statistics: {
-      matchesPlayed: 38,
-      matchesWon: 32,
-      winPercentage: 84.2,
-      acesPerMatch: 6.5,
-      doubleFaultsPerMatch: 2.3,
-      firstServePercentage: 62.8,
-      firstServeWonPercentage: 71.2,
-      secondServeWonPercentage: 54.1,
-      breakPointsSaved: 61.3,
-      returnPointsWon: 29.8,
-      netPointsWon: 73.6
-    }
-  }
-]
+import { usePlayers } from '@/hooks/usePlayerData'
+import { PlayerProfile } from '@/services/playerService'
 
 const Players = () => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedPlayer, setSelectedPlayer] = useState(playersData[0])
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
 
-  const filteredPlayers = playersData.filter(player =>
-    player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    player.country.toLowerCase().includes(searchTerm.toLowerCase())
+  const { data: players, isLoading, isError, refetch } = usePlayers(
+    searchTerm ? { search: searchTerm } : undefined
   )
 
-  const getCountryFlag = (country: string) => {
+  const filteredPlayers = players || []
+  const selectedPlayer = filteredPlayers.find(p => p.id === selectedPlayerId) || filteredPlayers[0] || null
+
+  const getCountryFlag = (country?: string) => {
+    if (!country) return '🏳️'
     const flags: Record<string, string> = {
+      'BR': '🇧🇷',
+      'BRA': '🇧🇷',
       'ESP': '🇪🇸',
       'SRB': '🇷🇸',
       'USA': '🇺🇸',
       'GER': '🇩🇪',
       'FRA': '🇫🇷',
-      'ITA': '🇮🇹'
+      'ITA': '🇮🇹',
+      'GBR': '🇬🇧',
+      'ARG': '🇦🇷',
     }
-    return flags[country] || '🏳️'
+    return flags[country.toUpperCase()] || '🏳️'
+  }
+
+  const getWinPercentage = (player: PlayerProfile) => {
+    if (!player.stats || player.stats.total_matches === 0) return 0
+    return player.stats.win_percentage || 0
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Players</h1>
+              <p className="text-muted-foreground">Manage player profiles and performance statistics</p>
+            </div>
+          </div>
+          <Card>
+            <CardContent className="p-6">
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+          <div className="grid gap-6 lg:grid-cols-4">
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                <CardContent className="space-y-2">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+            <div className="lg:col-span-3 space-y-6">
+              <Card><CardContent className="p-6"><Skeleton className="h-32 w-full" /></CardContent></Card>
+              <div className="grid gap-6 md:grid-cols-3">
+                {[1, 2, 3].map(i => (
+                  <Card key={i}><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageTransition>
+    )
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <PageTransition>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Players</h1>
+            <p className="text-muted-foreground">Manage player profiles and performance statistics</p>
+          </div>
+          <Card>
+            <CardContent className="p-12 text-center">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4 text-destructive" />
+              <h3 className="text-lg font-semibold mb-2">Error loading players</h3>
+              <p className="text-muted-foreground mb-4">Could not load the player list. Please try again.</p>
+              <Button onClick={() => refetch()} variant="outline">
+                <Loader2 className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </PageTransition>
+    )
   }
 
   return (
@@ -137,6 +139,18 @@ const Players = () => {
         </CardContent>
       </Card>
 
+      {/* Empty state */}
+      {filteredPlayers.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <UserX className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No players found</h3>
+            <p className="text-muted-foreground">
+              {searchTerm ? `No players match "${searchTerm}". Try a different search.` : 'No players registered yet.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
       <div className="grid gap-6 lg:grid-cols-4">
         {/* Players List */}
         <div className="lg:col-span-1">
@@ -152,23 +166,24 @@ const Players = () => {
                 {filteredPlayers.map((player) => (
                   <StaggerItem key={player.id}>
                     <div
-                    key={player.id}
-                    onClick={() => setSelectedPlayer(player)}
+                    onClick={() => setSelectedPlayerId(player.id)}
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedPlayer.id === player.id
+                      selectedPlayer?.id === player.id
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-accent'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                        <span className="text-lg">
-                          {getCountryFlag(player.country)}
-                        </span>
+                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center overflow-hidden">
+                        {player.avatar_url ? (
+                          <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-lg">{getCountryFlag(player.country)}</span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{player.name}</p>
-                        <p className="text-sm opacity-75">#{player.ranking}</p>
+                        <p className="font-medium truncate">{player.full_name}</p>
+                        <p className="text-sm opacity-75">@{player.username}</p>
                       </div>
                     </div>
                   </div>
@@ -180,54 +195,66 @@ const Players = () => {
         </div>
 
         {/* Player Details */}
+        {selectedPlayer && (
         <div className="lg:col-span-3 space-y-6">
           {/* Player Info */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start space-x-6">
-                <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center text-4xl">
-                  {getCountryFlag(selectedPlayer.country)}
+                <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center text-4xl overflow-hidden">
+                  {selectedPlayer.avatar_url ? (
+                    <img src={selectedPlayer.avatar_url} alt={selectedPlayer.full_name} className="w-full h-full object-cover" />
+                  ) : (
+                    getCountryFlag(selectedPlayer.country)
+                  )}
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2">{selectedPlayer.name}</h2>
+                  <h2 className="text-2xl font-bold mb-2">{selectedPlayer.full_name}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Ranking</span>
-                      <p className="font-medium">#{selectedPlayer.ranking}</p>
+                      <span className="text-muted-foreground">Username</span>
+                      <p className="font-medium">@{selectedPlayer.username}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Country</span>
-                      <p className="font-medium">{selectedPlayer.country}</p>
+                      <p className="font-medium">{getCountryFlag(selectedPlayer.country)} {selectedPlayer.country || 'N/A'}</p>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Age</span>
-                      <p className="font-medium">{selectedPlayer.age}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Playing Hand</span>
-                      <p className="font-medium capitalize">{selectedPlayer.playingHand}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mt-4">
+                    {selectedPlayer.height_cm && (
                     <div>
                       <span className="text-muted-foreground">Height</span>
-                      <p className="font-medium">{selectedPlayer.height} cm</p>
+                      <p className="font-medium">{selectedPlayer.height_cm} cm</p>
                     </div>
+                    )}
+                    {selectedPlayer.laterality && (
                     <div>
-                      <span className="text-muted-foreground">Weight</span>
-                      <p className="font-medium">{selectedPlayer.weight} kg</p>
+                      <span className="text-muted-foreground">Playing Hand</span>
+                      <p className="font-medium capitalize">{selectedPlayer.laterality}</p>
                     </div>
+                    )}
+                  </div>
+                  {(selectedPlayer.backhand_type || selectedPlayer.gender) && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mt-4">
+                    {selectedPlayer.backhand_type && (
                     <div>
                       <span className="text-muted-foreground">Backhand</span>
-                      <p className="font-medium capitalize">{selectedPlayer.backhand}</p>
+                      <p className="font-medium capitalize">{selectedPlayer.backhand_type}</p>
                     </div>
+                    )}
+                    {selectedPlayer.gender && (
+                    <div>
+                      <span className="text-muted-foreground">Gender</span>
+                      <p className="font-medium capitalize">{selectedPlayer.gender}</p>
+                    </div>
+                    )}
                   </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Statistics Overview */}
+          {selectedPlayer.stats && (
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
               <CardHeader>
@@ -239,16 +266,15 @@ const Players = () => {
               <CardContent>
                 <div className="text-center">
                   <div className="text-3xl font-bold mb-2">
-                    {selectedPlayer.statistics.matchesWon}-
-                    {selectedPlayer.statistics.matchesPlayed - selectedPlayer.statistics.matchesWon}
+                    {selectedPlayer.stats.wins}-{selectedPlayer.stats.losses}
                   </div>
                   <div className="text-sm text-muted-foreground mb-4">
-                    {selectedPlayer.statistics.winPercentage}% Win Rate
+                    {getWinPercentage(selectedPlayer).toFixed(1)}% Win Rate
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
                     <div
                       className="bg-court-accent h-2 rounded-full"
-                      style={{ width: `${selectedPlayer.statistics.winPercentage}%` }}
+                      style={{ width: `${getWinPercentage(selectedPlayer)}%` }}
                     />
                   </div>
                 </div>
@@ -265,16 +291,16 @@ const Players = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-sm">Aces/Match</span>
-                    <span className="font-medium">{selectedPlayer.statistics.acesPerMatch}</span>
+                    <span className="text-sm">Aces</span>
+                    <span className="font-medium">{selectedPlayer.stats.aces}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Double Faults</span>
+                    <span className="font-medium">{selectedPlayer.stats.double_faults}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">1st Serve %</span>
-                    <span className="font-medium">{selectedPlayer.statistics.firstServePercentage}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">1st Serve Won</span>
-                    <span className="font-medium">{selectedPlayer.statistics.firstServeWonPercentage}%</span>
+                    <span className="font-medium">{selectedPlayer.stats.first_serve_percentage?.toFixed(1)}%</span>
                   </div>
                 </div>
               </CardContent>
@@ -284,29 +310,31 @@ const Players = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <TrendingUp className="w-5 h-5 mr-2 text-court-accent" />
-                  Return & Defense
+                  Performance
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-sm">Return Points Won</span>
-                    <span className="font-medium">{selectedPlayer.statistics.returnPointsWon}%</span>
+                    <span className="text-sm">Winners</span>
+                    <span className="font-medium">{selectedPlayer.stats.winners}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Break Points Saved</span>
-                    <span className="font-medium">{selectedPlayer.statistics.breakPointsSaved}%</span>
+                    <span className="text-sm">Unforced Errors</span>
+                    <span className="font-medium">{selectedPlayer.stats.unforced_errors}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Net Points Won</span>
-                    <span className="font-medium">{selectedPlayer.statistics.netPointsWon}%</span>
+                    <span className="text-sm">Total Matches</span>
+                    <span className="font-medium">{selectedPlayer.stats.total_matches}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+          )}
 
           {/* Detailed Statistics */}
+          {selectedPlayer.stats && (
           <Card>
             <CardHeader>
               <CardTitle>Detailed Statistics</CardTitle>
@@ -317,20 +345,18 @@ const Players = () => {
                   <h4 className="font-medium mb-4">Serving Performance</h4>
                   <div className="space-y-3">
                     {[
-                      { label: 'First Serve Percentage', value: selectedPlayer.statistics.firstServePercentage },
-                      { label: 'First Serve Won', value: selectedPlayer.statistics.firstServeWonPercentage },
-                      { label: 'Second Serve Won', value: selectedPlayer.statistics.secondServeWonPercentage },
-                      { label: 'Break Points Saved', value: selectedPlayer.statistics.breakPointsSaved }
+                      { label: 'First Serve Percentage', value: selectedPlayer.stats.first_serve_percentage || 0 },
+                      { label: 'Win Percentage', value: getWinPercentage(selectedPlayer) },
                     ].map((stat) => (
                       <div key={stat.label}>
                         <div className="flex justify-between text-sm mb-1">
                           <span>{stat.label}</span>
-                          <span>{stat.value}%</span>
+                          <span>{stat.value.toFixed(1)}%</span>
                         </div>
                         <div className="w-full bg-secondary rounded-full h-2">
                           <div
                             className="bg-court-accent h-2 rounded-full"
-                            style={{ width: `${stat.value}%` }}
+                            style={{ width: `${Math.min(stat.value, 100)}%` }}
                           />
                         </div>
                       </div>
@@ -339,33 +365,46 @@ const Players = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-medium mb-4">Return & Court Coverage</h4>
+                  <h4 className="font-medium mb-4">Shot Statistics</h4>
                   <div className="space-y-3">
-                    {[
-                      { label: 'Return Points Won', value: selectedPlayer.statistics.returnPointsWon },
-                      { label: 'Net Points Won', value: selectedPlayer.statistics.netPointsWon },
-                      { label: 'Win Percentage', value: selectedPlayer.statistics.winPercentage }
-                    ].map((stat) => (
-                      <div key={stat.label}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>{stat.label}</span>
-                          <span>{stat.value}%</span>
-                        </div>
-                        <div className="w-full bg-secondary rounded-full h-2">
-                          <div
-                            className="bg-court-accent h-2 rounded-full"
-                            style={{ width: `${stat.value}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                    <div className="flex justify-between">
+                      <span className="text-sm">Aces</span>
+                      <span className="font-medium">{selectedPlayer.stats.aces}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Double Faults</span>
+                      <span className="font-medium">{selectedPlayer.stats.double_faults}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Winners</span>
+                      <span className="font-medium">{selectedPlayer.stats.winners}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Unforced Errors</span>
+                      <span className="font-medium">{selectedPlayer.stats.unforced_errors}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+          )}
+
+          {/* Bio */}
+          {selectedPlayer.bio && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">{selectedPlayer.bio}</p>
+            </CardContent>
+          </Card>
+          )}
         </div>
+        )}
       </div>
+      )}
       </div>
     </PageTransition>
   )
