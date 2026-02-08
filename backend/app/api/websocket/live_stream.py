@@ -22,8 +22,10 @@ class ConnectionManager:
         self.active_connections: Dict[str, Set[WebSocket]] = {}
         # Global connections (for system-wide events)
         self.global_connections: Set[WebSocket] = set()
+        # User connections for notifications (by user_id)
+        self.user_connections: Dict[str, Set[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, match_id: str = None):
+    async def connect(self, websocket: WebSocket, match_id: str = None, user_id: str = None):
         """Accept WebSocket connection"""
         await websocket.accept()
 
@@ -32,17 +34,27 @@ class ConnectionManager:
                 self.active_connections[match_id] = set()
             self.active_connections[match_id].add(websocket)
             logger.info("WebSocket connected to match", match_id=match_id)
+        elif user_id:
+            if user_id not in self.user_connections:
+                self.user_connections[user_id] = set()
+            self.user_connections[user_id].add(websocket)
+            logger.info("WebSocket connected for user", user_id=user_id)
         else:
             self.global_connections.add(websocket)
             logger.info("Global WebSocket connected")
 
-    def disconnect(self, websocket: WebSocket, match_id: str = None):
+    def disconnect(self, websocket: WebSocket, match_id: str = None, user_id: str = None):
         """Remove WebSocket connection"""
         if match_id and match_id in self.active_connections:
             self.active_connections[match_id].discard(websocket)
             if not self.active_connections[match_id]:
                 del self.active_connections[match_id]
             logger.info("WebSocket disconnected from match", match_id=match_id)
+        elif user_id and user_id in self.user_connections:
+            self.user_connections[user_id].discard(websocket)
+            if not self.user_connections[user_id]:
+                del self.user_connections[user_id]
+            logger.info("WebSocket disconnected for user", user_id=user_id)
         else:
             self.global_connections.discard(websocket)
             logger.info("Global WebSocket disconnected")
@@ -79,6 +91,23 @@ class ConnectionManager:
         # Remove disconnected websockets
         for websocket in disconnected:
             self.global_connections.discard(websocket)
+
+    async def send_to_user(self, user_id: str, data: dict):
+        """Send data to all connections for a specific user"""
+        if user_id in self.user_connections:
+            message = json.dumps(data)
+            disconnected = set()
+
+            for websocket in self.user_connections[user_id]:
+                try:
+                    await websocket.send_text(message)
+                except Exception as e:
+                    logger.error("Failed to send message to user", error=str(e), user_id=user_id)
+                    disconnected.add(websocket)
+
+            # Remove disconnected websockets
+            for websocket in disconnected:
+                self.user_connections[user_id].discard(websocket)
 
     async def broadcast_to_all(self, data: dict):
         """Broadcast data to all active connections"""
@@ -294,3 +323,12 @@ async def broadcast_analysis_update(task_id: str, progress: int, status: str, ma
         await manager.send_to_match(match_id, update_data)
     else:
         await manager.send_global(update_data)
+
+
+async def send_notification_to_user(user_id: str, notification_data: dict):
+    """Send notification to a specific user via WebSocket"""
+    await manager.send_to_user(user_id, {
+        "type": "notification",
+        "data": notification_data,
+        "timestamp": asyncio.get_event_loop().time()
+    })

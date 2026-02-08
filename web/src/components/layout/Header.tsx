@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/services/authService'
 import LanguageSelector from '../LanguageSelector'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 const Header = () => {
   const { theme, toggleTheme } = useThemeStore()
@@ -87,13 +89,7 @@ const Header = () => {
           </Button>
 
           {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative hover:bg-slate-800"
-          >
-            <Bell className="w-4 h-4 text-slate-400" />
-          </Button>
+          <NotificationBell />
 
           {/* User dropdown */}
           <div className="relative" ref={dropdownRef}>
