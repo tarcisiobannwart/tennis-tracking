@@ -25,6 +25,7 @@ import PlayerProfile from './pages/PlayerProfile'
 import Rankings from './pages/Rankings'
 import RankingDetail from './pages/RankingDetail'
 import Statistics from './pages/Statistics'
+import HeadToHead from './pages/HeadToHead'
 import Notifications from './pages/Notifications'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
@@ -73,6 +74,7 @@ function App() {
         <Route path="/app/organization" element={<Organization />} />
         <Route path="/app/accept-invite" element={<AcceptInvite />} />
         <Route path="/app/statistics" element={<Statistics />} />
+        <Route path="/app/h2h" element={<HeadToHead />} />
         <Route path="/app/notifications" element={<Notifications />} />
 
         {/* Admin routes */}
