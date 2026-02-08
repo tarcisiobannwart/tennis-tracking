@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Home, BarChart3, Plus, TrendingUp, Settings, Video, Upload, Dumbbell, ScanLine, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
@@ -32,6 +32,7 @@ interface BottomNavProps {
 
 export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) => {
   const location = useLocation()
+  const navigate = useNavigate()
   const [fabOpen, setFabOpen] = useState(false)
   const [isVisible] = useState(true)
 
@@ -41,7 +42,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
       label: 'Nova Partida',
       icon: <Video className="w-5 h-5" />,
       onClick: () => {
-        console.log('Nova Partida')
+        navigate('/app/matches')
         setFabOpen(false)
       }
     },
@@ -50,7 +51,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
       label: 'Upload Video',
       icon: <Upload className="w-5 h-5" />,
       onClick: () => {
-        console.log('Upload Video')
+        navigate('/app/matches')
         setFabOpen(false)
       }
     },
@@ -59,7 +60,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
       label: 'Iniciar Treino',
       icon: <Dumbbell className="w-5 h-5" />,
       onClick: () => {
-        console.log('Iniciar Treino')
+        navigate('/app/training')
         setFabOpen(false)
       }
     },
@@ -68,7 +69,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
       label: 'Scanner de Quadra',
       icon: <ScanLine className="w-5 h-5" />,
       onClick: () => {
-        console.log('Scanner de Quadra')
+        navigate('/app/live')
         setFabOpen(false)
       }
     }
