@@ -12,7 +12,7 @@ from app.models.point_history import (
     PointOutcome
 )
 from app.core.auth import get_current_user
-from app.models.user import User
+from app.models.user import UserInDB as User
 
 router = APIRouter(prefix="/point-history", tags=["point-history"])
 

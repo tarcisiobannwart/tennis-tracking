@@ -7,20 +7,23 @@ import os
 import uuid
 from datetime import datetime
 import aiofiles
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 
-from app.core.mongodb import get_database
+from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.config import settings
+from app.models.sql.video import Video
 from fastapi.security import HTTPBearer
 from jose import jwt, JWTError
 
 router = APIRouter()
 
-# Diretório para uploads
+# Diretorio para uploads
 UPLOAD_DIR = "/app/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Extensões permitidas
+# Extensoes permitidas
 ALLOWED_VIDEO_EXTENSIONS = [".mp4", ".avi", ".mov", ".mkv", ".webm"]
 MAX_FILE_SIZE = 500 * 1024 * 1024  # 500MB
 
@@ -48,16 +51,24 @@ async def get_test_user(token_data = Depends(security)):
             )
 
 
+def _get_user_id(current_user) -> str:
+    """Extract user ID from either dict (test user) or UserInDB object"""
+    if isinstance(current_user, dict):
+        return current_user["_id"]
+    return str(current_user.id)
+
+
 @router.post("/video")
 async def upload_video(
     file: UploadFile = File(...),
     title: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    current_user=Depends(get_test_user)
+    current_user=Depends(get_test_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Upload video for analysis"""
 
-    # Valida extensão do arquivo
+    # Valida extensao do arquivo
     file_extension = os.path.splitext(file.filename)[1].lower()
     if file_extension not in ALLOWED_VIDEO_EXTENSIONS:
         raise HTTPException(
@@ -65,7 +76,7 @@ async def upload_video(
             detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}"
         )
 
-    # Gera nome único para o arquivo
+    # Gera nome unico para o arquivo
     file_id = str(uuid.uuid4())
     file_name = f"{file_id}{file_extension}"
     file_path = os.path.join(UPLOAD_DIR, file_name)
@@ -83,33 +94,38 @@ async def upload_video(
                 )
 
             await f.write(content)
+    except HTTPException:
+        raise
     except Exception as e:
         if os.path.exists(file_path):
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
-    # Salva informações no banco
-    db = get_database()
-    video_doc = {
-        "videoId": file_id,
-        "userId": str(current_user["_id"]),
-        "fileName": file.filename,
-        "filePath": file_path,
-        "fileSize": len(content),
-        "title": title or file.filename,
-        "description": description or "",
-        "status": "uploaded",
-        "uploadedAt": datetime.utcnow(),
-        "analysisStatus": "pending",
-        "metadata": {
+    # Salva informacoes no banco
+    user_id = _get_user_id(current_user)
+
+    video = Video(
+        id=uuid.uuid4(),
+        user_id=uuid.UUID(user_id) if len(user_id) == 36 else uuid.uuid5(uuid.NAMESPACE_DNS, user_id),
+        filename=file_name,
+        original_filename=file.filename,
+        file_size=len(content),
+        mime_type=file.content_type or "video/mp4",
+        upload_path=file_path,
+        status="uploaded",
+        description=description or "",
+        metadata_={
+            "title": title or file.filename,
             "duration": None,
             "width": None,
             "height": None,
-            "fps": None
+            "fps": None,
+            "analysisStatus": "pending"
         }
-    }
+    )
 
-    result = await db.videos.insert_one(video_doc)
+    db.add(video)
+    await db.flush()
 
     return {
         "videoId": file_id,
@@ -123,52 +139,64 @@ async def upload_video(
 @router.get("/status/{video_id}")
 async def get_upload_status(
     video_id: str,
-    current_user=Depends(get_test_user)
+    current_user=Depends(get_test_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get upload status"""
-    db = get_database()
 
-    video = await db.videos.find_one({
-        "videoId": video_id,
-        "userId": str(current_user["_id"])
-    })
+    user_id = _get_user_id(current_user)
+
+    # Search by filename pattern (video_id is the UUID prefix of the filename)
+    result = await db.execute(
+        select(Video).where(
+            Video.filename.like(f"{video_id}%"),
+            Video.user_id == (uuid.UUID(user_id) if len(user_id) == 36 else uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
+        )
+    )
+    video = result.scalar_one_or_none()
 
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
 
+    metadata = video.metadata_ or {}
     return {
-        "videoId": video["videoId"],
-        "status": video["status"],
-        "fileName": video["fileName"],
-        "uploadedAt": video["uploadedAt"],
-        "analysisStatus": video.get("analysisStatus", "pending")
+        "videoId": video_id,
+        "status": video.status,
+        "fileName": video.original_filename,
+        "uploadedAt": video.uploaded_at,
+        "analysisStatus": metadata.get("analysisStatus", "pending")
     }
 
 
 @router.delete("/{video_id}")
 async def delete_video(
     video_id: str,
-    current_user=Depends(get_test_user)
+    current_user=Depends(get_test_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Delete uploaded video"""
-    db = get_database()
 
-    video = await db.videos.find_one({
-        "videoId": video_id,
-        "userId": str(current_user["_id"])
-    })
+    user_id = _get_user_id(current_user)
+
+    result = await db.execute(
+        select(Video).where(
+            Video.filename.like(f"{video_id}%"),
+            Video.user_id == (uuid.UUID(user_id) if len(user_id) == 36 else uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
+        )
+    )
+    video = result.scalar_one_or_none()
 
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    # Remove arquivo físico
-    if os.path.exists(video["filePath"]):
+    # Remove arquivo fisico
+    if video.upload_path and os.path.exists(video.upload_path):
         try:
-            os.remove(video["filePath"])
+            os.remove(video.upload_path)
         except Exception as e:
             print(f"Error removing file: {e}")
 
     # Remove do banco
-    await db.videos.delete_one({"videoId": video_id})
+    await db.delete(video)
 
     return {"message": "Video deleted successfully"}

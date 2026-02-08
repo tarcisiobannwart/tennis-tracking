@@ -5,12 +5,14 @@ Scoring API routes
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import Optional
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.scoring_service import ScoringService
 from app.models.scoring import MatchFormat, ScoreUpdate, GameSituation, LiveBroadcastData
 from app.models.scoreboard import ScoreboardStyle
 from app.core.auth import get_current_user
-from app.models.user import User
+from app.core.database import get_db
+from app.models.user import UserInDB as User
 
 router = APIRouter(prefix="/scoring", tags=["scoring"])
 
@@ -34,7 +36,8 @@ class AddPointRequest(BaseModel):
 @router.post("/matches", status_code=status.HTTP_201_CREATED)
 async def create_match_score(
     request: CreateMatchScoreRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Create a new match score
@@ -45,7 +48,7 @@ async def create_match_score(
     - Starting server
     - First set and game
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         match_score = await service.create_match_score(
@@ -72,7 +75,8 @@ async def create_match_score(
 @router.get("/matches/{match_id}")
 async def get_match_score(
     match_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get current match score
@@ -84,7 +88,7 @@ async def get_match_score(
     - Current server
     - Match status (complete/in-progress)
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         score_display = await service.get_current_score_display(match_id)
@@ -105,7 +109,8 @@ async def get_match_score(
 async def add_point(
     match_id: str,
     request: AddPointRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Add a point to the match
@@ -119,7 +124,7 @@ async def add_point(
 
     Returns events that occurred (point_won, game_won, set_won, match_won)
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         score_update = await service.add_point(match_id, request.winner_player_id)
@@ -147,7 +152,8 @@ async def add_point(
 @router.get("/matches/{match_id}/stats")
 async def get_match_stats(
     match_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get match statistics
@@ -159,7 +165,7 @@ async def get_match_stats(
     - Match format
     - Completion status
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         stats = await service.get_match_stats(match_id)
@@ -186,7 +192,8 @@ async def get_scoreboard(
     player2_ranking: Optional[int] = None,
     player1_country: Optional[str] = None,
     player2_country: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get visual scoreboard for match
@@ -207,7 +214,7 @@ async def get_scoreboard(
     - player1_country: Player 1 country code (optional, e.g., "SUI")
     - player2_country: Player 2 country code (optional, e.g., "ESP")
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         scoreboard = await service.get_scoreboard(
@@ -236,7 +243,8 @@ async def get_scoreboard(
 @router.get("/matches/{match_id}/situation")
 async def get_game_situation(
     match_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get current game situation with special conditions detection
@@ -262,7 +270,7 @@ async def get_game_situation(
     - Bagel: Leading 5-0 (possible 6-0 set)
     - Breadstick: Leading 5-1 (possible 6-1 set)
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         situation = await service.get_game_situation(match_id)
@@ -289,7 +297,8 @@ async def get_live_broadcast_data(
     player1_country: Optional[str] = None,
     player2_country: Optional[str] = None,
     last_points: int = 5,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get optimized live broadcast data package
@@ -314,7 +323,7 @@ async def get_live_broadcast_data(
     - player1_country, player2_country: Country codes (optional)
     - last_points: Number of recent points to include (default: 5, max: 20)
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     # Validate last_points parameter
     if last_points < 1 or last_points > 20:
@@ -350,7 +359,8 @@ async def get_live_broadcast_data(
 @router.get("/matches/{match_id}/broadcast")
 async def get_broadcast_score(
     match_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Get minimal broadcast overlay score
@@ -372,7 +382,7 @@ async def get_broadcast_score(
 
     Response format uses compact keys (p1/p2) to minimize payload size.
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         score = await service.get_broadcast_score(match_id)
@@ -392,7 +402,8 @@ async def get_broadcast_score(
 @router.get("/matches/{match_id}/export")
 async def export_match_data(
     match_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Export complete match data for analysis/archival
@@ -415,7 +426,7 @@ async def export_match_data(
     Warning: Response can be large for long matches (100+ KB).
     Not recommended for real-time polling.
     """
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         data = await service.export_complete_match_data(match_id)
@@ -435,10 +446,11 @@ async def export_match_data(
 @router.delete("/matches/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_match_score(
     match_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Delete a match score"""
-    service = ScoringService()
+    service = ScoringService(db)
 
     try:
         deleted = await service.delete_match_score(match_id)

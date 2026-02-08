@@ -6,9 +6,11 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 
-# MongoDB
-motor==3.3.2
-pymongo==4.6.1
+# Database (PostgreSQL)
+sqlalchemy[asyncio]==2.0.23
+alembic==1.12.1
+asyncpg==0.29.0
+pgvector==0.2.4
 
 # Data validation
 pydantic==2.5.0
@@ -44,3 +46,6 @@ slowapi>=0.1.9
 
 # Email
 resend>=0.7.0
+
+# Utilities
+python-slugify>=8.0.0

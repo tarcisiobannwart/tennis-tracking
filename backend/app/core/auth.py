@@ -8,7 +8,11 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.core.config import settings
-from app.core.mongodb import get_collection
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db, async_session
+from app.models.sql.user import User
+from sqlalchemy import select
+import uuid
 from app.models.user import TokenData, UserInDB
 
 
@@ -88,8 +92,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     """Get current authenticated user"""
     token_data = verify_token(token)
 
-    users_collection = get_collection("users")
-    user = await users_collection.find_one({"_id": token_data.user_id})
+    # Parse user_id - handle both UUID and legacy ObjectId formats
+    try:
+        user_uuid = uuid.UUID(token_data.user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired, please login again",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    async with async_session() as session:
+        result = await session.execute(select(User).where(User.id == user_uuid))
+        user = result.scalar_one_or_none()
 
     if user is None:
         raise HTTPException(
@@ -98,7 +113,27 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return UserInDB(**user)
+    # Build UserInDB from SQL User for backward compatibility
+    return UserInDB(
+        _id=str(user.id),
+        email=user.email,
+        username=user.username,
+        fullName=user.full_name,
+        role=user.role.value if hasattr(user.role, 'value') else user.role,
+        isActive=user.is_active,
+        password=user.password,
+        createdAt=user.created_at,
+        updatedAt=user.updated_at,
+        lastLogin=user.last_login,
+        refreshToken=user.refresh_token,
+        subscription=user.subscription,
+        organizationId=str(user.organization_id) if user.organization_id else None,
+        organizationRole=user.organization_role,
+        emailVerified=user.email_verified,
+        emailVerificationToken=user.email_verification_token,
+        passwordResetToken=user.password_reset_token,
+        passwordResetExpires=user.password_reset_expires,
+    )
 
 
 async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)) -> UserInDB:

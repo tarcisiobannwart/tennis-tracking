@@ -1,12 +1,14 @@
 """
-Training API routes (MongoDB)
+Training API routes (SQLAlchemy)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from typing import List, Optional
 import structlog
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import get_current_user
+from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.models.training import (
     TrainingSessionCreate,
     TrainingSessionUpdate,
@@ -17,7 +19,10 @@ from app.services.training_service import TrainingService
 
 router = APIRouter()
 logger = structlog.get_logger(__name__)
-training_service = TrainingService()
+
+
+def get_training_service(db: AsyncSession = Depends(get_db)) -> TrainingService:
+    return TrainingService(db)
 
 
 # --- Drill Types ---
@@ -29,6 +34,7 @@ async def list_drill_types(
     category: Optional[str] = Query(None),
     difficulty: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get available drill types (seeds default data if empty)"""
     await training_service.seed_drill_types()
@@ -39,6 +45,7 @@ async def list_drill_types(
 async def create_drill_type(
     data: DrillTypeCreate,
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Create a new drill type (admin/coach)"""
     return await training_service.create_drill_type(data)
@@ -53,9 +60,10 @@ async def list_sessions(
     status: Optional[str] = Query(None),
     session_type: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get training sessions for the current user"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     return await training_service.get_sessions(
         user_id=user_id, skip=skip, limit=limit, status=status, session_type=session_type
     )
@@ -65,9 +73,10 @@ async def list_sessions(
 async def create_session(
     data: TrainingSessionCreate,
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Create a new training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     return await training_service.create_session(user_id=user_id, data=data)
 
 
@@ -75,9 +84,10 @@ async def create_session(
 async def get_session(
     session_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get a specific training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.get_session(session_id, user_id)
     if not session:
         raise HTTPException(status_code=404, detail="Training session not found")
@@ -89,9 +99,10 @@ async def update_session(
     data: TrainingSessionUpdate,
     session_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Update a training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.update_session(session_id, user_id, data)
     if not session:
         raise HTTPException(status_code=404, detail="Training session not found")
@@ -102,9 +113,10 @@ async def update_session(
 async def delete_session(
     session_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Delete a training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     success = await training_service.delete_session(session_id, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Training session not found")
@@ -117,9 +129,10 @@ async def delete_session(
 async def start_session(
     session_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Start a planned training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.start_session(session_id, user_id)
     if not session:
         raise HTTPException(status_code=400, detail="Cannot start session (not found or not planned)")
@@ -130,9 +143,10 @@ async def start_session(
 async def finish_session(
     session_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Finish an in-progress training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.finish_session(session_id, user_id)
     if not session:
         raise HTTPException(status_code=400, detail="Cannot finish session (not found or not in progress)")
@@ -146,9 +160,10 @@ async def add_drill(
     data: TrainingDrillCreate,
     session_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Add a drill to a training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.add_drill_to_session(session_id, user_id, data)
     if not session:
         raise HTTPException(status_code=404, detail="Training session not found")
@@ -161,9 +176,10 @@ async def update_drill(
     session_id: str = Path(...),
     drill_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Update a drill in a training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.update_drill_in_session(session_id, user_id, drill_id, drill_updates)
     if not session:
         raise HTTPException(status_code=404, detail="Session or drill not found")
@@ -175,9 +191,10 @@ async def remove_drill(
     session_id: str = Path(...),
     drill_id: str = Path(...),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Remove a drill from a training session"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     session = await training_service.remove_drill_from_session(session_id, user_id, drill_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -190,9 +207,10 @@ async def remove_drill(
 async def get_progress(
     period: str = Query("month"),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get training progress for the current user"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     return await training_service.get_progress(user_id, period)
 
 
@@ -201,18 +219,20 @@ async def get_analytics(
     session_type: Optional[str] = Query(None),
     period: str = Query("month"),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get training analytics for the current user"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     return await training_service.get_analytics(user_id, session_type, period)
 
 
 @router.get("/recommendations")
 async def get_recommendations(
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get AI-powered training recommendations"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     return await training_service.get_recommendations(user_id)
 
 
@@ -221,9 +241,10 @@ async def get_calendar(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Get training calendar for the current user"""
-    user_id = current_user.get("_id") or current_user.get("id")
+    user_id = str(current_user.id)
     return await training_service.get_calendar(user_id, start_date, end_date)
 
 
@@ -232,6 +253,7 @@ async def get_player_recommendations(
     player_id: str = Path(..., description="ID do jogador"),
     focus_area: Optional[str] = Query(None, description="Area de foco especifica (serve, return, consistency, etc)"),
     current_user: dict = Depends(get_current_user),
+    training_service: TrainingService = Depends(get_training_service),
 ):
     """Gera recomendacoes personalizadas de treino com IA baseadas em historico de performance"""
     return await training_service.get_player_recommendations(player_id, focus_area)

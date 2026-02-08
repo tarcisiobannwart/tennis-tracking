@@ -27,10 +27,6 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALGORITHM: str = "HS256"
 
-    # Database - MongoDB
-    MONGODB_URL: str = "mongodb://admin:tennis_admin_2024@localhost:27017/tennis_tracking?authSource=admin"
-    DATABASE_NAME: str = "tennis_tracking"
-
     # PostgreSQL (asyncpg)
     DATABASE_URL: str = "postgresql+asyncpg://tennis:tennis123@localhost:5432/tennis_tracking"
 

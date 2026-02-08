@@ -9,7 +9,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import get_current_user
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.models.sql.tournament import TournamentStatus
 from app.models.tournament_schema import (
@@ -74,7 +74,7 @@ async def create_tournament(
     current_user: dict = Depends(get_current_user),
 ):
     """Criar novo torneio"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     tournament = await tournament_service.create_tournament(db, user_id, data)
     return to_tournament_response(tournament)
 
@@ -155,7 +155,7 @@ async def update_tournament(
     current_user: dict = Depends(get_current_user),
 ):
     """Atualizar torneio (apenas organizador)"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     tournament = await tournament_service.update_tournament(
         db, uuid.UUID(tournament_id), user_id, data
     )
@@ -172,7 +172,7 @@ async def delete_tournament(
     current_user: dict = Depends(get_current_user),
 ):
     """Deletar torneio (apenas organizador)"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     success = await tournament_service.delete_tournament(
         db, uuid.UUID(tournament_id), user_id
     )
@@ -221,7 +221,7 @@ async def get_my_tournaments(
     current_user: dict = Depends(get_current_user),
 ):
     """Listar meus torneios (organizados por mim)"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     tournaments, total = await tournament_service.get_my_tournaments(
         db, user_id, status=status, skip=skip, limit=limit
     )
@@ -238,7 +238,7 @@ async def add_category(
     current_user: dict = Depends(get_current_user),
 ):
     """Adicionar categoria ao torneio"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     category = await tournament_service.add_category(
         db, uuid.UUID(tournament_id), user_id, data
     )
@@ -270,7 +270,7 @@ async def register_for_tournament(
     current_user: dict = Depends(get_current_user),
 ):
     """Inscrever-se em um torneio"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     registration = await tournament_service.register_player(
         db, uuid.UUID(tournament_id), user_id, data
     )
@@ -314,7 +314,7 @@ async def get_my_registrations(
     current_user: dict = Depends(get_current_user),
 ):
     """Listar minhas inscricoes"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     registrations = await tournament_service.get_player_registrations(
         db, user_id, skip=skip, limit=limit
     )
@@ -355,7 +355,7 @@ async def cancel_registration(
     current_user: dict = Depends(get_current_user),
 ):
     """Cancelar inscricao"""
-    user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+    user_id = uuid.UUID(str(current_user.id))
     success = await tournament_service.cancel_registration(
         db, uuid.UUID(registration_id), user_id
     )

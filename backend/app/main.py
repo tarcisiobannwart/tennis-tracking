@@ -10,7 +10,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 
 from app.core.config import settings
-from app.core.mongodb import connect_mongodb, close_mongodb
 from app.core.database import connect_db, disconnect_db
 from app.core.middleware import setup_rate_limiting
 from app.core.exceptions import setup_exception_handlers
@@ -24,15 +23,11 @@ async def lifespan(app: FastAPI):
     print("Starting Tennis Tracking API")
     await connect_db()
     print("Connected to PostgreSQL")
-    await connect_mongodb()
-    print("Connected to MongoDB")
 
     yield
 
     # Shutdown
     print("Shutting down Tennis Tracking API")
-    await close_mongodb()
-    print("Disconnected from MongoDB")
     await disconnect_db()
     print("Disconnected from PostgreSQL")
 

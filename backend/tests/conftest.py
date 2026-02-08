@@ -1,16 +1,13 @@
 """
-Pytest configuration and fixtures for MongoDB-based tests
+Pytest configuration and fixtures for PostgreSQL-based tests
 """
 
 import pytest
 import asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
-from mongomock_motor import AsyncMongoMockClient
 
 from app.main import app
-from app.core import mongodb as mongodb_module
-from app.core.config import settings
 
 
 @pytest.fixture(scope="session")
@@ -21,25 +18,8 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(autouse=True)
-async def mock_mongodb():
-    """Mock MongoDB with mongomock-motor for each test."""
-    mock_client = AsyncMongoMockClient()
-    mock_db = mock_client[settings.DATABASE_NAME]
-
-    # Patch the global db object
-    mongodb_module.db.client = mock_client
-    mongodb_module.db.database = mock_db
-
-    yield mock_db
-
-    # Clean up all collections after each test
-    for name in await mock_db.list_collection_names():
-        await mock_db[name].drop()
-
-
 @pytest.fixture
-async def client(mock_mongodb) -> AsyncGenerator[AsyncClient, None]:
+async def client() -> AsyncGenerator[AsyncClient, None]:
     """Create a test HTTP client."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

@@ -11,7 +11,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import get_current_user
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.services.match_history_service import MatchHistoryService
 
@@ -42,7 +42,7 @@ async def list_match_history(
     - Superficie da quadra
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         # Parse dates se fornecidas
         parsed_start_date = None
@@ -111,7 +111,7 @@ async def get_match_detail(
     - Estatisticas basicas se disponiveis
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
         match_uuid = uuid.UUID(match_id)
 
         service = MatchHistoryService()

@@ -1,10 +1,10 @@
 """
-Stream models for MongoDB - Live camera streaming
+Stream Pydantic models - Live camera streaming
 """
 from typing import Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
-from bson import ObjectId
+import uuid
 
 
 class StreamStatus(str):
@@ -36,7 +36,7 @@ class StreamCreate(StreamBase):
 
 class StreamInDB(StreamBase):
     """Stream model as stored in database"""
-    id: Optional[str] = Field(default_factory=lambda: str(ObjectId()), alias="_id")
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
     userId: str
     streamKey: str
     rtmpUrl: str
@@ -53,7 +53,6 @@ class StreamInDB(StreamBase):
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class StreamResponse(BaseModel):

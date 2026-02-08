@@ -12,8 +12,6 @@ alembic==1.12.1
 asyncpg==0.29.0  # PostgreSQL async driver
 pgvector==0.2.4  # PostgreSQL vector extension
 aiosqlite==0.19.0  # SQLite async driver
-motor==3.3.2  # MongoDB async driver (temporario - sera removido apos migracao)
-pymongo==4.6.1  # MongoDB driver (temporario - sera removido apos migracao)
 
 # Data validation and serialization
 pydantic==2.5.0
@@ -47,7 +45,6 @@ sympy==1.12
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
-mongomock-motor>=0.0.20
 black==23.11.0
 isort==5.12.0
 flake8==6.1.0

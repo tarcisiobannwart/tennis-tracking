@@ -1,10 +1,10 @@
 """
-Analysis models for MongoDB
+Analysis Pydantic models
 """
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
-from bson import ObjectId
+import uuid
 
 
 class AnalysisStatus(str):
@@ -66,7 +66,7 @@ class Rally(BaseModel):
 
 class AnalysisTask(BaseModel):
     """Analysis task model"""
-    taskId: str = Field(default_factory=lambda: str(ObjectId()))
+    taskId: str = Field(default_factory=lambda: str(uuid.uuid4()))
     videoId: str
     userId: str
     status: str = AnalysisStatus.PENDING
@@ -79,12 +79,12 @@ class AnalysisTask(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        json_encoders = {ObjectId: str}
+        pass
 
 
 class AnalysisResult(BaseModel):
     """Complete analysis result model"""
-    id: Optional[str] = Field(default_factory=lambda: str(ObjectId()), alias="_id")
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
     taskId: str
     videoId: str
     matchId: Optional[str] = None
@@ -116,4 +116,4 @@ class AnalysisResult(BaseModel):
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+        pass

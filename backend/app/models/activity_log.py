@@ -1,5 +1,5 @@
 """
-Activity log models for MongoDB
+Activity log Pydantic models
 """
 from typing import Optional
 from datetime import datetime

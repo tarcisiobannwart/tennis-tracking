@@ -4,13 +4,16 @@ Videos API routes
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Body
 from typing import List, Optional
 from datetime import datetime
-from bson import ObjectId
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, delete
+import uuid
 import structlog
 
-from app.core.mongodb import get_database
+from app.core.database import get_db
 from app.core.auth import get_current_active_user
 from app.models.user import UserInDB
+from app.models.sql.video import Video
 from app.services.user_service import user_service
 from app.services.video_service import VideoService
 from app.core.dependencies import get_plan_limits
@@ -23,9 +26,9 @@ logger = structlog.get_logger(__name__)
 async def upload_video(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Upload a video for analysis"""
-    db = get_database()
     user_id = str(current_user.id)
 
     # Check plan limits
@@ -41,19 +44,22 @@ async def upload_video(
             )
 
     # Save video info to database
-    video_doc = {
-        "userId": user_id,
-        "filename": file.filename,
-        "contentType": file.content_type,
-        "size": file.size,
-        "status": "uploaded",
-        "uploadedAt": datetime.utcnow()
-    }
+    video = Video(
+        id=uuid.uuid4(),
+        user_id=uuid.UUID(user_id),
+        filename=file.filename,
+        original_filename=file.filename,
+        file_size=file.size or 0,
+        mime_type=file.content_type or "video/mp4",
+        upload_path=f"/app/uploads/{file.filename}",
+        status="uploaded",
+    )
 
-    result = await db.videos.insert_one(video_doc)
+    db.add(video)
+    await db.flush()
 
     return {
-        "id": str(result.inserted_id),
+        "id": str(video.id),
         "filename": file.filename,
         "status": "uploaded",
         "message": "Video enviado com sucesso"
@@ -61,56 +67,90 @@ async def upload_video(
 
 
 @router.get("/")
-async def get_user_videos(current_user: UserInDB = Depends(get_current_active_user)):
+async def get_user_videos(
+    current_user: UserInDB = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Get all videos for current user"""
-    db = get_database()
     user_id = str(current_user.id)
 
     # Check history limit
     limits = get_plan_limits(current_user)
     history_days = limits["history_days"]
 
-    query = {"userId": user_id}
+    query = select(Video).where(Video.user_id == uuid.UUID(user_id))
+
     if history_days > 0:
         from datetime import timedelta
         cutoff = datetime.utcnow() - timedelta(days=history_days)
-        query["uploadedAt"] = {"$gte": cutoff}
+        query = query.where(Video.uploaded_at >= cutoff)
 
-    videos = await db.videos.find(query).sort("uploadedAt", -1).to_list(100)
+    query = query.order_by(Video.uploaded_at.desc()).limit(100)
 
+    result = await db.execute(query)
+    videos = result.scalars().all()
+
+    formatted = []
     for video in videos:
-        video["_id"] = str(video["_id"])
+        formatted.append({
+            "_id": str(video.id),
+            "userId": str(video.user_id),
+            "filename": video.filename,
+            "contentType": video.mime_type,
+            "size": video.file_size,
+            "status": video.status,
+            "uploadedAt": video.uploaded_at.isoformat() if video.uploaded_at else None,
+        })
 
-    return videos
+    return formatted
 
 
 @router.get("/{video_id}")
-async def get_video(video_id: str, current_user: UserInDB = Depends(get_current_active_user)):
+async def get_video(
+    video_id: str,
+    current_user: UserInDB = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Get video by ID"""
-    db = get_database()
-    video = await db.videos.find_one({
-        "_id": ObjectId(video_id),
-        "userId": str(current_user.id)
-    })
+    query = select(Video).where(
+        Video.id == uuid.UUID(video_id),
+        Video.user_id == uuid.UUID(str(current_user.id))
+    )
+    result = await db.execute(query)
+    video = result.scalar_one_or_none()
 
     if not video:
         raise HTTPException(status_code=404, detail="Video nao encontrado")
 
-    video["_id"] = str(video["_id"])
-    return video
+    return {
+        "_id": str(video.id),
+        "userId": str(video.user_id),
+        "filename": video.filename,
+        "contentType": video.mime_type,
+        "size": video.file_size,
+        "status": video.status,
+        "uploadedAt": video.uploaded_at.isoformat() if video.uploaded_at else None,
+    }
 
 
 @router.delete("/{video_id}")
-async def delete_video(video_id: str, current_user: UserInDB = Depends(get_current_active_user)):
+async def delete_video(
+    video_id: str,
+    current_user: UserInDB = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Delete video"""
-    db = get_database()
-    result = await db.videos.delete_one({
-        "_id": ObjectId(video_id),
-        "userId": str(current_user.id)
-    })
+    query = select(Video).where(
+        Video.id == uuid.UUID(video_id),
+        Video.user_id == uuid.UUID(str(current_user.id))
+    )
+    result = await db.execute(query)
+    video = result.scalar_one_or_none()
 
-    if result.deleted_count == 0:
+    if not video:
         raise HTTPException(status_code=404, detail="Video nao encontrado")
+
+    await db.delete(video)
 
     return {"message": "Video excluido com sucesso"}
 
@@ -123,22 +163,23 @@ class BatchProcessRequest(BaseModel):
 @router.post("/batch-process")
 async def batch_process_videos(
     request: BatchProcessRequest,
-    current_user: UserInDB = Depends(get_current_active_user)
+    current_user: UserInDB = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Processa múltiplos vídeos em lote
+    Processa multiplos videos em lote
 
-    Critérios de aceite TT-55:
+    Criterios de aceite TT-55:
     - [x] Endpoint POST /videos/batch-process
     - [x] Upload batch funcional
-    - [x] Controle de concorrência
+    - [x] Controle de concorrencia
 
     Args:
-        request: Lista de IDs de vídeos para processar
-        current_user: Usuário autenticado
+        request: Lista de IDs de videos para processar
+        current_user: Usuario autenticado
 
     Returns:
-        Informações do batch job criado
+        Informacoes do batch job criado
     """
     try:
         logger.info(
@@ -148,12 +189,13 @@ async def batch_process_videos(
         )
 
         # Verify all videos belong to user
-        db = get_database()
         for video_id in request.video_ids:
-            video = await db.videos.find_one({
-                "_id": ObjectId(video_id),
-                "userId": str(current_user.id)
-            })
+            query = select(Video).where(
+                Video.id == uuid.UUID(video_id),
+                Video.user_id == uuid.UUID(str(current_user.id))
+            )
+            result = await db.execute(query)
+            video = result.scalar_one_or_none()
             if not video:
                 raise HTTPException(
                     status_code=404,
@@ -161,7 +203,7 @@ async def batch_process_videos(
                 )
 
         # Create batch processing job
-        video_service = VideoService(db)
+        video_service = VideoService()
         batch_info = await video_service.batch_process(request.video_ids)
 
         return {
@@ -182,24 +224,24 @@ async def list_analysis_tasks(
     match_id: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
-    current_user: UserInDB = Depends(get_current_active_user)
+    current_user: UserInDB = Depends(get_current_active_user),
 ):
     """
-    Lista todas as tarefas de análise de vídeo
+    Lista todas as tarefas de analise de video
 
-    Critérios de aceite TT-55:
+    Criterios de aceite TT-55:
     - [x] Endpoint GET /analysis/tasks
     - [x] Listagem com filtros por status
-    - [x] Paginação
+    - [x] Paginacao
 
     Query Parameters:
     - status: Filtrar por status (pending, processing, completed, failed)
     - match_id: Filtrar por ID da partida
-    - skip: Número de tarefas para pular (paginação)
-    - limit: Número máximo de tarefas retornadas
+    - skip: Numero de tarefas para pular (paginacao)
+    - limit: Numero maximo de tarefas retornadas
 
     Returns:
-        Lista de tarefas de análise
+        Lista de tarefas de analise
     """
     try:
         logger.info(
@@ -209,8 +251,7 @@ async def list_analysis_tasks(
             match_id=match_id
         )
 
-        db = get_database()
-        video_service = VideoService(db)
+        video_service = VideoService()
 
         tasks = await video_service.list_analysis_tasks(
             skip=skip,

@@ -16,7 +16,6 @@ up: ## Inicia todos os containers
 	@echo "✅ Serviços iniciados!"
 	@echo "📊 Frontend: http://localhost:3000"
 	@echo "📖 API Docs: http://localhost:8000/docs"
-	@echo "🗄️  MongoDB: mongodb://localhost:27017"
 
 .PHONY: down
 down: ## Para todos os containers
@@ -62,10 +61,6 @@ logs-backend: ## Mostra logs do backend
 logs-frontend: ## Mostra logs do frontend
 	@docker-compose logs -f frontend
 
-.PHONY: logs-mongodb
-logs-mongodb: ## Mostra logs do MongoDB
-	@docker-compose logs -f mongodb
-
 .PHONY: logs-redis
 logs-redis: ## Mostra logs do Redis
 	@docker-compose logs -f redis
@@ -89,7 +84,6 @@ health: ## Verifica saúde dos serviços
 	@echo "🏥 Verificando saúde dos serviços..."
 	@curl -s http://localhost:8000/health > /dev/null && echo "✅ Backend: OK" || echo "❌ Backend: FALHOU"
 	@curl -s http://localhost:3000 > /dev/null && echo "✅ Frontend: OK" || echo "❌ Frontend: FALHOU"
-	@docker-compose exec -T mongodb mongosh --quiet --eval "db.adminCommand('ping')" > /dev/null 2>&1 && echo "✅ MongoDB: OK" || echo "❌ MongoDB: FALHOU"
 	@docker-compose exec -T redis redis-cli ping > /dev/null 2>&1 && echo "✅ Redis: OK" || echo "❌ Redis: FALHOU"
 
 # ==================== DESENVOLVIMENTO ====================
@@ -107,28 +101,11 @@ shell-backend: ## Abre shell no container backend
 shell-frontend: ## Abre shell no container frontend
 	@docker-compose exec frontend /bin/sh
 
-.PHONY: shell-mongodb
-shell-mongodb: ## Abre MongoDB shell
-	@docker-compose exec mongodb mongosh -u admin -p tennis_admin_2024
-
 .PHONY: shell-redis
 shell-redis: ## Abre Redis CLI
 	@docker-compose exec redis redis-cli
 
 # ==================== BANCO DE DADOS ====================
-
-.PHONY: db-backup
-db-backup: ## Faz backup do MongoDB
-	@echo "💾 Fazendo backup do MongoDB..."
-	@mkdir -p ./backups
-	@docker-compose exec -T mongodb mongodump --uri="mongodb://admin:tennis_admin_2024@localhost:27017/tennis_tracking?authSource=admin" --archive > ./backups/backup_$$(date +%Y%m%d_%H%M%S).archive
-	@echo "✅ Backup salvo em ./backups/"
-
-.PHONY: db-restore
-db-restore: ## Restaura backup do MongoDB (use: make db-restore FILE=backup.archive)
-	@echo "📥 Restaurando backup do MongoDB..."
-	@docker-compose exec -T mongodb mongorestore --uri="mongodb://admin:tennis_admin_2024@localhost:27017/tennis_tracking?authSource=admin" --archive < ./backups/$(FILE)
-	@echo "✅ Backup restaurado!"
 
 .PHONY: db-seed
 db-seed: ## Popula banco com dados de exemplo
@@ -221,7 +198,6 @@ ports: ## Mostra portas utilizadas
 	@echo "Frontend: http://localhost:3000"
 	@echo "Backend API: http://localhost:8000"
 	@echo "API Docs: http://localhost:8000/docs"
-	@echo "MongoDB: mongodb://localhost:27017"
 	@echo "Redis: redis://localhost:6380"
 
 .PHONY: size
@@ -246,7 +222,6 @@ version: ## Mostra versões dos serviços
 	@echo "📋 Versões dos Serviços:"
 	@docker-compose exec backend python --version
 	@docker-compose exec frontend node --version
-	@docker-compose exec mongodb mongosh --version
 	@docker-compose exec redis redis-cli --version
 
 # ==================== ATALHOS ====================

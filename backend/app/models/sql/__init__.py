@@ -22,6 +22,9 @@ from app.models.sql.trajectory_embedding import TrajectoryEmbedding
 # Error reporting automatico
 from app.models.sql.error_report import ErrorReport, ErrorSourceEnum, ErrorReportStatusEnum
 
+# Match scoring
+from app.models.sql.match_score import MatchScoreSQL
+
 # TT-132: Sistema de torneios
 from app.models.sql.tournament import (
     Tournament,
@@ -53,6 +56,8 @@ __all__ = [
     "ErrorReport",
     "ErrorSourceEnum",
     "ErrorReportStatusEnum",
+    # Match scoring
+    "MatchScoreSQL",
     # TT-132: Tournaments
     "Tournament",
     "TournamentCategory",

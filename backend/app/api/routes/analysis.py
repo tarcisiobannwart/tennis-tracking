@@ -4,11 +4,14 @@ Analysis API routes
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime
-from bson import ObjectId
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import uuid
 
-from app.core.mongodb import get_database
+from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.models.sql.video import Video
+from app.models.sql.analysis import AnalysisTask
 
 router = APIRouter()
 
@@ -16,37 +19,41 @@ router = APIRouter()
 @router.post("/start/{video_id}")
 async def start_analysis(
     video_id: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Start video analysis"""
-    db = get_database()
+
+    user_id = str(current_user.id)
 
     # Verify video exists and belongs to user
-    video = await db.videos.find_one({
-        "_id": ObjectId(video_id),
-        "userId": str(current_user["_id"])
-    })
+    result = await db.execute(
+        select(Video).where(
+            Video.id == uuid.UUID(video_id),
+            Video.user_id == uuid.UUID(user_id)
+        )
+    )
+    video = result.scalar_one_or_none()
 
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
 
     # Create analysis task
-    task = {
-        "taskId": str(uuid.uuid4()),
-        "videoId": video_id,
-        "userId": str(current_user["_id"]),
-        "status": "queued",
-        "progress": 0,
-        "createdAt": datetime.utcnow(),
-        "results": {}
-    }
+    task = AnalysisTask(
+        id=uuid.uuid4(),
+        video_id=uuid.UUID(video_id),
+        user_id=uuid.UUID(user_id),
+        status="pending",
+        progress=0,
+    )
 
-    result = await db.analysis_tasks.insert_one(task)
+    db.add(task)
+    await db.flush()
 
     # TODO: Trigger actual analysis worker
 
     return {
-        "taskId": task["taskId"],
+        "taskId": str(task.id),
         "status": "queued",
         "message": "Analysis started successfully"
     }
@@ -55,70 +62,88 @@ async def start_analysis(
 @router.get("/status/{task_id}")
 async def get_analysis_status(
     task_id: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get analysis task status"""
-    db = get_database()
 
-    task = await db.analysis_tasks.find_one({
-        "taskId": task_id,
-        "userId": str(current_user["_id"])
-    })
+    user_id = str(current_user.id)
+
+    result = await db.execute(
+        select(AnalysisTask).where(
+            AnalysisTask.id == uuid.UUID(task_id),
+            AnalysisTask.user_id == uuid.UUID(user_id)
+        )
+    )
+    task = result.scalar_one_or_none()
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
     return {
-        "taskId": task["taskId"],
-        "status": task["status"],
-        "progress": task.get("progress", 0),
-        "results": task.get("results", {})
+        "taskId": str(task.id),
+        "status": task.status,
+        "progress": task.progress or 0,
+        "results": task.match_stats or {}
     }
 
 
 @router.get("/results/{task_id}")
 async def get_analysis_results(
     task_id: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Get analysis results"""
-    db = get_database()
 
-    task = await db.analysis_tasks.find_one({
-        "taskId": task_id,
-        "userId": str(current_user["_id"])
-    })
+    user_id = str(current_user.id)
+
+    result = await db.execute(
+        select(AnalysisTask).where(
+            AnalysisTask.id == uuid.UUID(task_id),
+            AnalysisTask.user_id == uuid.UUID(user_id)
+        )
+    )
+    task = result.scalar_one_or_none()
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if task["status"] != "completed":
+    if task.status != "completed":
         raise HTTPException(
             status_code=400,
-            detail=f"Analysis not completed. Current status: {task['status']}"
+            detail=f"Analysis not completed. Current status: {task.status}"
         )
 
-    return task.get("results", {})
+    return task.match_stats or {}
 
 
 @router.get("/history")
-async def get_analysis_history(current_user=Depends(get_current_user)):
+async def get_analysis_history(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Get user's analysis history"""
-    db = get_database()
 
-    tasks = await db.analysis_tasks.find(
-        {"userId": str(current_user["_id"])}
-    ).sort("createdAt", -1).to_list(50)
+    user_id = str(current_user.id)
 
-    # Convert ObjectId to string and format response
+    result = await db.execute(
+        select(AnalysisTask)
+        .where(AnalysisTask.user_id == uuid.UUID(user_id))
+        .order_by(AnalysisTask.created_at.desc())
+        .limit(50)
+    )
+    tasks = result.scalars().all()
+
+    # Format response
     formatted_tasks = []
     for task in tasks:
         formatted_tasks.append({
-            "taskId": task["taskId"],
-            "videoId": task.get("videoId"),
-            "status": task["status"],
-            "createdAt": task["createdAt"],
-            "completedAt": task.get("completedAt")
+            "taskId": str(task.id),
+            "videoId": str(task.video_id),
+            "status": task.status,
+            "createdAt": task.created_at,
+            "completedAt": task.completed_at
         })
 
     return formatted_tasks

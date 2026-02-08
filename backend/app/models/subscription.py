@@ -1,5 +1,5 @@
 """
-Subscription models for MongoDB
+Subscription Pydantic models
 """
 from typing import Optional
 from datetime import datetime

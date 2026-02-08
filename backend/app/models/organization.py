@@ -1,5 +1,5 @@
 """
-Organization models for MongoDB
+Organization Pydantic models
 """
 from typing import Optional, List
 from datetime import datetime

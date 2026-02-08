@@ -1,10 +1,10 @@
 """
-Video models for MongoDB
+Video Pydantic models
 """
 from typing import Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
-from bson import ObjectId
+import uuid
 
 
 class VideoStatus(str):
@@ -37,7 +37,7 @@ class VideoCreate(VideoBase):
 
 class VideoInDB(VideoBase):
     """Video model as stored in database"""
-    id: Optional[str] = Field(default_factory=lambda: str(ObjectId()), alias="_id")
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
     userId: str
     uploadPath: str
     processedPath: Optional[str] = None
@@ -53,7 +53,6 @@ class VideoInDB(VideoBase):
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class VideoResponse(VideoBase):

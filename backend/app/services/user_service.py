@@ -131,6 +131,30 @@ class UserService:
         await db.flush()
         return True
 
+    async def get_by_username_or_email(self, db: AsyncSession, identifier: str) -> Optional[User]:
+        result = await db.execute(
+            select(User).where(
+                or_(User.username == identifier, User.email == identifier)
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update_refresh_token(self, db: AsyncSession, user_id: uuid.UUID, token: Optional[str]) -> bool:
+        user = await self.get_by_id(db, user_id)
+        if not user:
+            return False
+        user.refresh_token = token
+        await db.flush()
+        return True
+
+    async def update_last_login(self, db: AsyncSession, user_id: uuid.UUID) -> bool:
+        user = await self.get_by_id(db, user_id)
+        if not user:
+            return False
+        user.last_login = datetime.utcnow()
+        await db.flush()
+        return True
+
     async def update_subscription(self, db: AsyncSession, user_id: uuid.UUID, subscription: dict) -> Optional[User]:
         user = await self.get_by_id(db, user_id)
         if not user:

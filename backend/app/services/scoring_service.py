@@ -4,7 +4,9 @@ Scoring service - Implements official ATP/WTA tennis scoring rules
 
 from typing import Optional, Dict, List
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorDatabase
+
+from sqlalchemy import select, delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.scoring import (
     MatchScore,
@@ -20,7 +22,7 @@ from app.models.scoreboard import (
     PlayerScoreDisplay,
     ScoreboardStyle
 )
-from app.core.mongodb import get_database
+from app.models.sql.match_score import MatchScoreSQL
 
 
 class ScoringService:
@@ -35,9 +37,8 @@ class ScoringService:
     - Server alternates each game (and every 2 points in tiebreak)
     """
 
-    def __init__(self, db: Optional[AsyncIOMotorDatabase] = None):
-        self.db = db or get_database()
-        self.collection = self.db.get_collection("match_scores")
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     async def create_match_score(
         self,
@@ -75,19 +76,48 @@ class ScoringService:
         match_score.start_new_game()
 
         # Save to database
-        await self.collection.insert_one(match_score.model_dump())
+        data = match_score.model_dump()
+        row = MatchScoreSQL(
+            match_id=data["match_id"],
+            player1_id=data["player1_id"],
+            player2_id=data["player2_id"],
+            format=data["format"],
+            current_server_id=data["current_server_id"],
+            is_complete=data["is_complete"],
+            winner_player_id=data.get("winner_player_id"),
+            score_data={
+                "sets": data.get("sets", []),
+                "current_set": data.get("current_set"),
+                "current_game": data.get("current_game"),
+            },
+        )
+        self.db.add(row)
+        await self.db.flush()
 
         return match_score
 
     async def get_match_score(self, match_id: str) -> Optional[MatchScore]:
         """Get match score by match ID"""
-        score_data = await self.collection.find_one({"match_id": match_id})
-        if not score_data:
+        result = await self.db.execute(
+            select(MatchScoreSQL).where(MatchScoreSQL.match_id == match_id)
+        )
+        row = result.scalar_one_or_none()
+        if not row:
             return None
 
-        # Remove MongoDB _id field
-        score_data.pop("_id", None)
-        return MatchScore(**score_data)
+        score_data = row.score_data or {}
+        return MatchScore(
+            match_id=row.match_id,
+            player1_id=row.player1_id,
+            player2_id=row.player2_id,
+            format=row.format,
+            current_server_id=row.current_server_id,
+            is_complete=row.is_complete,
+            winner_player_id=row.winner_player_id,
+            sets=score_data.get("sets", []),
+            current_set=score_data.get("current_set"),
+            current_game=score_data.get("current_game"),
+        )
 
     async def add_point(self, match_id: str, winner_player_id: str) -> ScoreUpdate:
         """
@@ -125,10 +155,21 @@ class ScoringService:
         situation = self._get_game_situation(match_score)
 
         # Update in database
-        await self.collection.update_one(
-            {"match_id": match_id},
-            {"$set": match_score.model_dump()}
+        result = await self.db.execute(
+            select(MatchScoreSQL).where(MatchScoreSQL.match_id == match_id)
         )
+        row = result.scalar_one_or_none()
+        if row:
+            data = match_score.model_dump()
+            row.current_server_id = data["current_server_id"]
+            row.is_complete = data["is_complete"]
+            row.winner_player_id = data.get("winner_player_id")
+            row.score_data = {
+                "sets": data.get("sets", []),
+                "current_set": data.get("current_set"),
+                "current_game": data.get("current_game"),
+            }
+            await self.db.flush()
 
         return ScoreUpdate(
             match_id=match_id,
@@ -234,8 +275,11 @@ class ScoringService:
 
     async def delete_match_score(self, match_id: str) -> bool:
         """Delete match score"""
-        result = await self.collection.delete_one({"match_id": match_id})
-        return result.deleted_count > 0
+        result = await self.db.execute(
+            delete(MatchScoreSQL).where(MatchScoreSQL.match_id == match_id)
+        )
+        await self.db.flush()
+        return result.rowcount > 0
 
     async def create_scoreboard(
         self,

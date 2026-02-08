@@ -10,7 +10,7 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.routes.auth import get_current_user
+from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.services.statistics_service import StatisticsService
 
@@ -37,7 +37,7 @@ async def get_statistics_dashboard(
     - Sequencia de resultados
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         service = StatisticsService()
         result = await service.get_dashboard(
@@ -71,7 +71,7 @@ async def get_monthly_stats(
     Retorna jogos mes a mes para grafico de barras.
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         service = StatisticsService()
         result = await service.get_monthly(db=db, user_id=user_id, months=months)
@@ -92,7 +92,7 @@ async def get_breakdown_stats(
     Retorna breakdown por tipo de jogo e tipo de resultado.
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         service = StatisticsService()
         result = await service.get_breakdown(db=db, user_id=user_id)
@@ -113,7 +113,7 @@ async def get_surface_stats(
     Retorna estatisticas por tipo de piso (saibro, hard, grama, carpete).
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         service = StatisticsService()
         result = await service.get_surface_stats(db=db, user_id=user_id)
@@ -135,7 +135,7 @@ async def get_opponent_profile_stats(
     Inclui lateralidade (destro/canhoto), backhand (1/2 maos) e faixa etaria.
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         service = StatisticsService()
         result = await service.get_opponent_profile(db=db, user_id=user_id)
@@ -157,7 +157,7 @@ async def get_result_streak(
     Retorna sequencia de resultados (V/D) para grid visual.
     """
     try:
-        user_id = uuid.UUID(current_user.get("id") or current_user.get("_id"))
+        user_id = uuid.UUID(str(current_user.id))
 
         service = StatisticsService()
         result = await service.get_streak(db=db, user_id=user_id, limit=limit)

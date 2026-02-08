@@ -28,9 +28,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tennis_pass}
       - POSTGRES_DB=${POSTGRES_DB:-tennis_tracking}
 
-      # MongoDB (legado)
-      - MONGODB_URL=${MONGODB_URL:-mongodb://admin:tennis_admin_2024@tennis-tracking-mongodb:27017/tennis_tracking?authSource=admin}
-
       # Redis
       - REDIS_URL=${REDIS_URL:-redis://tennis-tracking-redis:6379/0}
 

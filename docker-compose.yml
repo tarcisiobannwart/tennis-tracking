@@ -1,48 +1,6 @@
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: tennis-tracking-mongodb
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: tennis_admin_2024
-      MONGO_INITDB_DATABASE: tennis_tracking
-    volumes:
-      - mongodb_data:/data/db
-      - ./backend/scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-    networks:
-      - tennis-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-
-  # PostgreSQL Database
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: tennis-tracking-postgres
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: tennis
-      POSTGRES_PASSWORD: tennis123
-      POSTGRES_DB: tennis_tracking
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - tennis-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tennis -d tennis_tracking"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+  # PostgreSQL - uses shared infra-postgres on docker_infra network
+  # Connection: postgresql://postgres:postgres123@infra-postgres:5432/tennis_tracking
 
   # Redis for caching and session management
   redis:
@@ -71,8 +29,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://tennis:tennis123@postgres:5432/tennis_tracking
-      - MONGODB_URL=mongodb://admin:tennis_admin_2024@mongodb:27017/tennis_tracking?authSource=admin
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres123@infra-postgres:5432/tennis_tracking
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
       - JWT_ALGORITHM=HS256
@@ -99,10 +56,6 @@ services:
       - uploads_data:/app/uploads
       - ./models:/app/models
     depends_on:
-      postgres:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -162,8 +115,7 @@ services:
     container_name: tennis-tracking-worker
     restart: always
     environment:
-      - DATABASE_URL=postgresql+asyncpg://tennis:tennis123@postgres:5432/tennis_tracking
-      - MONGODB_URL=mongodb://admin:tennis_admin_2024@mongodb:27017/tennis_tracking?authSource=admin
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres123@infra-postgres:5432/tennis_tracking
       - REDIS_URL=redis://redis:6379
       - MODEL_PATH=/app/models
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
@@ -173,10 +125,6 @@ services:
       - uploads_data:/app/uploads
       - ./models:/app/models
     depends_on:
-      postgres:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -184,10 +132,6 @@ services:
     command: celery -A app.worker worker --loglevel=info
 
 volumes:
-  mongodb_data:
-    driver: local
-  postgres_data:
-    driver: local
   redis_data:
     driver: local
   uploads_data:

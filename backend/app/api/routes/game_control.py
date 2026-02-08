@@ -5,8 +5,10 @@ Endpoints para controle de jogo em tempo real
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.database import get_db
 from app.services.game_control_service import GameControlService
 from app.schemas.game_control import (
     StartMatchRequest,
@@ -24,7 +26,8 @@ router = APIRouter()
 @router.post("/start", response_model=GameControlResponse)
 async def start_match(
     request: StartMatchRequest,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Inicia uma partida
@@ -34,7 +37,7 @@ async def start_match(
     - [x] Validação de estado (não iniciar partida já iniciada)
     - [x] Suporte a formatos best_of_3 e best_of_5
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     response = await service.start_match(
         match_id=request.match_id,
@@ -51,7 +54,8 @@ async def start_match(
 @router.post("/pause", response_model=GameControlResponse)
 async def pause_match(
     request: PauseMatchRequest,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Pausa uma partida em andamento
@@ -59,7 +63,7 @@ async def pause_match(
     Critérios de aceite TT-29:
     - [x] Endpoint para pause_match() com eventos
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     response = await service.pause_match(
         match_id=request.match_id,
@@ -75,7 +79,8 @@ async def pause_match(
 @router.post("/resume", response_model=GameControlResponse)
 async def resume_match(
     request: ResumeMatchRequest,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Retoma uma partida pausada
@@ -83,7 +88,7 @@ async def resume_match(
     Critérios de aceite TT-29:
     - [x] Endpoint para resume_match() com eventos
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     response = await service.resume_match(match_id=request.match_id)
 
@@ -96,7 +101,8 @@ async def resume_match(
 @router.post("/point", response_model=GameControlResponse)
 async def add_point(
     request: AddPointRequest,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Registra um ponto com metadados
@@ -107,7 +113,7 @@ async def add_point(
     - [x] Validação de estado (partida em andamento, não pausada)
     - [x] Salvar estado antes do ponto para eventos
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     response = await service.add_point(
         match_id=request.match_id,
@@ -125,12 +131,13 @@ async def add_point(
 @router.get("/state/{match_id}", response_model=MatchStateResponse)
 async def get_match_state(
     match_id: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Retorna o estado atual da partida
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     state = await service.get_match_state(match_id=match_id)
 
@@ -172,7 +179,8 @@ async def get_event_types(current_user=Depends(get_current_user)):
 @router.get("/export/{match_id}")
 async def export_match_data(
     match_id: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Exporta dados completos da partida
@@ -180,7 +188,7 @@ async def export_match_data(
     Critérios de aceite TT-33:
     - [x] Endpoint para exportar JSON completo com todas as estatísticas, pontos, eventos, scoring
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     export_data = await service.export_match_data(match_id=match_id)
 
@@ -193,7 +201,8 @@ async def export_match_data(
 @router.get("/statistics/{match_id}")
 async def get_match_statistics(
     match_id: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Retorna estatísticas da partida
@@ -201,7 +210,7 @@ async def get_match_statistics(
     Critérios de aceite TT-33:
     - [x] Endpoint para get_match_statistics() com info, players, score e events_count
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     statistics = await service.get_match_statistics(match_id=match_id)
 
@@ -215,7 +224,8 @@ async def get_match_statistics(
 async def get_recent_events(
     match_id: str,
     limit: int = 10,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Retorna eventos recentes da partida
@@ -223,7 +233,7 @@ async def get_recent_events(
     Critérios de aceite TT-33:
     - [x] Endpoint para get_recent_events() com limite configurável
     """
-    service = GameControlService()
+    service = GameControlService(db)
 
     events = await service.get_recent_events(match_id=match_id, limit=limit)
 

@@ -8,7 +8,9 @@ import json
 import asyncio
 import structlog
 
-from app.core.mongodb import get_collection
+from app.core.database import async_session
+from app.models.match import Match
+from sqlalchemy import select
 
 router = APIRouter()
 logger = structlog.get_logger(__name__)
@@ -120,6 +122,16 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+async def _get_match_from_db(match_id: str) -> dict | None:
+    """Fetch a match from PostgreSQL by ID and return as dict, or None if not found."""
+    async with async_session() as session:
+        result = await session.execute(select(Match).where(Match.id == match_id))
+        match_row = result.scalar_one_or_none()
+        if match_row:
+            return {"status": match_row.status}
+        return None
+
+
 @router.websocket("/ws/live/{match_id}")
 async def websocket_match_endpoint(
     websocket: WebSocket,
@@ -132,8 +144,7 @@ async def websocket_match_endpoint(
 
     try:
         # Verify match exists
-        matches = get_collection("matches")
-        match = await matches.find_one({"_id": match_id})
+        match = await _get_match_from_db(match_id)
 
         if not match:
             await websocket.send_text(json.dumps({
@@ -248,8 +259,7 @@ async def handle_client_message(websocket: WebSocket, match_id: str, data: dict)
         }))
 
     elif message_type == "request_current_state":
-        matches = get_collection("matches")
-        match = await matches.find_one({"_id": match_id})
+        match = await _get_match_from_db(match_id)
 
         if match:
             await websocket.send_text(json.dumps({

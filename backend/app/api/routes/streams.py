@@ -48,7 +48,7 @@ async def create_stream(
 ):
     """Create a new stream and get RTMP connection details"""
     service = get_stream_service(db)
-    user_id = str(current_user["_id"])
+    user_id = str(current_user.id)
     device_info = request.device_info.dict() if request.device_info else None
 
     stream = await service.create_stream(
@@ -143,7 +143,7 @@ async def update_stream(
     if not stream:
         raise HTTPException(status_code=404, detail="Stream not found")
 
-    if stream["userId"] != str(current_user["_id"]):
+    if stream["userId"] != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Apply updates
@@ -165,7 +165,7 @@ async def end_stream(
     if not stream:
         raise HTTPException(status_code=404, detail="Stream not found")
 
-    if stream["userId"] != str(current_user["_id"]):
+    if stream["userId"] != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # End the stream first, then delete
@@ -189,7 +189,7 @@ async def toggle_recording(
     if not stream:
         raise HTTPException(status_code=404, detail="Stream not found")
 
-    if stream["userId"] != str(current_user["_id"]):
+    if stream["userId"] != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     is_recording = request.action == "start"

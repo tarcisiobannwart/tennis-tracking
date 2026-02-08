@@ -4,50 +4,59 @@ Matches API routes
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from datetime import datetime, timedelta
-from bson import ObjectId
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, delete, update
 import uuid
 
-from app.core.mongodb import get_database
+from app.core.database import get_db
 from app.core.auth import get_current_user
+from app.models.match import Match
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_matches(page: int = 1, limit: int = 20):
+async def get_matches(page: int = 1, limit: int = 20, db: AsyncSession = Depends(get_db)):
     """Get paginated matches"""
-    db = get_database()
 
     # Calculate skip value
     skip = (page - 1) * limit
 
     try:
         # Get matches with pagination
-        matches = await db.matches.find({}).skip(skip).limit(limit).sort("createdAt", -1).to_list(limit)
+        query = (
+            select(Match)
+            .order_by(Match.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await db.execute(query)
+        matches = result.scalars().all()
 
         # Get total count
-        total = await db.matches.count_documents({})
+        count_result = await db.execute(select(func.count()).select_from(Match))
+        total = count_result.scalar() or 0
 
         # Format response
         formatted_matches = []
         for match in matches:
             formatted_matches.append({
-                "id": str(match["_id"]),
-                "player1": match.get("player1", "Player 1"),
-                "player2": match.get("player2", "Player 2"),
-                "score": match.get("score", "0-0"),
-                "status": match.get("status", "completed"),
-                "date": match.get("createdAt", datetime.utcnow()).isoformat(),
-                "duration": match.get("duration", "00:00:00"),
-                "court": match.get("court", "Center Court"),
-                "tournament": match.get("tournament", "Training Match")
+                "id": str(match.id),
+                "player1": match.title.split(" vs ")[0] if " vs " in (match.title or "") else "Player 1",
+                "player2": match.title.split(" vs ")[1] if " vs " in (match.title or "") else "Player 2",
+                "score": f"{match.player1_sets}-{match.player2_sets}",
+                "status": match.status or "completed",
+                "date": (match.created_at or datetime.utcnow()).isoformat(),
+                "duration": f"{match.duration_minutes // 60:02d}:{match.duration_minutes % 60:02d}:00" if match.duration_minutes else "00:00:00",
+                "court": match.court_number or "Center Court",
+                "tournament": match.tournament_name or "Training Match"
             })
 
         # If no matches in database, return sample data
         if not formatted_matches:
             formatted_matches = [
                 {
-                    "id": str(ObjectId()),
+                    "id": str(uuid.uuid4()),
                     "player1": "Rafael Nadal",
                     "player2": "Novak Djokovic",
                     "score": "6-4, 7-5",
@@ -58,7 +67,7 @@ async def get_matches(page: int = 1, limit: int = 20):
                     "tournament": "Demo Match"
                 },
                 {
-                    "id": str(ObjectId()),
+                    "id": str(uuid.uuid4()),
                     "player1": "Roger Federer",
                     "player2": "Andy Murray",
                     "score": "7-6, 6-3",
@@ -82,7 +91,7 @@ async def get_matches(page: int = 1, limit: int = 20):
         # Return sample data on error
         sample_matches = [
             {
-                "id": str(ObjectId()),
+                "id": str(uuid.uuid4()),
                 "player1": "Rafael Nadal",
                 "player2": "Novak Djokovic",
                 "score": "6-4, 7-5",
@@ -103,47 +112,49 @@ async def get_matches(page: int = 1, limit: int = 20):
 
 
 @router.get("/live")
-async def get_live_matches():
+async def get_live_matches(db: AsyncSession = Depends(get_db)):
     """Get live matches"""
-    db = get_database()
-
     # Por enquanto, retorna lista vazia (sem partidas ao vivo)
-    # Em produção, isso seria integrado com sistema de streaming
+    # Em producao, isso seria integrado com sistema de streaming
     return []
 
 
 @router.get("/recent")
-async def get_recent_matches(limit: int = 5):
+async def get_recent_matches(limit: int = 5, db: AsyncSession = Depends(get_db)):
     """Get recent matches"""
-    db = get_database()
 
     # Busca partidas recentes
     recent_date = datetime.utcnow() - timedelta(days=7)
 
-    matches = await db.matches.find({
-        "createdAt": {"$gte": recent_date}
-    }).sort("createdAt", -1).limit(limit).to_list(limit)
+    query = (
+        select(Match)
+        .where(Match.created_at >= recent_date)
+        .order_by(Match.created_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    matches = result.scalars().all()
 
     # Formata resposta
     formatted_matches = []
     for match in matches:
         formatted_matches.append({
-            "id": str(match["_id"]),
-            "player1": match.get("player1", "Player 1"),
-            "player2": match.get("player2", "Player 2"),
-            "score": match.get("score", "0-0"),
-            "status": match.get("status", "completed"),
-            "date": match.get("createdAt", datetime.utcnow()).isoformat(),
-            "duration": match.get("duration", "00:00:00"),
-            "court": match.get("court", "Center Court"),
-            "tournament": match.get("tournament", "Training Match")
+            "id": str(match.id),
+            "player1": match.title.split(" vs ")[0] if " vs " in (match.title or "") else "Player 1",
+            "player2": match.title.split(" vs ")[1] if " vs " in (match.title or "") else "Player 2",
+            "score": f"{match.player1_sets}-{match.player2_sets}",
+            "status": match.status or "completed",
+            "date": (match.created_at or datetime.utcnow()).isoformat(),
+            "duration": f"{match.duration_minutes // 60:02d}:{match.duration_minutes % 60:02d}:00" if match.duration_minutes else "00:00:00",
+            "court": match.court_number or "Center Court",
+            "tournament": match.tournament_name or "Training Match"
         })
 
-    # Se não houver partidas, retorna dados de exemplo
+    # Se nao houver partidas, retorna dados de exemplo
     if not formatted_matches:
         formatted_matches = [
             {
-                "id": str(ObjectId()),
+                "id": str(uuid.uuid4()),
                 "player1": "Rafael Nadal",
                 "player2": "Novak Djokovic",
                 "score": "6-4, 7-5",
@@ -154,7 +165,7 @@ async def get_recent_matches(limit: int = 5):
                 "tournament": "Demo Match"
             },
             {
-                "id": str(ObjectId()),
+                "id": str(uuid.uuid4()),
                 "player1": "Roger Federer",
                 "player2": "Andy Murray",
                 "score": "7-6, 6-3",
@@ -175,77 +186,61 @@ async def create_match(
     player2: str,
     tournament: Optional[str] = "Training Match",
     court: Optional[str] = "Main Court",
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Create a new match"""
-    db = get_database()
 
-    match = {
-        "_id": ObjectId(),
-        "matchId": str(uuid.uuid4()),
-        "player1": player1,
-        "player2": player2,
-        "tournament": tournament,
-        "court": court,
-        "userId": str(current_user["_id"]),
-        "status": "scheduled",
-        "score": "0-0",
-        "sets": [],
-        "statistics": {
-            "player1": {
-                "aces": 0,
-                "double_faults": 0,
-                "winners": 0,
-                "unforced_errors": 0
-            },
-            "player2": {
-                "aces": 0,
-                "double_faults": 0,
-                "winners": 0,
-                "unforced_errors": 0
-            }
-        },
-        "createdAt": datetime.utcnow(),
-        "updatedAt": datetime.utcnow()
-    }
+    match = Match(
+        id=str(uuid.uuid4()),
+        title=f"{player1} vs {player2}",
+        tournament_name=tournament,
+        court_number=court,
+        player1_id=str(current_user.id),  # placeholder - ideally would be real player IDs
+        player2_id=str(current_user.id),  # placeholder
+        status="scheduled",
+        player1_sets=0,
+        player2_sets=0,
+    )
 
-    result = await db.matches.insert_one(match)
+    db.add(match)
+    await db.flush()
 
     return {
-        "id": str(result.inserted_id),
-        "matchId": match["matchId"],
+        "id": str(match.id),
+        "matchId": str(match.id),
         "message": "Match created successfully"
     }
 
 
 @router.get("/{match_id}")
-async def get_match(match_id: str, current_user=Depends(get_current_user)):
+async def get_match(
+    match_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Get match details"""
-    db = get_database()
 
-    # Tenta buscar por ObjectId ou matchId
-    try:
-        match = await db.matches.find_one({"_id": ObjectId(match_id)})
-    except:
-        match = await db.matches.find_one({"matchId": match_id})
+    result = await db.execute(select(Match).where(Match.id == match_id))
+    match = result.scalar_one_or_none()
 
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
     # Formata resposta
     return {
-        "id": str(match["_id"]),
-        "matchId": match.get("matchId"),
-        "player1": match.get("player1"),
-        "player2": match.get("player2"),
-        "score": match.get("score"),
-        "sets": match.get("sets", []),
-        "status": match.get("status"),
-        "tournament": match.get("tournament"),
-        "court": match.get("court"),
-        "statistics": match.get("statistics", {}),
-        "createdAt": match.get("createdAt"),
-        "updatedAt": match.get("updatedAt")
+        "id": str(match.id),
+        "matchId": str(match.id),
+        "player1": match.title.split(" vs ")[0] if " vs " in (match.title or "") else None,
+        "player2": match.title.split(" vs ")[1] if " vs " in (match.title or "") else None,
+        "score": f"{match.player1_sets}-{match.player2_sets}",
+        "sets": [],
+        "status": match.status,
+        "tournament": match.tournament_name,
+        "court": match.court_number,
+        "statistics": match.analysis_data or {},
+        "createdAt": match.created_at,
+        "updatedAt": match.updated_at
     }
 
 
@@ -253,24 +248,26 @@ async def get_match(match_id: str, current_user=Depends(get_current_user)):
 async def update_match_score(
     match_id: str,
     score: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Update match score"""
-    db = get_database()
 
-    # Atualiza score
-    result = await db.matches.update_one(
-        {"_id": ObjectId(match_id)},
-        {
-            "$set": {
-                "score": score,
-                "updatedAt": datetime.utcnow()
-            }
-        }
-    )
+    result = await db.execute(select(Match).where(Match.id == match_id))
+    match = result.scalar_one_or_none()
 
-    if result.modified_count == 0:
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
+
+    # Parse score string (e.g. "6-4" -> player1_sets=6, player2_sets=4)
+    try:
+        parts = score.split("-")
+        match.player1_sets = int(parts[0])
+        match.player2_sets = int(parts[1])
+    except (ValueError, IndexError):
+        pass  # Keep existing values if parse fails
+
+    match.updated_at = datetime.utcnow()
 
     return {"message": "Score updated successfully"}
 
@@ -279,10 +276,10 @@ async def update_match_score(
 async def update_match_status(
     match_id: str,
     status: str,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """Update match status"""
-    db = get_database()
 
     # Valida status
     valid_statuses = ["scheduled", "in_progress", "completed", "cancelled"]
@@ -292,34 +289,32 @@ async def update_match_status(
             detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
         )
 
-    # Atualiza status
-    result = await db.matches.update_one(
-        {"_id": ObjectId(match_id)},
-        {
-            "$set": {
-                "status": status,
-                "updatedAt": datetime.utcnow()
-            }
-        }
-    )
+    result = await db.execute(select(Match).where(Match.id == match_id))
+    match = result.scalar_one_or_none()
 
-    if result.modified_count == 0:
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
+
+    match.status = status
+    match.updated_at = datetime.utcnow()
 
     return {"message": "Status updated successfully"}
 
 
 @router.delete("/{match_id}")
-async def delete_match(match_id: str, current_user=Depends(get_current_user)):
+async def delete_match(
+    match_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Delete a match"""
-    db = get_database()
 
-    result = await db.matches.delete_one({
-        "_id": ObjectId(match_id),
-        "userId": str(current_user["_id"])
-    })
+    result = await db.execute(select(Match).where(Match.id == match_id))
+    match = result.scalar_one_or_none()
 
-    if result.deleted_count == 0:
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found or not authorized")
+
+    await db.delete(match)
 
     return {"message": "Match deleted successfully"}

@@ -5,10 +5,14 @@ Gerencia o ciclo de vida e estado de partidas em tempo real
 
 from typing import Optional, Dict, Any, List, Callable
 from datetime import datetime
-from bson import ObjectId
+import uuid as uuid_mod
 import structlog
 
-from app.core.mongodb import get_database
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.match import Match
+from app.models.point import Point
+from app.models.event import GameEvent
 from app.schemas.game_control import (
     GameStateEnum,
     PointTypeEnum,
@@ -30,8 +34,8 @@ logger = structlog.get_logger(__name__)
 class GameControlService:
     """Service for game control operations"""
 
-    def __init__(self):
-        self.db = get_database()
+    def __init__(self, db: AsyncSession):
+        self.db = db
         # Armazena callbacks por match_id -> event_type -> [callbacks]
         self._callbacks: Dict[str, Dict[str, List[Callable]]] = {}
 
@@ -51,9 +55,8 @@ class GameControlService:
         """
         try:
             # Buscar partida
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 return GameControlResponse(
@@ -63,7 +66,7 @@ class GameControlService:
                 )
 
             # Validar estado - não iniciar partida já iniciada
-            current_status = match.get("status", "scheduled")
+            current_status = match.status or "scheduled"
             if current_status in ["in_progress", "completed"]:
                 return GameControlResponse(
                     success=False,
@@ -73,8 +76,8 @@ class GameControlService:
                 )
 
             # Validar jogador sacador
-            player1_id = match.get("player1_id") or match.get("player1")
-            player2_id = match.get("player2_id") or match.get("player2")
+            player1_id = match.player1_id
+            player2_id = match.player2_id
 
             if server_player_id not in [str(player1_id), str(player2_id)]:
                 return GameControlResponse(
@@ -95,26 +98,20 @@ class GameControlService:
                 "player1_points": 0,
                 "player2_points": 0,
                 "server_player_id": server_player_id,
-                "started_at": datetime.utcnow(),
+                "started_at": datetime.utcnow().isoformat(),
                 "paused_at": None,
                 "resumed_at": None,
                 "last_point_at": None,
                 "tournament_data": tournament_data or {},
-                "best_of_sets": match.get("best_of_sets", 3)  # Suporte a best_of_3 e best_of_5
+                "best_of_sets": match.best_of_sets or 3
             }
 
             # Atualizar partida
-            await self.db.matches.update_one(
-                {"_id": match["_id"]},
-                {
-                    "$set": {
-                        "status": "in_progress",
-                        "started_at": game_state["started_at"],
-                        "game_state": game_state,
-                        "updatedAt": datetime.utcnow()
-                    }
-                }
-            )
+            match.status = "in_progress"
+            match.started_at = datetime.utcnow()
+            match.game_state = game_state
+            match.updated_at = datetime.utcnow()
+            await self.db.flush()
 
             logger.info(
                 "Match started",
@@ -158,9 +155,8 @@ class GameControlService:
         - [x] pause_match() com eventos
         """
         try:
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 return GameControlResponse(
@@ -169,7 +165,7 @@ class GameControlService:
                     match_id=match_id
                 )
 
-            game_state = match.get("game_state", {})
+            game_state = match.game_state or {}
 
             if game_state.get("state") != GameStateEnum.IN_PROGRESS.value:
                 return GameControlResponse(
@@ -180,17 +176,11 @@ class GameControlService:
 
             # Pausar partida
             game_state["state"] = GameStateEnum.PAUSED.value
-            game_state["paused_at"] = datetime.utcnow()
+            game_state["paused_at"] = datetime.utcnow().isoformat()
 
-            await self.db.matches.update_one(
-                {"_id": match["_id"]},
-                {
-                    "$set": {
-                        "game_state": game_state,
-                        "updatedAt": datetime.utcnow()
-                    }
-                }
-            )
+            match.game_state = game_state
+            match.updated_at = datetime.utcnow()
+            await self.db.flush()
 
             logger.info("Match paused", match_id=match_id, reason=reason)
 
@@ -225,9 +215,8 @@ class GameControlService:
         - [x] resume_match() com eventos
         """
         try:
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 return GameControlResponse(
@@ -236,7 +225,7 @@ class GameControlService:
                     match_id=match_id
                 )
 
-            game_state = match.get("game_state", {})
+            game_state = match.game_state or {}
 
             if game_state.get("state") != GameStateEnum.PAUSED.value:
                 return GameControlResponse(
@@ -247,17 +236,11 @@ class GameControlService:
 
             # Retomar partida
             game_state["state"] = GameStateEnum.IN_PROGRESS.value
-            game_state["resumed_at"] = datetime.utcnow()
+            game_state["resumed_at"] = datetime.utcnow().isoformat()
 
-            await self.db.matches.update_one(
-                {"_id": match["_id"]},
-                {
-                    "$set": {
-                        "game_state": game_state,
-                        "updatedAt": datetime.utcnow()
-                    }
-                }
-            )
+            match.game_state = game_state
+            match.updated_at = datetime.utcnow()
+            await self.db.flush()
 
             logger.info("Match resumed", match_id=match_id)
 
@@ -299,9 +282,8 @@ class GameControlService:
         - [x] Salvar estado antes do ponto para eventos
         """
         try:
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 return GameControlResponse(
@@ -310,7 +292,7 @@ class GameControlService:
                     match_id=match_id
                 )
 
-            game_state = match.get("game_state", {})
+            game_state = match.game_state or {}
 
             # Validação de estado (partida em andamento, não pausada)
             if game_state.get("state") != GameStateEnum.IN_PROGRESS.value:
@@ -336,31 +318,24 @@ class GameControlService:
             )
 
             # Criar registro do ponto
-            point_data = {
-                "match_id": match_id,
-                "winner_player_id": winner_player_id,
-                "point_type": point_type.value,
-                "timestamp": datetime.utcnow(),
-                "state_before": state_before.dict(),
-                "metadata": metadata.dict() if metadata else {}
-            }
-
-            # Salvar ponto no banco
-            point_result = await self.db.points.insert_one(point_data)
+            point = Point(
+                id=str(uuid_mod.uuid4()),
+                match_id=match_id,
+                winner_player_id=winner_player_id,
+                outcome=point_type.value,
+                score_before=state_before.dict(),
+                analysis_data=metadata.dict() if metadata else {}
+            )
+            self.db.add(point)
+            await self.db.flush()
 
             # Atualizar placar (lógica simplificada - pode ser expandida)
             # TODO: Implementar lógica completa de placar de tênis
-            game_state["last_point_at"] = datetime.utcnow()
+            game_state["last_point_at"] = datetime.utcnow().isoformat()
 
-            await self.db.matches.update_one(
-                {"_id": match["_id"]},
-                {
-                    "$set": {
-                        "game_state": game_state,
-                        "updatedAt": datetime.utcnow()
-                    }
-                }
-            )
+            match.game_state = game_state
+            match.updated_at = datetime.utcnow()
+            await self.db.flush()
 
             logger.info(
                 "Point added",
@@ -403,8 +378,8 @@ class GameControlService:
                 )
 
             # Detectar situações críticas (TT-32)
-            player1_id = match.get("player1_id") or match.get("player1")
-            player2_id = match.get("player2_id") or match.get("player2")
+            player1_id = match.player1_id
+            player2_id = match.player2_id
 
             # Detectar break point
             is_break_pt = self._is_break_point(
@@ -477,7 +452,7 @@ class GameControlService:
                 message="Ponto registrado com sucesso",
                 match_id=match_id,
                 data={
-                    "point_id": str(point_result.inserted_id),
+                    "point_id": str(point.id),
                     "state_before": state_before.dict()
                 }
             )
@@ -553,14 +528,18 @@ class GameControlService:
         )
 
         # Salvar evento no banco
-        await self.db.game_events.insert_one({
-            "match_id": match_id,
-            "event_type": event_type.value,
-            "player_id": player_id,
-            "timestamp": event_data.timestamp,
-            "state_before": state_before.dict() if state_before else None,
-            "metadata": metadata or {}
-        })
+        event = GameEvent(
+            match_id=match_id,
+            event_type=event_type.value,
+            player_id=player_id,
+            timestamp=event_data.timestamp,
+            event_data={
+                "state_before": state_before.dict() if state_before else None,
+                "metadata": metadata or {}
+            }
+        )
+        self.db.add(event)
+        await self.db.flush()
 
         # Executar callbacks (com tratamento de erros)
         if match_id in self._callbacks:
@@ -585,14 +564,13 @@ class GameControlService:
     async def get_match_state(self, match_id: str) -> Optional[MatchStateResponse]:
         """Retorna o estado atual da partida"""
         try:
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 return None
 
-            game_state = match.get("game_state", {})
+            game_state = match.game_state or {}
 
             return MatchStateResponse(
                 match_id=match_id,
@@ -804,37 +782,65 @@ class GameControlService:
         """
         try:
             # Buscar partida
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 logger.warning("Match not found for export", match_id=match_id)
                 return None
 
             # Buscar todos os eventos da partida
-            events_cursor = self.db.game_events.find({"match_id": match_id}).sort("timestamp", 1)
+            result = await self.db.execute(
+                select(GameEvent).where(GameEvent.match_id == match_id).order_by(GameEvent.timestamp.asc())
+            )
+            events_rows = result.scalars().all()
             events = []
-            async for event in events_cursor:
-                event["_id"] = str(event["_id"])
-                events.append(event)
+            for ev in events_rows:
+                events.append({
+                    "id": str(ev.id),
+                    "match_id": ev.match_id,
+                    "event_type": ev.event_type if isinstance(ev.event_type, str) else ev.event_type.value,
+                    "player_id": ev.player_id,
+                    "timestamp": ev.timestamp.isoformat() if ev.timestamp else None,
+                    "event_data": ev.event_data,
+                })
 
             # Buscar todos os pontos
-            points_cursor = self.db.points.find({"match_id": match_id}).sort("timestamp", 1)
+            result = await self.db.execute(
+                select(Point).where(Point.match_id == match_id).order_by(Point.created_at.asc())
+            )
+            points_rows = result.scalars().all()
             points = []
-            async for point in points_cursor:
-                point["_id"] = str(point["_id"])
-                points.append(point)
+            for pt in points_rows:
+                points.append({
+                    "id": str(pt.id),
+                    "match_id": pt.match_id,
+                    "point_number": pt.point_number,
+                    "winner_player_id": pt.winner_player_id,
+                    "outcome": pt.outcome,
+                    "score_before": pt.score_before,
+                    "created_at": pt.created_at.isoformat() if pt.created_at else None,
+                })
 
             # Obter estatísticas
             statistics = await self.get_match_statistics(match_id)
 
-            # Converter ObjectId para string
-            match["_id"] = str(match["_id"])
+            # Preparar dados do match
+            match_data = {
+                "id": match.id,
+                "title": match.title,
+                "status": match.status,
+                "player1_id": match.player1_id,
+                "player2_id": match.player2_id,
+                "best_of_sets": match.best_of_sets,
+                "game_state": match.game_state,
+                "started_at": match.started_at.isoformat() if match.started_at else None,
+                "finished_at": match.finished_at.isoformat() if match.finished_at else None,
+            }
 
             # Preparar dados completos
             export_data = {
-                "match": match,
+                "match": match_data,
                 "events": events,
                 "points": points,
                 "statistics": statistics,
@@ -870,21 +876,26 @@ class GameControlService:
         """
         try:
             # Buscar partida
-            match = await self.db.matches.find_one({"_id": ObjectId(match_id)})
-            if not match:
-                match = await self.db.matches.find_one({"matchId": match_id})
+            result = await self.db.execute(select(Match).where(Match.id == match_id))
+            match = result.scalar_one_or_none()
 
             if not match:
                 return {}
 
-            game_state = match.get("game_state", {})
+            game_state = match.game_state or {}
 
             # Calcular duração da partida
             duration_info = {}
             started_at = game_state.get("started_at")
             if started_at:
+                if isinstance(started_at, str):
+                    started_at = datetime.fromisoformat(started_at)
+
                 # Se partida está completa, usar ended_at
-                ended_at = game_state.get("ended_at") or datetime.utcnow()
+                ended_at = game_state.get("ended_at")
+                if ended_at and isinstance(ended_at, str):
+                    ended_at = datetime.fromisoformat(ended_at)
+                ended_at = ended_at or datetime.utcnow()
 
                 # Calcular duração
                 duration = ended_at - started_at
@@ -901,23 +912,25 @@ class GameControlService:
 
             # Contar eventos por tipo
             events_count = {}
-            pipeline = [
-                {"$match": {"match_id": match_id}},
-                {"$group": {"_id": "$event_type", "count": {"$sum": 1}}}
-            ]
-            async for result in self.db.game_events.aggregate(pipeline):
-                events_count[result["_id"]] = result["count"]
+            result = await self.db.execute(
+                select(GameEvent.event_type, func.count()).where(
+                    GameEvent.match_id == match_id
+                ).group_by(GameEvent.event_type)
+            )
+            for event_type, count in result.all():
+                event_type_str = event_type if isinstance(event_type, str) else event_type.value
+                events_count[event_type_str] = count
 
             # Informações dos jogadores
-            player1_id = match.get("player1_id") or match.get("player1")
-            player2_id = match.get("player2_id") or match.get("player2")
+            player1_id = match.player1_id
+            player2_id = match.player2_id
 
             # Estatísticas básicas
             statistics = {
                 "info": {
                     "match_id": match_id,
-                    "status": match.get("status", "unknown"),
-                    "started_at": started_at.isoformat() if started_at else None,
+                    "status": match.status or "unknown",
+                    "started_at": started_at.isoformat() if isinstance(started_at, datetime) else started_at,
                     "duration": duration_info,
                     "best_of_sets": game_state.get("best_of_sets", 3)
                 },
@@ -968,14 +981,23 @@ class GameControlService:
             Lista de eventos recentes
         """
         try:
-            events_cursor = self.db.game_events.find(
-                {"match_id": match_id}
-            ).sort("timestamp", -1).limit(limit)
+            result = await self.db.execute(
+                select(GameEvent).where(
+                    GameEvent.match_id == match_id
+                ).order_by(GameEvent.timestamp.desc()).limit(limit)
+            )
+            events_rows = result.scalars().all()
 
             events = []
-            async for event in events_cursor:
-                event["_id"] = str(event["_id"])
-                events.append(event)
+            for ev in events_rows:
+                events.append({
+                    "id": str(ev.id),
+                    "match_id": ev.match_id,
+                    "event_type": ev.event_type if isinstance(ev.event_type, str) else ev.event_type.value,
+                    "player_id": ev.player_id,
+                    "timestamp": ev.timestamp.isoformat() if ev.timestamp else None,
+                    "event_data": ev.event_data,
+                })
 
             return events
 

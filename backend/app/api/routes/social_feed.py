@@ -172,7 +172,7 @@ async def create_post(
             detail="match_id e obrigatorio para posts de resultado de partida"
         )
 
-    user_id = uuid.UUID(str(current_user.get("id") or current_user.get("_id")))
+    user_id = uuid.UUID(str(current_user.id))
 
     post = await service.create_post(
         user_id=user_id,
@@ -258,7 +258,7 @@ async def delete_post(
     """
     service = SocialFeedService(db)
 
-    user_id = uuid.UUID(str(current_user.get("id") or current_user.get("_id")))
+    user_id = uuid.UUID(str(current_user.id))
 
     success = await service.delete_post(post_id, user_id)
 
@@ -297,7 +297,7 @@ async def react_to_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post nao encontrado")
 
-    user_id = uuid.UUID(str(current_user.get("id") or current_user.get("_id")))
+    user_id = uuid.UUID(str(current_user.id))
 
     reaction = await service.react_to_post(
         post_id=post_id,
@@ -333,7 +333,7 @@ async def remove_reaction(
     """
     service = SocialFeedService(db)
 
-    user_id = uuid.UUID(str(current_user.get("id") or current_user.get("_id")))
+    user_id = uuid.UUID(str(current_user.id))
 
     success = await service.remove_reaction(post_id, user_id)
 
@@ -372,7 +372,7 @@ async def add_comment(
     if not post:
         raise HTTPException(status_code=404, detail="Post nao encontrado")
 
-    user_id = uuid.UUID(str(current_user.get("id") or current_user.get("_id")))
+    user_id = uuid.UUID(str(current_user.id))
 
     comment = await service.add_comment(
         post_id=post_id,
@@ -454,7 +454,7 @@ async def delete_comment(
     """
     service = SocialFeedService(db)
 
-    user_id = uuid.UUID(str(current_user.get("id") or current_user.get("_id")))
+    user_id = uuid.UUID(str(current_user.id))
 
     success = await service.delete_comment(comment_id, user_id)
 
