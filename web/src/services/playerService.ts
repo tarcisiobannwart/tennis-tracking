@@ -52,7 +52,18 @@ export interface RecentMatch {
   tournament?: string
 }
 
+export interface PlayerListFilters {
+  search?: string
+  country?: string
+  skill_level?: string
+  is_active?: boolean
+}
+
 export const playerService = {
+  async getPlayers(filters?: PlayerListFilters, skip: number = 0, limit: number = 100): Promise<PlayerProfile[]> {
+    return apiGet('/players', { skip, limit, ...filters })
+  },
+
   async getPlayerByUsername(username: string): Promise<PlayerProfile> {
     return apiGet(`/players/username/${username}`)
   },
