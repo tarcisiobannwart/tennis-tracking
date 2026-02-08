@@ -13,6 +13,7 @@ import {
   Sparkles,
   MoreVertical,
   Trash2,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useMatch } from '@/hooks/useMatchData'
 
 interface FeedCardProps {
   post: FeedPost
@@ -72,32 +74,92 @@ export const FeedCard: React.FC<FeedCardProps> = ({
     }
   }
 
+  // Fetch match details when post has match_id
+  const {
+    data: match,
+    isLoading: isLoadingMatch,
+    isError: isMatchError,
+  } = useMatch(post.match_id || '', !!post.match_id && post.post_type === 'match_result')
+
   const renderContent = () => {
     // Match result card
     if (post.post_type === 'match_result' && post.match_id) {
-      // TODO: Fetch match details from match_id
-      // For now, show placeholder
+      // Loading state
+      if (isLoadingMatch) {
+        return (
+          <div className="mb-4 flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            <span className="ml-2 text-sm text-slate-400">Carregando detalhes da partida...</span>
+          </div>
+        )
+      }
+
+      // Error or no match data
+      if (isMatchError || !match) {
+        return (
+          <div className="mb-4 p-4 bg-slate-800 rounded-lg border border-slate-700">
+            <p className="text-sm text-slate-400 text-center">
+              Não foi possível carregar os detalhes da partida
+            </p>
+          </div>
+        )
+      }
+
+      // Format score from match data
+      const formatScore = (): string => {
+        if (!match.score?.sets || match.score.sets.length === 0) {
+          return '0-0'
+        }
+        return match.score.sets
+          .map((set) => `${set.player1Games}-${set.player2Games}`)
+          .join(', ')
+      }
+
+      // Determine winner
+      const getWinnerId = (): string => {
+        if (match.status !== 'completed' || !match.score?.sets) {
+          return match.player1.id
+        }
+        const player1Sets = match.score.sets.filter(
+          (set) => set.player1Games > set.player2Games
+        ).length
+        const player2Sets = match.score.sets.filter(
+          (set) => set.player2Games > set.player1Games
+        ).length
+        return player1Sets > player2Sets ? match.player1.id : match.player2.id
+      }
+
+      // Format duration
+      const formatDuration = (): string | undefined => {
+        if (!match.duration) return undefined
+        const hours = Math.floor(match.duration / 60)
+        const minutes = match.duration % 60
+        return hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`
+      }
+
       return (
         <div className="mb-4">
           <MatchResultCard
             matchResult={{
               match_id: post.match_id,
               player1: {
-                id: '1',
-                name: 'Jogador 1',
-                ranking: 10,
+                id: match.player1.id,
+                name: match.player1.name,
+                avatar: match.player1.avatar,
+                ranking: match.player1.ranking,
               },
               player2: {
-                id: '2',
-                name: 'Jogador 2',
-                ranking: 15,
+                id: match.player2.id,
+                name: match.player2.name,
+                avatar: match.player2.avatar,
+                ranking: match.player2.ranking,
               },
-              score: '6-4, 7-5',
-              winner_id: '1',
-              tournament: 'Torneio Demo',
-              court: 'Quadra Central',
-              duration: '1h 45min',
-              date: post.created_at,
+              score: formatScore(),
+              winner_id: getWinnerId(),
+              tournament: match.tournament,
+              court: match.round,
+              duration: formatDuration(),
+              date: match.date,
             }}
           />
         </div>
