@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { authService } from '@/services/authService'
 import LanguageSelector from '../LanguageSelector'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { GlobalSearch } from '@/components/search/GlobalSearch'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 const Header = () => {
@@ -48,14 +49,7 @@ const Header = () => {
       <div className="flex items-center justify-between h-full px-4 md:px-6">
         {/* Search */}
         <div className="flex items-center space-x-4 flex-1 max-w-md">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <Input
-              type="text"
-              placeholder={t('common.search')}
-              className="pl-10 pr-4 h-9 w-full bg-slate-800 border-slate-700 text-slate-100 text-sm"
-            />
-          </div>
+          <GlobalSearch />
         </div>
 
         {/* Actions */}

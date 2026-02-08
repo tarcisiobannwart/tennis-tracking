@@ -14,7 +14,7 @@ from app.core.mongodb import connect_mongodb, close_mongodb
 from app.core.database import connect_db, disconnect_db
 from app.core.middleware import setup_rate_limiting
 from app.core.exceptions import setup_exception_handlers
-from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training, trajectories, error_reports, players, rankings, tournaments, statistics, notifications, social_feed, match_history, venues
+from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training, trajectories, error_reports, players, rankings, tournaments, statistics, notifications, social_feed, match_history, venues, search, h2h
 
 
 @asynccontextmanager
@@ -64,6 +64,8 @@ tags_metadata = [
     {"name": "Social Feed", "description": "Feed social com posts, resultados de partidas e reacoes"},
     {"name": "Match History", "description": "Historico de partidas entre jogadores"},
     {"name": "Venues", "description": "Gestao de locais, clubes e academias"},
+    {"name": "Search", "description": "Busca global unificada de jogadores, locais, rankings e torneios"},
+    {"name": "H2H", "description": "Head to Head comparativo entre jogadores"},
 ]
 
 # Create FastAPI application
@@ -123,6 +125,8 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["Not
 app.include_router(social_feed.router, prefix="/api/social-feed", tags=["Social Feed"])
 app.include_router(match_history.router, prefix="/api/match-history", tags=["Match History"])
 app.include_router(venues.router, prefix="/api/venues", tags=["Venues"])
+app.include_router(search.router, prefix="/api/search", tags=["Search"])
+app.include_router(h2h.router, prefix="/api/h2h", tags=["H2H"])
 
 
 @app.get("/")
