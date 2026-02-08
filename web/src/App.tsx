@@ -24,6 +24,7 @@ import AcceptInvite from './pages/AcceptInvite'
 import PlayerProfile from './pages/PlayerProfile'
 import Rankings from './pages/Rankings'
 import RankingDetail from './pages/RankingDetail'
+import Statistics from './pages/Statistics'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminSubscriptions from './pages/admin/AdminSubscriptions'
@@ -70,6 +71,7 @@ function App() {
         <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/organization" element={<Organization />} />
         <Route path="/app/accept-invite" element={<AcceptInvite />} />
+        <Route path="/app/statistics" element={<Statistics />} />
 
         {/* Admin routes */}
         <Route path="/app/admin" element={

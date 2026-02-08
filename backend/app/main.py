@@ -14,7 +14,7 @@ from app.core.mongodb import connect_mongodb, close_mongodb
 from app.core.database import connect_db, disconnect_db
 from app.core.middleware import setup_rate_limiting
 from app.core.exceptions import setup_exception_handlers
-from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training, trajectories, error_reports, players, rankings, tournaments
+from app.api.routes import auth, users, videos, analysis, matches, upload, streams, subscriptions, admin, organizations, scoring, game_control, point_history, events, training, trajectories, error_reports, players, rankings, tournaments, statistics, notifications, social_feed, match_history, venues
 
 
 @asynccontextmanager
@@ -59,6 +59,11 @@ tags_metadata = [
     {"name": "Players", "description": "Perfis de jogadores, estatisticas e historico de jogos"},
     {"name": "Rankings", "description": "Sistema de rankings por local/clube com rodadas e classificatorias"},
     {"name": "Tournaments", "description": "Sistema de torneios com inscricao online"},
+    {"name": "Statistics", "description": "Dashboard de estatisticas avancadas com graficos e breakdowns"},
+    {"name": "Notifications", "description": "Sistema de notificacoes com feed cronologico e push real-time"},
+    {"name": "Social Feed", "description": "Feed social com posts, resultados de partidas e reacoes"},
+    {"name": "Match History", "description": "Historico de partidas entre jogadores"},
+    {"name": "Venues", "description": "Gestao de locais, clubes e academias"},
 ]
 
 # Create FastAPI application
@@ -113,6 +118,11 @@ app.include_router(error_reports.router, prefix="/api/error-reports", tags=["Err
 app.include_router(players.router, prefix="/api/players", tags=["Players"])
 app.include_router(rankings.router, prefix="/api/rankings", tags=["Rankings"])
 app.include_router(tournaments.router, prefix="/api/tournaments", tags=["Tournaments"])
+app.include_router(statistics.router, prefix="/api/statistics", tags=["Statistics"])
+app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(social_feed.router, prefix="/api/social-feed", tags=["Social Feed"])
+app.include_router(match_history.router, prefix="/api/match-history", tags=["Match History"])
+app.include_router(venues.router, prefix="/api/venues", tags=["Venues"])
 
 
 @app.get("/")
