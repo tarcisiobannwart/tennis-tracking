@@ -78,8 +78,7 @@ class AnalysisTask(BaseModel):
     createdAt: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
-        allow_population_by_field_name = True
-        pass
+        populate_by_name = True
 
 
 class AnalysisResult(BaseModel):
@@ -114,6 +113,5 @@ class AnalysisResult(BaseModel):
     createdAt: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         arbitrary_types_allowed = True
-        pass
