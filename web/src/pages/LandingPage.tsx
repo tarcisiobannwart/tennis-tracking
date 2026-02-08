@@ -925,14 +925,17 @@ export default function LandingPage() {
             <p className="text-xs text-slate-600">
               &copy; {new Date().getFullYear()} Tennis Tracking. Todos os direitos reservados.
             </p>
-            <div className="flex items-center gap-2">
-              {(Object.keys(courtColors) as CourtColor[]).map((color) => (
-                <div
-                  key={color}
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: courtColors[color].hex }}
-                />
-              ))}
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-slate-700">v{__APP_VERSION__}</span>
+              <div className="flex items-center gap-2">
+                {(Object.keys(courtColors) as CourtColor[]).map((color) => (
+                  <div
+                    key={color}
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: courtColors[color].hex }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

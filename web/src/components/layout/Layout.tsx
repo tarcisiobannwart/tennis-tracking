@@ -33,6 +33,11 @@ const Layout = () => {
         <main className="flex-1 p-4 md:p-6">
           <Outlet />
         </main>
+
+        {/* Footer */}
+        <footer className="py-3 px-4 md:px-6 text-center">
+          <span className="text-xs text-slate-700">Tennis Tracking v{__APP_VERSION__}</span>
+        </footer>
       </div>
     </div>
   )
