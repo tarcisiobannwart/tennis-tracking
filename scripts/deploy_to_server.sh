@@ -10,7 +10,7 @@ set -e
 SERVER_IP="192.168.0.21"
 SERVER_USER="${1:-root}"
 PROJECT_NAME="tennis-tracking"
-REMOTE_DIR="/opt/tennis-tracking"
+REMOTE_DIR="$HOME/docker/tennis-tracking"
 
 # Colors
 RED='\033[0;31m'

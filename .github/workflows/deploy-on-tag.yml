@@ -17,25 +17,18 @@ jobs:
         chmod 600 ~/.ssh/deploy-key.pem
         ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-    - name: Debug SSH key
-      run: |
-        echo "Key file size: $(wc -c < ~/.ssh/deploy-key.pem) bytes"
-        echo "Key type: $(head -1 ~/.ssh/deploy-key.pem)"
-        echo "Key ends with: $(tail -1 ~/.ssh/deploy-key.pem)"
-        ssh-keygen -l -f ~/.ssh/deploy-key.pem 2>&1 || echo "Key validation failed"
-
     - name: Deploy to server
       env:
         SERVER_IP: ${{ secrets.SERVER_IP }}
         SERVER_USER: ${{ secrets.SERVER_USER }}
         IMAGE_TAG: ${{ github.ref_name }}
       run: |
-        ssh -vvv -i ~/.ssh/deploy-key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << ENDSSH
+        ssh -i ~/.ssh/deploy-key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << ENDSSH
           set -e
 
           echo "=== Tennis Tracking - Deploy $IMAGE_TAG ==="
 
-          cd /opt/tennis-tracking
+          cd ~/docker/tennis-tracking
 
           # Guardar versao atual para rollback
           CURRENT_VERSION=\$(git describe --tags --abbrev=0 2>/dev/null || echo "unknown")

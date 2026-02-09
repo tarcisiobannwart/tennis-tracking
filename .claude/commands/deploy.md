@@ -358,7 +358,7 @@ git push origin "v1.5.2"
 ```bash
 # SSH no servidor de producao e voltar para tag anterior:
 ssh user@<SERVER_IP>
-cd /opt/tennis-tracking
+cd ~/docker/tennis-tracking
 git checkout v1.5.0
 docker compose -f docker-compose.server.yml down
 docker compose -f docker-compose.server.yml up -d --build
@@ -371,7 +371,7 @@ docker compose -f docker-compose.server.yml up -d --build
 ./scripts/deploy_to_server.sh [username]
 # Ou manualmente:
 ssh user@192.168.0.21
-cd /opt/tennis-tracking
+cd ~/docker/tennis-tracking
 git fetch --all --tags
 git checkout v1.5.1
 docker compose -f docker-compose.server.yml up -d --build
@@ -392,7 +392,7 @@ curl http://192.168.0.21:8000/health
 | Item | Valor |
 |------|-------|
 | Servidor producao | `192.168.0.21` (via GitHub Secrets) |
-| Diretorio no servidor | `/opt/tennis-tracking` |
+| Diretorio no servidor | `~/docker/tennis-tracking` |
 | Docker Compose (prod) | `docker-compose.server.yml` |
 | Docker Compose (dev) | `docker-compose.yml` |
 | Containers producao | `backend:8000` + `frontend:3000` + `worker` + `redis` |
