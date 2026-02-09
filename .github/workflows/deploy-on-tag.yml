@@ -48,16 +48,18 @@ jobs:
           echo "Aguardando servicos..."
           sleep 30
 
-          # Verificar health
-          if curl -sf http://localhost:5002/health > /dev/null 2>&1; then
-            echo "Deploy $IMAGE_TAG concluido com sucesso!"
+          # Verificar health do backend
+          if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+            echo "Backend health OK!"
           else
-            echo "AVISO: Health check falhou, verificar logs"
-            docker compose -f docker-compose.server.yml logs --tail=50 tennis-tracking-app
+            echo "AVISO: Backend health check falhou, verificar logs"
+            docker compose -f docker-compose.server.yml logs --tail=50 backend
           fi
 
-          # Status
+          # Status dos containers
           docker compose -f docker-compose.server.yml ps
+
+          echo "Deploy $IMAGE_TAG concluido!"
         ENDSSH
 
     - name: Verify deployment
@@ -65,9 +67,9 @@ jobs:
         SERVER_IP: ${{ secrets.SERVER_IP }}
       run: |
         sleep 10
-        response=$(curl -s -o /dev/null -w "%{http_code}" http://$SERVER_IP:5002/health 2>/dev/null || echo "000")
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://$SERVER_IP:8000/health 2>/dev/null || echo "000")
         if [ "$response" = "200" ]; then
-          echo "Application is healthy (HTTP 200)"
+          echo "Backend is healthy (HTTP 200)"
         else
           echo "Health check returned HTTP $response - may still be starting"
         fi

@@ -164,7 +164,7 @@ $CHANGELOG
 ## Deploy
 - Servidor: Producao (via GitHub Actions SSH)
 - Compose: docker-compose.server.yml
-- Health: http://localhost:5002/health
+- Health: http://localhost:8000/health
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 EOF
@@ -183,7 +183,7 @@ Apos o push da tag, o GitHub Actions workflow `deploy-on-tag.yml` eh acionado au
 2. `git fetch --all --tags && git checkout v$NEW_VERSION`
 3. `docker compose -f docker-compose.server.yml down`
 4. `docker compose -f docker-compose.server.yml up -d --build`
-5. Aguarda 30s e verifica health check em `http://localhost:5002/health`
+5. Aguarda 30s e verifica health check em `http://localhost:8000/health`
 
 **Link do GitHub Actions:**
 ```
@@ -267,7 +267,7 @@ ETAPA 4: Deploy
    |   1. SSH no servidor de producao
    |   2. git checkout v1.5.1
    |   3. docker compose -f docker-compose.server.yml up -d --build
-   |   4. Health check: http://localhost:5002/health
+   |   4. Health check: http://localhost:8000/health
 
 ========================================================
 
@@ -279,8 +279,9 @@ Resumo:
 
 Proximos passos:
    - Monitorar workflow: https://github.com/tarcisiobannwart/tennis-tracking/actions
-   - Verificar health: https://tennis.tarcisiobannwart.com/health
+   - Verificar API: https://tennis-api.tarcisiobannwart.com/health
    - Frontend: https://tennis.tarcisiobannwart.com
+   - API: https://tennis-api.tarcisiobannwart.com
 ```
 
 ### Dry Run
@@ -380,10 +381,10 @@ docker compose -f docker-compose.server.yml up -d --build
 
 ```bash
 # Health check da API (producao via dominio)
-curl https://tennis.tarcisiobannwart.com/health
+curl https://tennis-api.tarcisiobannwart.com/health
 
 # Health check direto no servidor (IP interno)
-curl http://192.168.0.21:5002/health
+curl http://192.168.0.21:8000/health
 ```
 
 ## Informacoes de Infraestrutura
@@ -392,19 +393,22 @@ curl http://192.168.0.21:5002/health
 |------|-------|
 | Servidor producao | `192.168.0.21` (via GitHub Secrets) |
 | Diretorio no servidor | `/opt/tennis-tracking` |
-| Porta da aplicacao | `5002` |
-| Docker Compose | `docker-compose.server.yml` |
-| Dockerfile | `Dockerfile` (multi-stage: frontend + backend + nginx) |
-| Imagem unificada | `tennis-tracking-app` (nginx + fastapi + celery via supervisor) |
+| Docker Compose (prod) | `docker-compose.server.yml` |
+| Docker Compose (dev) | `docker-compose.yml` |
+| Containers producao | `backend:8000` + `frontend:3000` + `worker` + `redis` |
+| Backend Dockerfile | `backend/Dockerfile` (FastAPI, porta 8000) |
+| Frontend Dockerfile | `web/Dockerfile` (Nginx + React build, porta 3000) |
+| Worker Dockerfile | `backend/Dockerfile.worker` (Celery) |
 | Database | `infra-postgres:5432` (rede externa `docker_infra`) |
 | Redis | `tennis-tracking-redis` (container local) |
+| Proxy reverso | Nginx Proxy Manager (externo, gerencia SSL/Let's Encrypt) |
 | CI/CD | GitHub Actions (`deploy-on-tag.yml`) |
 | GitHub Actions URL | `https://github.com/tarcisiobannwart/tennis-tracking/actions` |
 | Branch de deploy | `main` |
 | Formato de tag | `vX.Y.Z` (semver) |
-| Frontend (prod) | `https://tennis.tarcisiobannwart.com` |
-| API (prod) | `https://tennis.tarcisiobannwart.com/api` |
-| CORS allowed | `https://tennis.tarcisiobannwart.com`, `http://localhost` |
+| Frontend (prod) | `https://tennis.tarcisiobannwart.com` -> `tennis-tracking-frontend:3000` |
+| API (prod) | `https://tennis-api.tarcisiobannwart.com` -> `tennis-tracking-backend:8000` |
+| CORS allowed | `https://tennis.tarcisiobannwart.com`, `https://tennis-api.tarcisiobannwart.com`, `http://localhost` |
 
 ## Comandos Relacionados
 
