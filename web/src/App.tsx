@@ -27,6 +27,7 @@ import RankingDetail from './pages/RankingDetail'
 import Statistics from './pages/Statistics'
 import HeadToHead from './pages/HeadToHead'
 import Notifications from './pages/Notifications'
+import LiveScoring from './pages/LiveScoring'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminSubscriptions from './pages/admin/AdminSubscriptions'
@@ -66,6 +67,7 @@ function App() {
         <Route path="/app/matches" element={<Matches />} />
         <Route path="/app/match/new" element={<NewMatch />} />
         <Route path="/app/match/:id" element={<MatchDetail />} />
+        <Route path="/app/match/:id/live" element={<LiveScoring />} />
         <Route path="/app/players" element={<Players />} />
         <Route path="/app/analytics" element={<Analytics />} />
         <Route path="/app/training" element={<Training />} />
