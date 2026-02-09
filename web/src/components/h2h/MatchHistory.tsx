@@ -3,7 +3,7 @@
  * Lista de confrontos diretos H2H
  */
 
-import { Calendar, MapPin, Clock, Trophy, CheckCircle2, XCircle } from 'lucide-react'
+import { Calendar, Clock, Trophy, CheckCircle2, XCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { H2HMatchItem } from '@/services/h2hService'
 
@@ -44,7 +44,7 @@ const formatDuration = (minutes?: number) => {
   return `${hours}h${mins.toString().padStart(2, '0')}`
 }
 
-const MatchHistory = ({ matches, opponentName }: MatchHistoryProps) => {
+const MatchHistory = ({ matches }: MatchHistoryProps) => {
   if (matches.length === 0) {
     return (
       <Card className="bg-slate-800 border-slate-700">

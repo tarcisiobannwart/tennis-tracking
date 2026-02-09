@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Clock, Trophy, Target, Zap, AlertCircle, Award, Flag, UserX, Timer } from 'lucide-react'
+import { Clock, Trophy, Target, AlertCircle, Award, Flag, UserX, Timer } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { gameControlService } from '@/services/gameControlService'
-import { WebSocketMessage } from '@/types'
 
 export interface GameEvent {
   id: string
@@ -81,19 +80,6 @@ const EventTimeline = ({
       prevEventsLengthRef.current = events.length
     }
   }, [events.length])
-
-  // Handle WebSocket event updates
-  const handleWebSocketEvent = useCallback((event: GameEvent) => {
-    setEvents(prev => {
-      // Check if event already exists
-      const exists = prev.some(e => e.id === event.id)
-      if (exists) return prev
-
-      const updated = [event, ...prev]
-      onNewEvent?.(event)
-      return updated
-    })
-  }, [onNewEvent])
 
   // Get icon for event type
   const getEventIcon = (type: string) => {

@@ -1,17 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, Moon, Sun, Search, Upload, User, LogOut, CreditCard } from 'lucide-react'
+import { Moon, Sun, Upload, User, LogOut, CreditCard } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useThemeStore } from '@/stores/themeStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { authService } from '@/services/authService'
 import LanguageSelector from '../LanguageSelector'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { GlobalSearch } from '@/components/search/GlobalSearch'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 const Header = () => {
   const { theme, toggleTheme } = useThemeStore()

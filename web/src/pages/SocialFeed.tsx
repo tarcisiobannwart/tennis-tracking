@@ -62,7 +62,6 @@ const SocialFeed: React.FC = () => {
         setPosts(response.data)
       }
 
-      setTotalPages(response.total_pages)
       setHasMore(pageNum < response.total_pages)
       setPage(pageNum)
     } catch (err: any) {

@@ -3,7 +3,7 @@
  * Donut charts para lateralidade (destro/canhoto) e backhand (1/2 maos)
  */
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { Card, CardContent } from '@/components/ui/card'
 
 interface DonutData {
@@ -42,8 +42,6 @@ const OpponentDonutChart = ({ title, data }: OpponentDonutChartProps) => {
     losses: item.losses,
     win_rate: item.win_rate,
   }))
-
-  const totalMatches = chartData.reduce((acc, item) => acc + item.value, 0)
 
   return (
     <Card className="bg-slate-800 border-slate-700">

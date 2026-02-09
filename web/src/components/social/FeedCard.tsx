@@ -203,13 +203,13 @@ export const FeedCard: React.FC<FeedCardProps> = ({
               player1: {
                 id: match.player1.id,
                 name: match.player1.name,
-                avatar: match.player1.avatar,
+                avatar: match.player1.profileImage,
                 ranking: match.player1.ranking,
               },
               player2: {
                 id: match.player2.id,
                 name: match.player2.name,
-                avatar: match.player2.avatar,
+                avatar: match.player2.profileImage,
                 ranking: match.player2.ranking,
               },
               score: formatScore(),

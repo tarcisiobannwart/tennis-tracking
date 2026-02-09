@@ -17,7 +17,7 @@ interface NotificationBellProps {
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className = '' }) => {
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const navigate = useNavigate()
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchUnreadCount = async () => {
     try {

@@ -56,7 +56,7 @@ const ResultStreak = ({ data }: ResultStreakProps) => {
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {data.map((item, index) => (
+          {data.map((item) => (
             <div
               key={item.match_id}
               className="group relative"
