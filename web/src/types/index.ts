@@ -211,7 +211,9 @@ export interface PaginatedResponse<T> {
 
 // WebSocket message types
 export interface WebSocketMessage {
-  type: 'frame_update' | 'match_event' | 'score_update' | 'connection' | 'error'
+  type: 'frame_update' | 'match_event' | 'score_update' | 'connection' | 'error' | 'scoring_event' | 'match_control' | 'match_state' | 'ping' | 'pong'
+  event_type?: 'point_scored' | 'game_won' | 'set_won' | 'match_completed' | 'match_paused' | 'match_resumed'
+  match_id?: string
   data: any
   timestamp: number
 }

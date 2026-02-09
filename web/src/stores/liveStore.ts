@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { LiveFrame, Match, WebSocketMessage } from '@/types'
+import { scoringService, ScoreDisplay } from '@/services/scoringService'
 
 interface LiveStore {
   // Connection state
@@ -9,6 +10,10 @@ interface LiveStore {
   // Current match data
   currentMatch: Match | null
   currentFrame: LiveFrame | null
+
+  // Scoring data
+  scoreboard: ScoreDisplay | null
+  lastScoringEvent: WebSocketMessage | null
 
   // Live tracking data
   frames: LiveFrame[]
@@ -27,6 +32,8 @@ interface LiveStore {
   setConnectionStatus: (status: LiveStore['connectionStatus']) => void
   setCurrentMatch: (match: Match | null) => void
   setCurrentFrame: (frame: LiveFrame | null) => void
+  setScoreboard: (scoreboard: ScoreDisplay | null) => void
+  setLastScoringEvent: (event: WebSocketMessage | null) => void
   addFrame: (frame: LiveFrame) => void
   setIsRecording: (isRecording: boolean) => void
   setIsAnalyzing: (isAnalyzing: boolean) => void
@@ -35,6 +42,7 @@ interface LiveStore {
   setIsPlaying: (isPlaying: boolean) => void
   setSocket: (socket: WebSocket | null) => void
   handleWebSocketMessage: (message: WebSocketMessage) => void
+  fetchScoreboardData: (matchId: string) => Promise<void>
   clearFrames: () => void
   reset: () => void
 }
@@ -45,6 +53,8 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
   connectionStatus: 'disconnected',
   currentMatch: null,
   currentFrame: null,
+  scoreboard: null,
+  lastScoringEvent: null,
   frames: [],
   isRecording: false,
   isAnalyzing: false,
@@ -64,6 +74,10 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
   setCurrentMatch: (match) => set({ currentMatch: match }),
 
   setCurrentFrame: (frame) => set({ currentFrame: frame }),
+
+  setScoreboard: (scoreboard) => set({ scoreboard }),
+
+  setLastScoringEvent: (event) => set({ lastScoringEvent: event }),
 
   addFrame: (frame) => {
     const { frames } = get()
@@ -85,7 +99,7 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
   setSocket: (socket) => set({ socket }),
 
   handleWebSocketMessage: (message) => {
-    const { type, data } = message
+    const { type, event_type, data } = message
 
     switch (type) {
       case 'frame_update':
@@ -98,6 +112,45 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
         if (data.match) {
           get().setCurrentMatch(data.match)
         }
+        break
+
+      case 'match_state':
+        // Handle initial match state with scoreboard
+        if (data.scoreboard) {
+          get().setScoreboard(data.scoreboard)
+        }
+        break
+
+      case 'scoring_event':
+        // Handle scoring events: point_scored, game_won, set_won, match_completed
+        get().setLastScoringEvent(message)
+
+        if (event_type === 'point_scored' && data) {
+          // Update scoreboard with new score
+          if (data.scoreboard) {
+            get().setScoreboard(data.scoreboard)
+          }
+        } else if (event_type === 'game_won' && data) {
+          // Update scoreboard after game won
+          if (data.score || data.scoreboard) {
+            get().setScoreboard(data.scoreboard || data.score)
+          }
+        } else if (event_type === 'set_won' && data) {
+          // Update scoreboard after set won
+          if (data.score || data.scoreboard) {
+            get().setScoreboard(data.scoreboard || data.score)
+          }
+        } else if (event_type === 'match_completed' && data) {
+          // Update final scoreboard
+          if (data.final_score || data.scoreboard) {
+            get().setScoreboard(data.scoreboard || data.final_score)
+          }
+        }
+        break
+
+      case 'match_control':
+        // Handle match control events: match_paused, match_resumed
+        console.log('Match control event:', event_type, data)
         break
 
       case 'score_update':
@@ -125,11 +178,22 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
     }
   },
 
+  fetchScoreboardData: async (matchId: string) => {
+    try {
+      const scoreDisplay = await scoringService.getCurrentScore(matchId)
+      get().setScoreboard(scoreDisplay)
+    } catch (error) {
+      console.error('Failed to fetch scoreboard:', error)
+    }
+  },
+
   clearFrames: () => set({ frames: [] }),
 
   reset: () => set({
     currentMatch: null,
     currentFrame: null,
+    scoreboard: null,
+    lastScoringEvent: null,
     frames: [],
     isRecording: false,
     isAnalyzing: false,

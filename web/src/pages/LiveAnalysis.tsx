@@ -16,9 +16,11 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import toast from 'react-hot-toast'
 import { useLiveStore } from '@/stores/liveStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { getWebSocketUrl } from '@/services/websocketService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import VideoPlayer from '@/components/video/VideoPlayer'
@@ -43,8 +45,11 @@ const LiveAnalysis = () => {
 
   const {
     isConnected,
+    connectionStatus,
     currentMatch,
     currentFrame,
+    scoreboard,
+    lastScoringEvent,
     isRecording,
     isAnalyzing,
     videoUrl,
@@ -55,15 +60,21 @@ const LiveAnalysis = () => {
 
   const { setModal } = useUIStore()
 
-  // WebSocket connection for live data
+  // Get match ID from currentMatch or use a default for testing
+  const matchId = currentMatch?.id || 'test-match-id'
+
+  // WebSocket connection for live scoring
   const { send } = useWebSocket({
-    url: 'ws://localhost:8000/ws/live',
-    enabled: false, // Disabled until WebSocket endpoint is properly configured
+    url: getWebSocketUrl(`/ws/live/${matchId}`),
+    enabled: true, // Enable WebSocket connection
+    matchId,
+    enablePollingFallback: true,
+    pollingInterval: 5000,
     onConnect: () => {
-      console.log('Connected to live analysis')
+      console.log('Connected to live match WebSocket', matchId)
     },
     onDisconnect: () => {
-      console.log('Disconnected from live analysis')
+      console.log('Disconnected from live match WebSocket')
     },
     onError: (error) => {
       console.error('WebSocket error:', error)
@@ -89,6 +100,60 @@ const LiveAnalysis = () => {
     const interval = setInterval(fetchStreams, 10000)
     return () => clearInterval(interval)
   }, [fetchStreams])
+
+  // Handle scoring events with visual notifications
+  useEffect(() => {
+    if (!lastScoringEvent) return
+
+    const { event_type, data } = lastScoringEvent
+
+    switch (event_type) {
+      case 'point_scored':
+        // Just update scoreboard, no toast for every point
+        break
+
+      case 'game_won':
+        if (data.winner_player_id) {
+          toast.success(`Game won!`, {
+            icon: '🎾',
+            duration: 3000,
+          })
+        }
+        break
+
+      case 'set_won':
+        if (data.winner_player_id) {
+          toast.success(`Set won!`, {
+            icon: '🏆',
+            duration: 4000,
+          })
+        }
+        break
+
+      case 'match_completed':
+        if (data.winner_player_id) {
+          toast.success(`Match completed!`, {
+            icon: '🎉',
+            duration: 5000,
+          })
+        }
+        break
+
+      case 'match_paused':
+        toast(`Match paused${data.reason ? `: ${data.reason}` : ''}`, {
+          icon: '⏸️',
+          duration: 3000,
+        })
+        break
+
+      case 'match_resumed':
+        toast('Match resumed', {
+          icon: '▶️',
+          duration: 2000,
+        })
+        break
+    }
+  }, [lastScoringEvent])
 
   // Camera selection (local camera)
   const selectCamera = async () => {
@@ -148,12 +213,24 @@ const LiveAnalysis = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Radio className={`w-5 h-5 ${liveCount > 0 ? 'text-green-500' : isConnected ? 'text-green-500' : 'text-red-500'}`} />
+            <Radio className={`w-5 h-5 ${
+              liveCount > 0
+                ? 'text-green-500'
+                : connectionStatus === 'connected'
+                  ? 'text-green-500'
+                  : connectionStatus === 'connecting'
+                    ? 'text-yellow-500'
+                    : 'text-red-500'
+            }`} />
             <span className="text-sm font-medium">
               {liveCount > 0
                 ? `${liveCount} camera${liveCount > 1 ? 's' : ''} ao vivo`
-                : isConnected
+                : connectionStatus === 'connected'
                 ? t('liveAnalysis.status.connected')
+                : connectionStatus === 'connecting'
+                ? 'Conectando...'
+                : connectionStatus === 'error'
+                ? 'Erro (usando polling)'
                 : t('liveAnalysis.status.disconnected')}
             </span>
           </div>
@@ -398,8 +475,43 @@ const LiveAnalysis = () => {
             )}
 
             {/* Score Board */}
-            {currentMatch && (
-              <ScoreBoard match={currentMatch} />
+            {(currentMatch || scoreboard) && (
+              currentMatch ? (
+                <ScoreBoard match={currentMatch} />
+              ) : scoreboard ? (
+                <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                  <CardContent className="p-4">
+                    <div className="text-sm text-center text-slate-400 mb-2">Live Score</div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className={scoreboard.player1.serving ? 'font-bold' : ''}>
+                        Player 1
+                      </div>
+                      <div>Score</div>
+                      <div className={scoreboard.player2.serving ? 'font-bold' : ''}>
+                        Player 2
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center mt-2 text-2xl font-mono">
+                      <div>{scoreboard.player1.current_points}</div>
+                      <div className="text-slate-400">-</div>
+                      <div>{scoreboard.player2.current_points}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center mt-2">
+                      <div className="text-sm">
+                        {scoreboard.player1.games.map((g, i) => (
+                          <span key={i} className="mx-1">{g}</span>
+                        ))}
+                      </div>
+                      <div className="text-xs text-slate-400">Sets</div>
+                      <div className="text-sm">
+                        {scoreboard.player2.games.map((g, i) => (
+                          <span key={i} className="mx-1">{g}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null
             )}
 
             {/* Live Statistics */}

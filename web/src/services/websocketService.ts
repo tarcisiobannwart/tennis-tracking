@@ -15,15 +15,16 @@ class WebSocketService {
   private config: WebSocketConfig | null = null
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
-  private reconnectInterval = 3000
+  private baseReconnectInterval = 1000 // Start with 1 second
   private reconnectTimer: number | null = null
   private isManuallyDisconnected = false
+  private pingInterval: number | null = null
 
   connect(config: WebSocketConfig): Promise<void> {
     return new Promise((resolve, reject) => {
       this.config = config
       this.maxReconnectAttempts = config.reconnectAttempts || 5
-      this.reconnectInterval = config.reconnectInterval || 3000
+      this.baseReconnectInterval = config.reconnectInterval || 1000
       this.isManuallyDisconnected = false
 
       try {
@@ -32,6 +33,7 @@ class WebSocketService {
         this.socket.onopen = () => {
           console.log('WebSocket connected')
           this.reconnectAttempts = 0
+          this.startPingInterval()
           config.onConnect?.()
           resolve()
         }
@@ -39,7 +41,13 @@ class WebSocketService {
         this.socket.onmessage = (event) => {
           try {
             const message: WebSocketMessage = JSON.parse(event.data)
-            config.onMessage?.(message)
+
+            // Handle ping/pong messages
+            if (message.type === 'ping') {
+              this.send({ type: 'pong', timestamp: Date.now() })
+            } else {
+              config.onMessage?.(message)
+            }
           } catch (error) {
             console.error('Failed to parse WebSocket message:', error)
           }
@@ -48,6 +56,7 @@ class WebSocketService {
         this.socket.onclose = (event) => {
           console.log('WebSocket disconnected', event)
           this.socket = null
+          this.stopPingInterval()
           config.onDisconnect?.()
 
           // Attempt to reconnect if not manually disconnected
@@ -70,6 +79,7 @@ class WebSocketService {
   disconnect(): void {
     this.isManuallyDisconnected = true
     this.clearReconnectTimer()
+    this.stopPingInterval()
 
     if (this.socket) {
       this.socket.close()
@@ -105,6 +115,11 @@ class WebSocketService {
   private scheduleReconnect(): void {
     this.clearReconnectTimer()
 
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+    const backoffDelay = this.baseReconnectInterval * Math.pow(2, this.reconnectAttempts)
+    const maxDelay = 30000 // Cap at 30 seconds
+    const delay = Math.min(backoffDelay, maxDelay)
+
     this.reconnectTimer = setTimeout(() => {
       if (this.config && !this.isManuallyDisconnected) {
         console.log(`Attempting to reconnect... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
@@ -113,13 +128,30 @@ class WebSocketService {
           console.error('Reconnection failed:', error)
         })
       }
-    }, this.reconnectInterval)
+    }, delay)
   }
 
   private clearReconnectTimer(): void {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
+    }
+  }
+
+  private startPingInterval(): void {
+    this.stopPingInterval()
+    // Send ping every 25 seconds to keep connection alive
+    this.pingInterval = setInterval(() => {
+      if (this.socket?.readyState === WebSocket.OPEN) {
+        this.send({ type: 'ping', timestamp: Date.now() })
+      }
+    }, 25000)
+  }
+
+  private stopPingInterval(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval)
+      this.pingInterval = null
     }
   }
 
@@ -134,6 +166,22 @@ class WebSocketService {
 // Create singleton instance for live analysis
 export const liveWebSocket = new WebSocketService()
 
+// Helper to get WebSocket URL
+export const getWebSocketUrl = (path: string): string => {
+  // Check if there's an environment variable for WebSocket URL
+  const wsBaseUrl = import.meta.env.VITE_WS_URL
+
+  if (wsBaseUrl) {
+    return `${wsBaseUrl}${path}`
+  }
+
+  // Auto-detect from current location
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+
+  return `${protocol}//${host}${path}`
+}
+
 // Utility function to connect to live analysis WebSocket
 export const connectToLiveAnalysis = async (
   matchId: string,
@@ -142,7 +190,7 @@ export const connectToLiveAnalysis = async (
   onDisconnect?: () => void,
   onError?: (error: Event) => void
 ): Promise<void> => {
-  const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/live/${matchId}`
+  const wsUrl = getWebSocketUrl(`/ws/live/${matchId}`)
 
   await liveWebSocket.connect({
     url: wsUrl,
@@ -150,8 +198,8 @@ export const connectToLiveAnalysis = async (
     onConnect,
     onDisconnect,
     onError,
-    reconnectAttempts: 10,
-    reconnectInterval: 2000,
+    reconnectAttempts: 5,
+    reconnectInterval: 1000,
   })
 }
 
