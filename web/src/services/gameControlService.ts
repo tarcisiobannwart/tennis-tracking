@@ -34,6 +34,26 @@ export interface MatchState {
   }
 }
 
+export interface GameEvent {
+  id: string
+  match_id: string
+  event_type: string
+  player_id?: string
+  timestamp: string
+  description?: string
+  event_data?: Record<string, any>
+  current_set?: number
+  current_game?: number
+  priority?: 'low' | 'normal' | 'high' | 'critical'
+}
+
+export interface RecentEventsResponse {
+  match_id: string
+  events: GameEvent[]
+  count: number
+  limit: number
+}
+
 export const gameControlService = {
   async startMatch(request: StartMatchRequest): Promise<GameControlResponse> {
     return apiPost<GameControlResponse>('/game-control/start', request)
@@ -54,6 +74,10 @@ export const gameControlService = {
     return apiPost<GameControlResponse>('/game-control/resume', {
       match_id: matchId,
     })
+  },
+
+  async getRecentEvents(matchId: string, limit: number = 50): Promise<RecentEventsResponse> {
+    return apiGet<RecentEventsResponse>(`/game-control/events/recent/${matchId}`, { limit })
   },
 }
 
