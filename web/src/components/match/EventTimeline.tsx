@@ -29,7 +29,7 @@ interface EventTimelineProps {
 const EventTimeline = ({
   matchId,
   events: externalEvents = [],
-  onNewEvent,
+  onNewEvent: _onNewEvent,
   compact = false,
   maxHeight = '80vh'
 }: EventTimelineProps) => {
