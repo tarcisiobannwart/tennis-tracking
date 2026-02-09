@@ -11,14 +11,13 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import (
     DateTime,
-    Enum,
     Index,
     Integer,
     String,
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -64,8 +63,8 @@ class ErrorReport(Base):
     )
 
     # Origem: frontend ou backend
-    source: Mapped[ErrorSourceEnum] = mapped_column(
-        Enum(ErrorSourceEnum, name="error_source_enum"),
+    source: Mapped[str] = mapped_column(
+        ENUM('frontend', 'backend', name='error_source_enum', create_type=False),
         nullable=False,
         index=True,
     )
@@ -104,9 +103,9 @@ class ErrorReport(Base):
     )
 
     # Status do report
-    status: Mapped[ErrorReportStatusEnum] = mapped_column(
-        Enum(ErrorReportStatusEnum, name="error_report_status_enum"),
-        default=ErrorReportStatusEnum.open,
+    status: Mapped[str] = mapped_column(
+        ENUM('open', 'reported', 'resolved', 'ignored', name='error_report_status_enum', create_type=False),
+        default='open',
         nullable=False,
         index=True,
     )

@@ -13,7 +13,6 @@ from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -21,7 +20,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -76,9 +75,9 @@ class Organization(Base):
 
     # Plano
     plan: Mapped[str] = mapped_column(
-        Enum(OrganizationPlan, name="organization_plan", create_constraint=True),
+        ENUM('rally', 'match_point', 'grand_slam', name='organization_plan', create_type=False),
         nullable=False,
-        default=OrganizationPlan.GRAND_SLAM,
+        default='grand_slam',
     )
     max_members: Mapped[int] = mapped_column(Integer, default=10)
 
@@ -164,9 +163,9 @@ class OrganizationInvite(Base):
 
     # Status
     status: Mapped[str] = mapped_column(
-        Enum(InviteStatus, name="invite_status", create_constraint=True),
+        ENUM('pending', 'accepted', 'expired', 'cancelled', name='invite_status', create_type=False),
         nullable=False,
-        default=InviteStatus.PENDING,
+        default='pending',
     )
 
     # Expiracao

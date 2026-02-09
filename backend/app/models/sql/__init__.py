@@ -3,6 +3,9 @@ SQLAlchemy ORM models para PostgreSQL.
 
 Modelos migrados de MongoDB/Pydantic para SQLAlchemy 2.0 style.
 Os modelos Pydantic originais sao mantidos como schemas (Create/Response).
+
+NOTA: Todos os modelos que herdam de Base devem ser importados aqui
+para que o mapper do SQLAlchemy consiga resolver relationship() por string.
 """
 
 from app.models.sql.user import User
@@ -36,6 +39,26 @@ from app.models.sql.tournament import (
     PaymentStatus,
 )
 
+# TT-137: Notificacoes
+from app.models.sql.notification import Notification, NotificationType
+
+# TT-130: Social feed
+from app.models.sql.social_feed import FeedPost, FeedReaction, FeedComment
+
+# Venues
+from app.models.sql.venue import Venue, VenueMember, VenueFollower
+
+# Modelos non-sql que usam a mesma Base (necessarios para resolver relationships)
+from app.models.player import Player
+from app.models.match import Match
+from app.models.set import Set
+from app.models.game import Game
+from app.models.point import Point
+from app.models.event import GameEvent
+from app.models.training import DrillType, TrainingSession
+from app.models.point_history import PointHistory
+from app.models.ranking import Ranking, RankingParticipant, RankingRound, RankingMatch
+
 __all__ = [
     "User",
     "Organization",
@@ -66,4 +89,29 @@ __all__ = [
     "TournamentType",
     "RegistrationStatus",
     "PaymentStatus",
+    # TT-137: Notifications
+    "Notification",
+    "NotificationType",
+    # TT-130: Social feed
+    "FeedPost",
+    "FeedReaction",
+    "FeedComment",
+    # Venues
+    "Venue",
+    "VenueMember",
+    "VenueFollower",
+    # Non-sql models (same Base)
+    "Player",
+    "Match",
+    "Set",
+    "Game",
+    "Point",
+    "GameEvent",
+    "DrillType",
+    "TrainingSession",
+    "PointHistory",
+    "Ranking",
+    "RankingParticipant",
+    "RankingRound",
+    "RankingMatch",
 ]

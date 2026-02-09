@@ -13,14 +13,13 @@ from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     String,
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -68,9 +67,9 @@ class Notification(Base):
 
     # Tipo de notificacao
     notification_type: Mapped[str] = mapped_column(
-        Enum(NotificationType, name="notification_type", create_constraint=True),
+        ENUM('match_result', 'friendship', 'game_scheduled', 'ranking_round', 'tournament', 'system', name='notification_type', create_type=False),
         nullable=False,
-        default=NotificationType.SYSTEM,
+        default='system',
     )
 
     # Conteudo da notificacao

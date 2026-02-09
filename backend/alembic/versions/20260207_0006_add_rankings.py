@@ -24,15 +24,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Criar enums
-    ranking_type_enum = sa.Enum("round_robin", "challenge", name="ranking_type_enum")
-    ranking_type_enum.create(op.get_bind(), checkfirst=True)
-
-    ranking_status_enum = sa.Enum(
-        "active", "inactive", "completed",
-        name="ranking_status_enum",
-    )
-    ranking_status_enum.create(op.get_bind(), checkfirst=True)
+    # Criar enums via raw SQL
+    op.execute("CREATE TYPE ranking_type_enum AS ENUM ('round_robin', 'challenge')")
+    op.execute("CREATE TYPE ranking_status_enum AS ENUM ('active', 'inactive', 'completed')")
 
     # Criar tabela rankings
     op.create_table(
@@ -42,7 +36,7 @@ def upgrade() -> None:
         sa.Column("description", sa.String(500), nullable=True),
         sa.Column("ranking_type", sa.String(20), nullable=False, server_default="round_robin"),
         sa.Column("status", sa.String(20), nullable=False, server_default="active"),
-        sa.Column("organization_id", sa.String, sa.ForeignKey("organizations.id"), nullable=True),
+        sa.Column("organization_id", sa.String, nullable=True),  # Ref logica a organizations.id (UUID)
         sa.Column("venue", sa.String(200), nullable=True),
         sa.Column("location", sa.String(200), nullable=True),
         sa.Column("scoring_config", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
@@ -54,7 +48,7 @@ def upgrade() -> None:
         sa.Column("allow_self_scheduling", sa.Boolean, default=False, nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), onupdate=sa.func.now(), nullable=True),
-        sa.Column("created_by", sa.String, sa.ForeignKey("users.id"), nullable=True),
+        sa.Column("created_by", sa.String, nullable=True),  # Ref logica a users.id (UUID)
     )
 
     # Criar tabela ranking_participants
@@ -62,7 +56,7 @@ def upgrade() -> None:
         "ranking_participants",
         sa.Column("id", sa.String, primary_key=True),
         sa.Column("ranking_id", sa.String, sa.ForeignKey("rankings.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("user_id", sa.String, sa.ForeignKey("users.id"), nullable=False),
+        sa.Column("user_id", sa.String, nullable=False),  # Ref logica a users.id (UUID)
         sa.Column("position", sa.Integer, nullable=True),
         sa.Column("previous_position", sa.Integer, nullable=True),
         sa.Column("points", sa.Float, default=0.0, nullable=False),
@@ -102,11 +96,11 @@ def upgrade() -> None:
         sa.Column("ranking_id", sa.String, sa.ForeignKey("rankings.id", ondelete="CASCADE"), nullable=False),
         sa.Column("round_id", sa.String, sa.ForeignKey("ranking_rounds.id", ondelete="CASCADE"), nullable=True),
         sa.Column("match_id", sa.String, sa.ForeignKey("matches.id"), nullable=True),
-        sa.Column("player1_id", sa.String, sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("player2_id", sa.String, sa.ForeignKey("users.id"), nullable=False),
+        sa.Column("player1_id", sa.String, nullable=False),  # Ref logica a users.id (UUID)
+        sa.Column("player2_id", sa.String, nullable=False),  # Ref logica a users.id (UUID)
         sa.Column("player1_score", sa.String(50), nullable=True),
         sa.Column("player2_score", sa.String(50), nullable=True),
-        sa.Column("winner_id", sa.String, sa.ForeignKey("users.id"), nullable=True),
+        sa.Column("winner_id", sa.String, nullable=True),  # Ref logica a users.id (UUID)
         sa.Column("player1_points", sa.Float, default=0.0, nullable=False),
         sa.Column("player2_points", sa.Float, default=0.0, nullable=False),
         sa.Column("scheduled_at", sa.DateTime(timezone=True), nullable=True),
@@ -171,5 +165,5 @@ def downgrade() -> None:
     op.drop_table("rankings")
 
     # Remover enums
-    sa.Enum(name="ranking_type_enum").drop(op.get_bind(), checkfirst=True)
-    sa.Enum(name="ranking_status_enum").drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TYPE IF EXISTS ranking_type_enum")
+    op.execute("DROP TYPE IF EXISTS ranking_status_enum")

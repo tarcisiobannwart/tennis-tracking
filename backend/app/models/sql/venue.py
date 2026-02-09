@@ -12,7 +12,6 @@ from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
     Float,
     ForeignKey,
     Index,
@@ -21,7 +20,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -187,9 +186,9 @@ class VenueMember(Base):
 
     # Role
     role: Mapped[str] = mapped_column(
-        Enum(VenueMemberRole, name="venue_member_role", create_constraint=True),
+        ENUM('member', 'admin', 'owner', name='venue_member_role', create_type=False),
         nullable=False,
-        default=VenueMemberRole.MEMBER,
+        default='member',
     )
 
     # Timestamps

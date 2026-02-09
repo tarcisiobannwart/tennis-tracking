@@ -35,7 +35,7 @@ class UserService:
             id=uuid.uuid4(),
             email=user_data.email,
             username=user_data.username,
-            full_name=user_data.full_name,
+            full_name=user_data.fullName,
             password=get_password_hash(user_data.password),
             role=user_data.role if hasattr(user_data, 'role') else "viewer",
             is_active=True,

@@ -15,7 +15,6 @@ from typing import Optional
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as PgEnum,
     Float,
     ForeignKey,
     Index,
@@ -23,7 +22,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -86,14 +85,14 @@ class Tournament(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     sport: Mapped[str] = mapped_column(String(50), nullable=False, default="tennis")
     tournament_type: Mapped[str] = mapped_column(
-        PgEnum(TournamentType, name="tournament_type", create_type=True),
+        ENUM('singles', 'doubles', 'mixed', 'team', name='tournament_type', create_type=False),
         nullable=False,
-        default=TournamentType.SINGLES,
+        default='singles',
     )
     status: Mapped[str] = mapped_column(
-        PgEnum(TournamentStatus, name="tournament_status", create_type=True),
+        ENUM('draft', 'open', 'closed', 'in_progress', 'completed', 'cancelled', name='tournament_status', create_type=False),
         nullable=False,
-        default=TournamentStatus.DRAFT,
+        default='draft',
     )
 
     # Organizador (usuario ou organizacao)
@@ -257,16 +256,16 @@ class TournamentRegistration(Base):
 
     # Status
     status: Mapped[str] = mapped_column(
-        PgEnum(RegistrationStatus, name="registration_status", create_type=True),
+        ENUM('pending', 'confirmed', 'cancelled', 'waitlist', name='registration_status', create_type=False),
         nullable=False,
-        default=RegistrationStatus.PENDING,
+        default='pending',
     )
 
     # Pagamento
     payment_status: Mapped[str] = mapped_column(
-        PgEnum(PaymentStatus, name="payment_status", create_type=True),
+        ENUM('pending', 'paid', 'refunded', 'failed', name='payment_status', create_type=False),
         nullable=False,
-        default=PaymentStatus.PENDING,
+        default='pending',
     )
     amount_paid: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     payment_method: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)

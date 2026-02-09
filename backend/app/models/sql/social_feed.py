@@ -12,7 +12,6 @@ from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -20,7 +19,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -69,9 +68,9 @@ class FeedPost(Base):
 
     # Tipo de post
     post_type: Mapped[str] = mapped_column(
-        Enum(PostType, name="post_type", create_constraint=True),
+        ENUM('text', 'match_result', 'photo', 'text_photo', name='post_type', create_type=False),
         nullable=False,
-        default=PostType.TEXT,
+        default='text',
     )
 
     # Conteudo
@@ -165,9 +164,9 @@ class FeedReaction(Base):
 
     # Tipo de reacao
     reaction_type: Mapped[str] = mapped_column(
-        Enum(ReactionType, name="reaction_type", create_constraint=True),
+        ENUM('like', 'cheer', name='reaction_type', create_type=False),
         nullable=False,
-        default=ReactionType.LIKE,
+        default='like',
     )
 
     # Timestamp

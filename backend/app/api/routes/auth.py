@@ -94,13 +94,16 @@ async def register(user_data: UserCreate, request: Request, db: AsyncSession = D
 
     # Log activity
     await activity_log_service.log(
-        user_id=str(user.id),
+        db=db,
+        user_id=user.id,
         action="register",
         resource="user",
         resource_id=str(user.id),
         ip_address=request.client.host if request.client else None,
     )
 
+    # Refresh user to load any expired attributes (onupdate columns)
+    await db.refresh(user)
     user_response = _build_user_response_from_sql(user)
 
     return Token(
@@ -150,12 +153,15 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
 
     # Log activity
     await activity_log_service.log(
-        user_id=str(user.id),
+        db=db,
+        user_id=user.id,
         action="login",
         resource="user",
         ip_address=request.client.host if request.client else None,
     )
 
+    # Refresh user to load any expired attributes (onupdate columns)
+    await db.refresh(user)
     user_response = _build_user_response_from_sql(user)
 
     return Token(
@@ -204,6 +210,8 @@ async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
         # Update refresh token in database
         await user_service.update_refresh_token(db, user.id, new_refresh_token)
 
+        # Refresh user to load any expired attributes (onupdate columns)
+        await db.refresh(user)
         user_response = _build_user_response_from_sql(user)
 
         return Token(

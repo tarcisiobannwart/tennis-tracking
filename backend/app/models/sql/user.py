@@ -12,13 +12,12 @@ from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
     Index,
     String,
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -82,9 +81,9 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     password: Mapped[str] = mapped_column(Text, nullable=False)
     role: Mapped[str] = mapped_column(
-        Enum(UserRole, name="user_role", create_constraint=True),
+        ENUM('admin', 'coach', 'player', 'analyst', 'viewer', name='user_role', create_type=False),
         nullable=False,
-        default=UserRole.VIEWER,
+        default='viewer',
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
