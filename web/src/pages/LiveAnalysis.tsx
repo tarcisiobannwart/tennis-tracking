@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Play,
   Pause,
@@ -36,12 +36,13 @@ import { LiveStream } from '@/types'
 
 const LiveAnalysis = () => {
   const { t } = useTranslation()
-  const [selectedCamera, setSelectedCamera] = useState<string | null>(null)
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [viewMode, setViewMode] = useState<'camera' | 'multi-stream' | 'upload'>('multi-stream')
   const [streams, setStreams] = useState<LiveStream[]>([])
   const [loadingStreams, setLoadingStreams] = useState(false)
+  const cameraVideoRef = useRef<HTMLVideoElement>(null)
 
   const {
     connectionStatus,
@@ -161,6 +162,11 @@ const LiveAnalysis = () => {
   // Camera selection (local camera)
   const selectCamera = async () => {
     try {
+      // Parar stream anterior se existir
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop())
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: 1280,
@@ -169,19 +175,36 @@ const LiveAnalysis = () => {
         }
       })
 
-      const videoElement = document.getElementById('live-video') as HTMLVideoElement
-      if (videoElement) {
-        videoElement.srcObject = stream
-        setSelectedCamera('camera')
-        setViewMode('camera')
-      }
+      setCameraStream(stream)
+      setViewMode('camera')
     } catch (error) {
       console.error('Error accessing camera:', error)
+      toast.error('Erro ao acessar a camera. Verifique as permissoes.')
     }
   }
 
+  // Atribuir stream ao video element quando disponivel
+  useEffect(() => {
+    if (cameraVideoRef.current && cameraStream) {
+      cameraVideoRef.current.srcObject = cameraStream
+    }
+  }, [cameraStream, viewMode])
+
+  // Limpar camera ao desmontar
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [cameraStream])
+
   // Control functions
-  const startRecording = () => {
+  const startRecording = async () => {
+    // Se nao tem camera ativa, iniciar camera primeiro
+    if (!cameraStream) {
+      await selectCamera()
+    }
     setIsRecording(true)
     send({ type: 'start_recording' })
   }
@@ -289,9 +312,25 @@ const LiveAnalysis = () => {
                     }}
                   />
                 </div>
-              ) : videoUrl || selectedCamera ? (
+              ) : viewMode === 'camera' && cameraStream ? (
+                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={cameraVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-contain"
+                  />
+                  {isRecording && (
+                    <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600/80 text-white px-3 py-1.5 rounded-full text-sm">
+                      <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                      REC
+                    </div>
+                  )}
+                </div>
+              ) : videoUrl ? (
                 <VideoPlayer
-                  src={videoUrl || undefined}
+                  src={videoUrl}
                   showOverlays={true}
                   currentFrame={currentFrame}
                   onTimeUpdate={(_time) => {}}
@@ -315,14 +354,6 @@ const LiveAnalysis = () => {
                   </div>
                 </div>
               )}
-
-              {/* Hidden video element for camera feed */}
-              <video
-                id="live-video"
-                autoPlay
-                muted
-                className="hidden"
-              />
             </CardContent>
           </Card>
 
