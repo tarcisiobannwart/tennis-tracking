@@ -44,7 +44,6 @@ const LiveAnalysis = () => {
   const [loadingStreams, setLoadingStreams] = useState(false)
 
   const {
-    isConnected,
     connectionStatus,
     currentMatch,
     currentFrame,

@@ -38,7 +38,6 @@ const RankingDetail = () => {
     data: standingsData,
     isLoading: isLoadingStandings,
     isError: isErrorStandings,
-    error: errorStandings,
     refetch: refetchStandings
   } = useStandings(id || '')
 
@@ -46,7 +45,6 @@ const RankingDetail = () => {
     data: rounds,
     isLoading: isLoadingRounds,
     isError: isErrorRounds,
-    error: errorRounds,
     refetch: refetchRounds
   } = useRounds(id || '')
 

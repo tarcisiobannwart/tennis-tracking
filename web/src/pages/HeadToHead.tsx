@@ -36,7 +36,7 @@ const HeadToHead = () => {
   const [isLoadingH2H, setIsLoadingH2H] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const playerId = user?.id || user?._id || ''
+  const playerId = user?.id || ''
 
   // Buscar lista de adversarios
   const fetchOpponents = async () => {

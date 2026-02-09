@@ -8,10 +8,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
-  Undo2,
   Trophy,
   Circle,
-  CheckCircle2,
   AlertTriangle,
   Target,
   Zap,
@@ -53,7 +51,6 @@ const LiveScoring = () => {
   const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const [showMatchEndModal, setShowMatchEndModal] = useState(false)
-  const [lastEvent, setLastEvent] = useState<string[]>([])
 
   // Load match and live data
   useEffect(() => {
@@ -109,14 +106,12 @@ const LiveScoring = () => {
     setShowPointTypeModal(true)
   }
 
-  const handleAddPoint = async (pointType?: PointType) => {
+  const handleAddPoint = async (_pointType?: PointType) => {
     if (!selectedWinnerId || !id) return
 
     setProcessing(true)
     try {
       const response = await scoringService.addPoint(id, selectedWinnerId)
-
-      setLastEvent(response.events)
 
       // Show event notifications
       if (response.events.includes('match_won')) {

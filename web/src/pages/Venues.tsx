@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Users, Heart, Search, Plus } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PageTransition } from '@/components/animations'
@@ -88,12 +88,13 @@ const Venues = () => {
             <CardContent className="pt-6">
               <form onSubmit={handleSearch} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input
                       placeholder="Buscar por nome..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      icon={<Search className="w-4 h-4" />}
+                      className="pl-10"
                     />
                   </div>
                   <Input

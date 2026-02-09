@@ -28,7 +28,7 @@ import gameControlService from '@/services/gameControlService'
 import { useUIStore } from '@/stores/uiStore'
 
 type MatchFormat = 'best_of_3' | 'best_of_5'
-type SurfaceType = 'hard' | 'clay' | 'grass' | 'indoor'
+type SurfaceType = 'hard' | 'clay' | 'grass' | 'carpet'
 
 const NewMatch = () => {
   const navigate = useNavigate()
@@ -119,7 +119,7 @@ const NewMatch = () => {
       { value: 'hard', label: 'Hard Court', icon: '🎾' },
       { value: 'clay', label: 'Clay', icon: '🟧' },
       { value: 'grass', label: 'Grass', icon: '🟩' },
-      { value: 'indoor', label: 'Indoor', icon: '🏢' },
+      { value: 'carpet', label: 'Carpet', icon: '🏢' },
     ]
 
   // Handle create match
@@ -152,7 +152,7 @@ const NewMatch = () => {
         const serverPlayerId = serverPlayer === 'player1' ? player1.id : player2.id
 
         await gameControlService.startMatch({
-          match_id: createdMatch.matchId || createdMatch.id,
+          match_id: createdMatch.id,
           server_player_id: serverPlayerId,
           tournament_data: {
             name: venue?.name,
@@ -168,7 +168,7 @@ const NewMatch = () => {
         })
 
         // Redirect to live scoring page
-        navigate(`/app/match/${createdMatch.matchId || createdMatch.id}`)
+        navigate(`/app/match/${createdMatch.id}`)
       } else {
         addNotification({
           type: 'success',

@@ -6,7 +6,6 @@ import {
   Filter,
   Trophy,
   Users,
-  Calendar,
   MapPin,
   TrendingUp,
   TrendingDown,
@@ -145,7 +144,8 @@ const Rankings = () => {
                       {(['all', 'active', 'inactive', 'completed'] as StatusFilter[]).map((status) => (
                         <Chip
                           key={status}
-                          active={statusFilter === status}
+                          variant={statusFilter === status ? 'active' : 'default'}
+                          clickable
                           onClick={() => setStatusFilter(status)}
                         >
                           {status === 'all' ? 'Todos' : getStatusConfig(status).label}
@@ -161,7 +161,8 @@ const Rankings = () => {
                       {(['all', 'round_robin', 'challenge'] as TypeFilter[]).map((type) => (
                         <Chip
                           key={type}
-                          active={typeFilter === type}
+                          variant={typeFilter === type ? 'active' : 'default'}
+                          clickable
                           onClick={() => setTypeFilter(type)}
                         >
                           {type === 'all' ? 'Todos' : getTypeConfig(type).label}

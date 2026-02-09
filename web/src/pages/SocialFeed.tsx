@@ -38,7 +38,6 @@ const SocialFeed: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
-  const [totalPages, setTotalPages] = useState(1)
 
   // New post form
   const [showNewPostForm, setShowNewPostForm] = useState(false)
