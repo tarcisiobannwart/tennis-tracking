@@ -36,7 +36,7 @@ class StreamCreate(StreamBase):
 
 class StreamInDB(StreamBase):
     """Stream model as stored in database"""
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     userId: str
     streamKey: str
     rtmpUrl: str
@@ -50,9 +50,6 @@ class StreamInDB(StreamBase):
     viewerCount: int = 0
     metadata: Optional[Dict[str, Any]] = None
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class StreamResponse(BaseModel):

@@ -92,13 +92,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     """Get current authenticated user"""
     token_data = verify_token(token)
 
-    # Parse user_id - handle both UUID and legacy ObjectId formats
     try:
         user_uuid = uuid.UUID(token_data.user_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired, please login again",
+            detail="Invalid token format, please login again",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -115,7 +114,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
 
     # Build UserInDB from SQL User for backward compatibility
     return UserInDB(
-        _id=str(user.id),
+        id=str(user.id),
         email=user.email,
         username=user.username,
         fullName=user.full_name,

@@ -37,7 +37,7 @@ class VideoCreate(VideoBase):
 
 class VideoInDB(VideoBase):
     """Video model as stored in database"""
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     userId: str
     uploadPath: str
     processedPath: Optional[str] = None
@@ -50,9 +50,6 @@ class VideoInDB(VideoBase):
     processedAt: Optional[datetime] = None
     error: Optional[str] = None
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class VideoResponse(VideoBase):

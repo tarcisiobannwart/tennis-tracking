@@ -219,12 +219,9 @@ class DrillTypeCreate(DrillTypeBase):
 
 
 class DrillTypeInDB(DrillTypeBase):
-    id: Optional[str] = Field(None, alias="_id")
+    id: Optional[str] = Field(None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
-
-    class Config:
-        populate_by_name = True
 
 
 class DrillTypeResponse(DrillTypeBase):
@@ -305,7 +302,7 @@ class TrainingSessionUpdate(BaseModel):
 
 
 class TrainingSessionInDB(TrainingSessionBase):
-    id: Optional[str] = Field(None, alias="_id")
+    id: Optional[str] = Field(None)
     user_id: str
     status: str = SessionStatus.PLANNED.value
     started_at: Optional[datetime] = None
@@ -322,9 +319,6 @@ class TrainingSessionInDB(TrainingSessionBase):
     drills: List[TrainingDrillInDB] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
-
-    class Config:
-        populate_by_name = True
 
 
 class TrainingSessionResponse(TrainingSessionBase):

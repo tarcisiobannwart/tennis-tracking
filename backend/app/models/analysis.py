@@ -83,7 +83,7 @@ class AnalysisTask(BaseModel):
 
 class AnalysisResult(BaseModel):
     """Complete analysis result model"""
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     taskId: str
     videoId: str
     matchId: Optional[str] = None
@@ -112,6 +112,3 @@ class AnalysisResult(BaseModel):
     modelVersions: Dict[str, str] = Field(default_factory=dict)
     createdAt: datetime = Field(default_factory=datetime.utcnow)
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True

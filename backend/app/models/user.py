@@ -72,7 +72,7 @@ class UserCreate(UserBase):
 
 class UserInDB(UserBase):
     """User model as stored in database"""
-    id: Optional[str] = Field(default=None, alias="_id")
+    id: Optional[str] = Field(default=None)
     password: str
     createdAt: datetime = Field(default_factory=datetime.utcnow)
     updatedAt: datetime = Field(default_factory=datetime.utcnow)

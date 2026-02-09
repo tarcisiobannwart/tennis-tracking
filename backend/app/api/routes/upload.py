@@ -36,7 +36,7 @@ async def get_test_user(token_data = Depends(security)):
         # Try to decode test token first
         payload = jwt.decode(token_data.credentials, "test-secret-key", algorithms=["HS256"])
         return {
-            "_id": payload.get("sub"),
+            "id": payload.get("sub"),
             "email": payload.get("sub"),
             "name": payload.get("name", "Test User")
         }
@@ -54,7 +54,7 @@ async def get_test_user(token_data = Depends(security)):
 def _get_user_id(current_user) -> str:
     """Extract user ID from either dict (test user) or UserInDB object"""
     if isinstance(current_user, dict):
-        return current_user["_id"]
+        return current_user["id"]
     return str(current_user.id)
 
 
