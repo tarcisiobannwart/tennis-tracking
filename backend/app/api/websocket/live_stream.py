@@ -132,6 +132,20 @@ async def _get_match_from_db(match_id: str) -> dict | None:
         return None
 
 
+async def _get_match_scoreboard(match_id: str) -> dict | None:
+    """Get current match scoreboard from scoring service."""
+    from app.services.scoring_service import ScoringService
+
+    async with async_session() as session:
+        try:
+            scoring_service = ScoringService(session)
+            score_display = await scoring_service.get_current_score_display(match_id)
+            return score_display
+        except Exception as e:
+            logger.error("Failed to get scoreboard", match_id=match_id, error=str(e))
+            return None
+
+
 @router.websocket("/ws/live/{match_id}")
 async def websocket_match_endpoint(
     websocket: WebSocket,
@@ -154,14 +168,18 @@ async def websocket_match_endpoint(
             await websocket.close()
             return
 
-        # Send initial match state
-        await websocket.send_text(json.dumps({
+        # Send initial match state with scoreboard
+        scoreboard = await _get_match_scoreboard(match_id)
+        initial_state = {
             "type": "match_state",
             "match_id": match_id,
             "data": {
                 "status": match.get("status", "unknown"),
+                "scoreboard": scoreboard if scoreboard else None
             }
-        }))
+        }
+        await websocket.send_text(json.dumps(initial_state))
+        logger.info("Sent initial state with scoreboard", match_id=match_id, has_scoreboard=bool(scoreboard))
 
         # Keep connection alive and handle incoming messages
         while True:
@@ -342,3 +360,93 @@ async def send_notification_to_user(user_id: str, notification_data: dict):
         "data": notification_data,
         "timestamp": asyncio.get_event_loop().time()
     })
+
+
+# Scoring-specific broadcast functions
+async def broadcast_point_scored(match_id: str, score_update: dict):
+    """
+    Broadcast point_scored event with updated score to all match viewers.
+
+    Args:
+        match_id: Match ID
+        score_update: Score update data from ScoringService
+    """
+    await manager.send_to_match(match_id, {
+        "type": "scoring_event",
+        "event_type": "point_scored",
+        "match_id": match_id,
+        "data": score_update,
+        "timestamp": asyncio.get_event_loop().time()
+    })
+    logger.info("Broadcast point_scored", match_id=match_id)
+
+
+async def broadcast_game_won(match_id: str, winner_player_id: str, score_data: dict):
+    """Broadcast game_won event"""
+    await manager.send_to_match(match_id, {
+        "type": "scoring_event",
+        "event_type": "game_won",
+        "match_id": match_id,
+        "data": {
+            "winner_player_id": winner_player_id,
+            "score": score_data
+        },
+        "timestamp": asyncio.get_event_loop().time()
+    })
+    logger.info("Broadcast game_won", match_id=match_id, winner=winner_player_id)
+
+
+async def broadcast_set_won(match_id: str, winner_player_id: str, score_data: dict):
+    """Broadcast set_won event"""
+    await manager.send_to_match(match_id, {
+        "type": "scoring_event",
+        "event_type": "set_won",
+        "match_id": match_id,
+        "data": {
+            "winner_player_id": winner_player_id,
+            "score": score_data
+        },
+        "timestamp": asyncio.get_event_loop().time()
+    })
+    logger.info("Broadcast set_won", match_id=match_id, winner=winner_player_id)
+
+
+async def broadcast_match_completed(match_id: str, winner_player_id: str, final_score: dict):
+    """Broadcast match_completed event"""
+    await manager.send_to_match(match_id, {
+        "type": "scoring_event",
+        "event_type": "match_completed",
+        "match_id": match_id,
+        "data": {
+            "winner_player_id": winner_player_id,
+            "final_score": final_score
+        },
+        "timestamp": asyncio.get_event_loop().time()
+    })
+    logger.info("Broadcast match_completed", match_id=match_id, winner=winner_player_id)
+
+
+async def broadcast_match_paused(match_id: str, reason: str = None):
+    """Broadcast match_paused event"""
+    await manager.send_to_match(match_id, {
+        "type": "match_control",
+        "event_type": "match_paused",
+        "match_id": match_id,
+        "data": {
+            "reason": reason
+        },
+        "timestamp": asyncio.get_event_loop().time()
+    })
+    logger.info("Broadcast match_paused", match_id=match_id, reason=reason)
+
+
+async def broadcast_match_resumed(match_id: str):
+    """Broadcast match_resumed event"""
+    await manager.send_to_match(match_id, {
+        "type": "match_control",
+        "event_type": "match_resumed",
+        "match_id": match_id,
+        "data": {},
+        "timestamp": asyncio.get_event_loop().time()
+    })
+    logger.info("Broadcast match_resumed", match_id=match_id)

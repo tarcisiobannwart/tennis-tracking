@@ -123,13 +123,25 @@ async def add_point(
     - Server alternation
 
     Returns events that occurred (point_won, game_won, set_won, match_won)
+
+    Also broadcasts the event via WebSocket to all connected viewers.
     """
+    from app.api.websocket.live_stream import (
+        broadcast_point_scored,
+        broadcast_game_won,
+        broadcast_set_won,
+        broadcast_match_completed
+    )
+    import structlog
+
+    logger = structlog.get_logger(__name__)
     service = ScoringService(db)
 
     try:
         score_update = await service.add_point(match_id, request.winner_player_id)
 
-        return {
+        # Prepare response
+        response_data = {
             "message": "Point added successfully",
             "match_id": score_update.match_id,
             "point_winner_id": score_update.point_winner_id,
@@ -137,6 +149,35 @@ async def add_point(
             "events": score_update.events,
             "situation": score_update.situation.model_dump() if score_update.situation else None
         }
+
+        # Broadcast point_scored event via WebSocket
+        try:
+            # Get updated score for broadcast
+            score_display = await service.get_current_score_display(match_id)
+
+            # Broadcast point scored
+            await broadcast_point_scored(match_id, {
+                "point_winner_id": score_update.point_winner_id,
+                "events": score_update.events,
+                "scoreboard": score_display,
+                "situation": score_update.situation.model_dump() if score_update.situation else None
+            })
+
+            # Broadcast specific events
+            if "game_won" in score_update.events:
+                await broadcast_game_won(match_id, score_update.point_winner_id, score_display)
+
+            if "set_won" in score_update.events:
+                await broadcast_set_won(match_id, score_update.point_winner_id, score_display)
+
+            if "match_won" in score_update.events:
+                await broadcast_match_completed(match_id, score_update.point_winner_id, score_display)
+
+        except Exception as ws_error:
+            # Don't fail the request if WebSocket broadcast fails
+            logger.warning("WebSocket broadcast failed", match_id=match_id, error=str(ws_error))
+
+        return response_data
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

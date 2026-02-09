@@ -62,7 +62,13 @@ async def pause_match(
 
     Critérios de aceite TT-29:
     - [x] Endpoint para pause_match() com eventos
+
+    Broadcasts match_paused event via WebSocket to all connected viewers.
     """
+    from app.api.websocket.live_stream import broadcast_match_paused
+    import structlog
+
+    logger = structlog.get_logger(__name__)
     service = GameControlService(db)
 
     response = await service.pause_match(
@@ -72,6 +78,12 @@ async def pause_match(
 
     if not response.success:
         raise HTTPException(status_code=400, detail=response.message)
+
+    # Broadcast match_paused via WebSocket
+    try:
+        await broadcast_match_paused(request.match_id, request.reason)
+    except Exception as ws_error:
+        logger.warning("WebSocket broadcast failed", match_id=request.match_id, error=str(ws_error))
 
     return response
 
@@ -87,13 +99,25 @@ async def resume_match(
 
     Critérios de aceite TT-29:
     - [x] Endpoint para resume_match() com eventos
+
+    Broadcasts match_resumed event via WebSocket to all connected viewers.
     """
+    from app.api.websocket.live_stream import broadcast_match_resumed
+    import structlog
+
+    logger = structlog.get_logger(__name__)
     service = GameControlService(db)
 
     response = await service.resume_match(match_id=request.match_id)
 
     if not response.success:
         raise HTTPException(status_code=400, detail=response.message)
+
+    # Broadcast match_resumed via WebSocket
+    try:
+        await broadcast_match_resumed(request.match_id)
+    except Exception as ws_error:
+        logger.warning("WebSocket broadcast failed", match_id=request.match_id, error=str(ws_error))
 
     return response
 
