@@ -38,8 +38,11 @@ jobs:
           git fetch --all --tags
           git checkout $IMAGE_TAG
 
-          # Parar containers
-          docker compose -f docker-compose.server.yml down || true
+          # Parar containers e remover orfaos
+          docker compose -f docker-compose.server.yml down --remove-orphans || true
+
+          # Remover containers conflitantes (de deploys anteriores)
+          docker rm -f tennis-tracking-redis tennis-tracking-mediamtx 2>/dev/null || true
 
           # Rebuild e iniciar
           docker compose -f docker-compose.server.yml up -d --build
