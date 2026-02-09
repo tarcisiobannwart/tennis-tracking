@@ -1,8 +1,6 @@
-# Comando: Deploy (Commit + Tag + Pipeline)
+# Comando: Deploy (Commit + Tag + GitHub Actions)
 
-Executa o fluxo completo de deploy do Tennis Tracking: commit das alteracoes na branch main, criacao de tag de versao e push da tag que aciona o Bitbucket Pipeline.
-
-> **NOTA**: Referencias a Bitbucket Pipelines, AWS ECR e URLs devem ser atualizadas conforme o CI/CD do Tennis Tracking. O fluxo geral (commit → tag → pipeline) permanece valido.
+Executa o fluxo completo de deploy do Tennis Tracking: commit das alteracoes na branch main, criacao de tag de versao e push da tag que aciona o GitHub Actions workflow.
 
 ## Fluxo de Execucao
 
@@ -32,18 +30,18 @@ Executa o fluxo completo de deploy do Tennis Tracking: commit das alteracoes na 
                              v
 +-------------------------------------------------------------+
 | 3. CRIAR TAG                                                 |
-|    - Detectar ultima tag (v1.0.XX)                           |
+|    - Detectar ultima tag                                     |
 |    - Calcular proxima versao (semver)                        |
 |    - Gerar changelog                                         |
 |    - Criar tag anotada                                       |
-|    - Push tag (aciona Bitbucket Pipeline)                    |
+|    - Push tag (aciona GitHub Actions)                        |
 +----------------------------+--------------------------------+
                              |
                              v
 +-------------------------------------------------------------+
-| 4. MONITORAR PIPELINE                                        |
-|    - Exibir link do pipeline                                 |
-|    - Pipeline faz: build AMD64 + push ECR + update server    |
+| 4. MONITORAR DEPLOY                                          |
+|    - Exibir link do GitHub Actions                           |
+|    - GitHub Actions faz: SSH + git pull + docker build       |
 +-------------------------------------------------------------+
 ```
 
@@ -53,9 +51,9 @@ Executa o fluxo completo de deploy do Tennis Tracking: commit das alteracoes na 
 
 | Argumento | Descricao | Exemplo |
 |-----------|-----------|---------|
-| (vazio) | Incrementa patch version (x.y.Z) | `v1.0.3` -> `v1.0.4` |
-| `--minor` | Incrementa minor version (x.Y.0) | `v1.0.3` -> `v1.1.0` |
-| `--major` | Incrementa major version (X.0.0) | `v1.0.3` -> `v2.0.0` |
+| (vazio) | Incrementa patch version (x.y.Z) | `v1.5.0` -> `v1.5.1` |
+| `--minor` | Incrementa minor version (x.Y.0) | `v1.5.0` -> `v1.6.0` |
+| `--major` | Incrementa major version (X.0.0) | `v1.5.0` -> `v2.0.0` |
 | `--version=X.Y.Z` | Define versao especifica | `--version=2.0.0` |
 | `--skip-commit` | Pula etapa de commit (ja commitado) | |
 | `--dry-run` | Mostra o que seria feito sem executar | |
@@ -75,7 +73,7 @@ git status --porcelain
 git describe --tags --abbrev=0 2>/dev/null || echo "Nenhuma tag encontrada"
 
 # Verificar tags remotas (para pegar a mais recente)
-git ls-remote --tags origin | grep -oP 'v1\.\d+\.\d+' | sort -V | tail -1
+git ls-remote --tags origin | grep -oP 'v\d+\.\d+\.\d+' | sort -V | tail -1
 
 # Verificar se main esta atualizado com remote
 git fetch origin
@@ -118,9 +116,9 @@ PATCH=$(echo $VERSION | cut -d. -f3)
 
 | Tipo de Incremento | Formula | Exemplo |
 |--------------------|---------|---------|
-| `--major` | `MAJOR+1.0.0` | `1.0.3` -> `2.0.0` |
-| `--minor` | `MAJOR.MINOR+1.0` | `1.0.3` -> `1.1.0` |
-| (default/patch) | `MAJOR.MINOR.PATCH+1` | `1.0.3` -> `1.0.4` |
+| `--major` | `MAJOR+1.0.0` | `1.5.0` -> `2.0.0` |
+| `--minor` | `MAJOR.MINOR+1.0` | `1.5.0` -> `1.6.0` |
+| (default/patch) | `MAJOR.MINOR.PATCH+1` | `1.5.0` -> `1.5.1` |
 
 #### Deteccao Automatica de Versao
 
@@ -164,31 +162,32 @@ $CHANGELOG
 - Commit: $(git rev-parse HEAD)
 
 ## Deploy
-- Registry: 021301014509.dkr.ecr.us-east-1.amazonaws.com/tmf-hub
-- Plataforma: linux/amd64
-- Pipeline: Bitbucket Pipelines (triggered by tag)
+- Servidor: Producao (via GitHub Actions SSH)
+- Compose: docker-compose.server.yml
+- Health: http://localhost:5002/health
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 EOF
 )"
 
-# Push tag (aciona o Bitbucket Pipeline automaticamente)
+# Push tag (aciona o GitHub Actions automaticamente)
 git push origin "v$NEW_VERSION"
 ```
 
-### Passo 4: Monitorar Pipeline
+### Passo 4: Monitorar Deploy
 
-Apos o push da tag, o Bitbucket Pipeline eh acionado automaticamente.
+Apos o push da tag, o GitHub Actions workflow `deploy-on-tag.yml` eh acionado automaticamente.
 
-**O pipeline faz:**
-1. Build da imagem Docker com `--platform linux/amd64 -f Dockerfile.unified`
-2. Push para ECR: `021301014509.dkr.ecr.us-east-1.amazonaws.com/tmf-hub:v$NEW_VERSION`
-3. Push para ECR: `021301014509.dkr.ecr.us-east-1.amazonaws.com/tmf-hub:latest`
-4. Atualiza o container no servidor de producao
+**O workflow faz:**
+1. Conecta via SSH ao servidor de producao
+2. `git fetch --all --tags && git checkout v$NEW_VERSION`
+3. `docker compose -f docker-compose.server.yml down`
+4. `docker compose -f docker-compose.server.yml up -d --build`
+5. Aguarda 30s e verifica health check em `http://localhost:5002/health`
 
-**Link do pipeline:**
+**Link do GitHub Actions:**
 ```
-https://bitbucket.org/phdesignsystems/tennis-tracking/pipelines
+https://github.com/tarcisiobannwart/tennis-tracking/actions
 ```
 
 ## Regras de Seguranca
@@ -197,7 +196,7 @@ https://bitbucket.org/phdesignsystems/tennis-tracking/pipelines
 
 | Verificacao | Acao se Falhar |
 |-------------|----------------|
-| Branch atual eh `main` | Abortar (TMF usa main diretamente) |
+| Branch atual eh `main` | Abortar |
 | Nao ha alteracoes uncommitted | Sugerir commit primeiro |
 | Main esta atualizado com remote | Abortar (pedir pull) |
 | Tag nao existe | Abortar se ja existir |
@@ -209,7 +208,7 @@ https://bitbucket.org/phdesignsystems/tennis-tracking/pipelines
 3. **SEMPRE** criar tags anotadas (nao lightweight)
 4. **SEMPRE** gerar changelog na tag
 5. **SEMPRE** verificar que a tag nao existe antes de criar
-6. **SEMPRE** usar formato v1.0.XX para tags
+6. **SEMPRE** usar formato semver vX.Y.Z para tags
 
 ## Fluxo de Decisao para Versao
 
@@ -242,7 +241,7 @@ DEPLOY Tennis Tracking - Iniciando fluxo de release
 ETAPA 1: Verificacoes
    |- Branch atual: main
    |- Alteracoes pendentes: 3 arquivos
-   |- Ultima tag: v1.0.12
+   |- Ultima tag: v1.5.0
    |- Remote sync: OK
 
 ETAPA 2: Commit
@@ -252,34 +251,34 @@ ETAPA 2: Commit
    |- Push main: OK
 
 ETAPA 3: Criar Tag
-   |- Versao anterior: v1.0.12
+   |- Versao anterior: v1.5.0
    |- Tipo incremento: patch (auto-detectado)
-   |- Nova versao: v1.0.13
+   |- Nova versao: v1.5.1
    |- Changelog:
-   |   - feat(clients): adicionar filtros avancados
-   |   - fix(hr): corrigir calculo de folha
+   |   - feat(frontend): adicionar filtros avancados
+   |   - fix(backend): corrigir query de scoring
    |   - chore: atualizar dependencias
    |- Tag criada: OK
-   |- Push tag: OK (pipeline acionado)
+   |- Push tag: OK (GitHub Actions acionado)
 
-ETAPA 4: Pipeline
-   |- URL: https://bitbucket.org/phdesignsystems/tennis-tracking/pipelines
-   |- O pipeline ira:
-   |   1. Build imagem: docker build --platform linux/amd64 -f Dockerfile.unified
-   |   2. Push ECR: tmf-hub:v1.0.13 + tmf-hub:latest
-   |   3. Atualizar container em producao
+ETAPA 4: Deploy
+   |- GitHub Actions: https://github.com/tarcisiobannwart/tennis-tracking/actions
+   |- O workflow ira:
+   |   1. SSH no servidor de producao
+   |   2. git checkout v1.5.1
+   |   3. docker compose -f docker-compose.server.yml up -d --build
+   |   4. Health check: http://localhost:5002/health
 
 ========================================================
 
 DEPLOY INICIADO COM SUCESSO!
 
 Resumo:
-   - Versao: v1.0.13
+   - Versao: v1.5.1
    - Commits incluidos: 3
-   - ECR: 021301014509.dkr.ecr.us-east-1.amazonaws.com/tmf-hub:v1.0.13
 
 Proximos passos:
-   - Monitorar pipeline: https://bitbucket.org/phdesignsystems/tennis-tracking/pipelines
+   - Monitorar workflow: https://github.com/tarcisiobannwart/tennis-tracking/actions
    - Verificar health: https://hub-api.trademarketingforce.com/health
    - Frontend: https://hub.trademarketingforce.com
 ```
@@ -294,17 +293,17 @@ O que seria executado:
 
 1. COMMIT
    - 3 arquivos seriam commitados
-   - Mensagem: "feat(clients): adicionar filtros avancados"
+   - Mensagem: "feat(frontend): adicionar filtros avancados"
 
 2. TAG
-   - Versao atual: v1.0.12
-   - Nova versao: v1.0.13 (patch)
+   - Versao atual: v1.5.0
+   - Nova versao: v1.5.1 (patch)
    - Commits incluidos: 3
 
-3. PIPELINE
-   - Tag v1.0.13 acionaria o Bitbucket Pipeline
-   - Imagem: tmf-hub:v1.0.13
-   - Registry: 021301014509.dkr.ecr.us-east-1.amazonaws.com/tmf-hub
+3. DEPLOY
+   - Tag v1.5.1 acionaria GitHub Actions workflow
+   - SSH para servidor de producao
+   - docker compose rebuild
 
 ========================================================
 
@@ -319,7 +318,7 @@ DEPLOY Tennis Tracking - Iniciando fluxo de release
 ========================================================
 
 ETAPA 1: Verificacoes
-   |- Branch atual: feature/clients-filters
+   |- Branch atual: feature/new-feature
    |- ERRO: Branch deve ser 'main'
 
 ========================================================
@@ -330,7 +329,7 @@ O Tennis Tracking faz deploy diretamente da branch main.
 Faca merge da sua feature branch para main primeiro:
 
    git checkout main
-   git merge feature/clients-filters
+   git merge feature/new-feature
    git push origin main
 
 Depois execute /deploy novamente.
@@ -349,47 +348,63 @@ git revert HEAD --no-edit
 git push origin main
 
 # Criar nova tag patch com o revert
-git tag -a "v1.0.14" -m "Rollback: revert v1.0.13"
-git push origin "v1.0.14"
+git tag -a "v1.5.2" -m "Rollback: revert v1.5.1"
+git push origin "v1.5.2"
 ```
 
 ### Rollback Manual (Emergencia)
 
 ```bash
-# No servidor de producao, voltar para tag anterior
-# SSH no servidor e executar:
-docker pull 021301014509.dkr.ecr.us-east-1.amazonaws.com/tmf-hub:v1.0.12
-docker compose up -d
+# SSH no servidor de producao e voltar para tag anterior:
+ssh user@<SERVER_IP>
+cd /opt/tennis-tracking
+git checkout v1.5.0
+docker compose -f docker-compose.server.yml down
+docker compose -f docker-compose.server.yml up -d --build
+```
+
+### Deploy Manual (sem GitHub Actions)
+
+```bash
+# Usar script de deploy direto:
+./scripts/deploy_to_server.sh [username]
+# Ou manualmente:
+ssh user@192.168.0.21
+cd /opt/tennis-tracking
+git fetch --all --tags
+git checkout v1.5.1
+docker compose -f docker-compose.server.yml up -d --build
 ```
 
 ### Verificacao Pos-Deploy
 
 ```bash
-# Health check da API
+# Health check da API (producao via dominio)
 curl https://hub-api.trademarketingforce.com/health
 
-# Health check do banco
-curl https://hub-api.trademarketingforce.com/health/db
-
-# Health check do Redis
-curl https://hub-api.trademarketingforce.com/health/redis
+# Health check direto no servidor (IP interno)
+curl http://192.168.0.21:5002/health
 ```
 
 ## Informacoes de Infraestrutura
 
 | Item | Valor |
 |------|-------|
-| ECR Registry | `021301014509.dkr.ecr.us-east-1.amazonaws.com` |
-| ECR Repository | `tmf-hub` |
-| Regiao AWS | `us-east-1` |
-| Plataforma | `linux/amd64` |
-| Dockerfile | `Dockerfile.unified` |
+| Servidor producao | `192.168.0.21` (via GitHub Secrets) |
+| Diretorio no servidor | `/opt/tennis-tracking` |
+| Porta da aplicacao | `5002` |
+| Docker Compose | `docker-compose.server.yml` |
+| Dockerfile | `Dockerfile` (multi-stage: frontend + backend + nginx) |
+| Imagem unificada | `tennis-tracking-app` (nginx + fastapi + celery via supervisor) |
+| Database | `infra-postgres:5432` (rede externa `docker_infra`) |
+| Redis | `tennis-tracking-redis` (container local) |
+| CI/CD | GitHub Actions (`deploy-on-tag.yml`) |
+| GitHub Actions URL | `https://github.com/tarcisiobannwart/tennis-tracking/actions` |
 | Branch de deploy | `main` |
-| Formato de tag | `v1.0.XX` |
-| Pipeline | Bitbucket Pipelines |
-| Pipeline URL | `https://bitbucket.org/phdesignsystems/tennis-tracking/pipelines` |
+| Formato de tag | `vX.Y.Z` (semver) |
 | Frontend (prod) | `https://hub.trademarketingforce.com` |
 | API (prod) | `https://hub-api.trademarketingforce.com` |
+| CORS allowed | `https://tennis.tarcisiobannwart.com`, `http://localhost` |
 
 ## Comandos Relacionados
 
