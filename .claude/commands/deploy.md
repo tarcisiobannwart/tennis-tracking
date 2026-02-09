@@ -279,8 +279,8 @@ Resumo:
 
 Proximos passos:
    - Monitorar workflow: https://github.com/tarcisiobannwart/tennis-tracking/actions
-   - Verificar health: https://hub-api.trademarketingforce.com/health
-   - Frontend: https://hub.trademarketingforce.com
+   - Verificar health: https://tennis.tarcisiobannwart.com/health
+   - Frontend: https://tennis.tarcisiobannwart.com
 ```
 
 ### Dry Run
@@ -380,7 +380,7 @@ docker compose -f docker-compose.server.yml up -d --build
 
 ```bash
 # Health check da API (producao via dominio)
-curl https://hub-api.trademarketingforce.com/health
+curl https://tennis.tarcisiobannwart.com/health
 
 # Health check direto no servidor (IP interno)
 curl http://192.168.0.21:5002/health
@@ -402,8 +402,8 @@ curl http://192.168.0.21:5002/health
 | GitHub Actions URL | `https://github.com/tarcisiobannwart/tennis-tracking/actions` |
 | Branch de deploy | `main` |
 | Formato de tag | `vX.Y.Z` (semver) |
-| Frontend (prod) | `https://hub.trademarketingforce.com` |
-| API (prod) | `https://hub-api.trademarketingforce.com` |
+| Frontend (prod) | `https://tennis.tarcisiobannwart.com` |
+| API (prod) | `https://tennis.tarcisiobannwart.com/api` |
 | CORS allowed | `https://tennis.tarcisiobannwart.com`, `http://localhost` |
 
 ## Comandos Relacionados
