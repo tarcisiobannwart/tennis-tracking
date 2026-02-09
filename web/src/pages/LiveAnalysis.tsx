@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Play,
   Pause,
@@ -63,9 +63,13 @@ const LiveAnalysis = () => {
   const matchId = currentMatch?.id || 'test-match-id'
 
   // WebSocket connection for live scoring
+  const wsUrl = useMemo(
+    () => getWebSocketUrl(`/ws/live/${matchId}`),
+    [matchId]
+  )
   const { send } = useWebSocket({
-    url: getWebSocketUrl(`/ws/live/${matchId}`),
-    enabled: true, // Enable WebSocket connection
+    url: wsUrl,
+    enabled: true,
     matchId,
     enablePollingFallback: true,
     pollingInterval: 5000,

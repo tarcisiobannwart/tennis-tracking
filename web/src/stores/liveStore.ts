@@ -168,6 +168,15 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
         get().setConnectionStatus(data.status)
         break
 
+      case 'welcome':
+      case 'subscription_confirmed':
+      case 'current_state':
+      case 'analysis_update':
+      case 'notification':
+      case 'ping':
+        // Tipos de mensagem do backend que não requerem ação no store
+        break
+
       case 'error':
         console.error('WebSocket error:', data)
         get().setConnectionStatus('error')

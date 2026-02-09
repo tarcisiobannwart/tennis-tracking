@@ -29,7 +29,17 @@ export const useWebSocket = ({
   const websocketRef = useRef<WebSocketService | null>(null)
   const pollingTimerRef = useRef<number | null>(null)
   const reconnectFailedRef = useRef(false)
+  const onMessageRef = useRef(onMessage)
+  const onConnectRef = useRef(onConnect)
+  const onDisconnectRef = useRef(onDisconnect)
+  const onErrorRef = useRef(onError)
   const { setSocket, setConnectionStatus, handleWebSocketMessage, fetchScoreboardData } = useLiveStore()
+
+  // Manter refs atualizados sem causar re-render
+  onMessageRef.current = onMessage
+  onConnectRef.current = onConnect
+  onDisconnectRef.current = onDisconnect
+  onErrorRef.current = onError
 
   const startPolling = useCallback(() => {
     if (!enablePollingFallback || !matchId) return
@@ -60,7 +70,6 @@ export const useWebSocket = ({
   }, [])
 
   const connect = useCallback(async () => {
-    // Exit early if disabled
     if (!enabled) {
       setConnectionStatus('disconnected')
       return
@@ -81,17 +90,17 @@ export const useWebSocket = ({
         reconnectInterval: 1000,
         onMessage: (message) => {
           handleWebSocketMessage(message)
-          onMessage?.(message)
+          onMessageRef.current?.(message)
         },
         onConnect: () => {
           setConnectionStatus('connected')
           stopPolling() // Stop polling when WebSocket connects
           reconnectFailedRef.current = false
-          onConnect?.()
+          onConnectRef.current?.()
         },
         onDisconnect: () => {
           setConnectionStatus('disconnected')
-          onDisconnect?.()
+          onDisconnectRef.current?.()
 
           // Start polling fallback after max reconnection attempts
           if (reconnectFailedRef.current && enablePollingFallback) {
@@ -101,12 +110,12 @@ export const useWebSocket = ({
         onError: (error) => {
           setConnectionStatus('error')
           reconnectFailedRef.current = true
-          onError?.(error)
+          onErrorRef.current?.(error)
         },
       })
 
       websocketRef.current = websocket
-      setSocket(websocket as any) // Store reference in Zustand
+      setSocket(websocket as any)
     } catch (error) {
       console.error('WebSocket connection failed:', error)
       setConnectionStatus('error')
@@ -117,7 +126,7 @@ export const useWebSocket = ({
         startPolling()
       }
     }
-  }, [url, enabled, matchId, enablePollingFallback, onMessage, onConnect, onDisconnect, onError, setConnectionStatus, setSocket, handleWebSocketMessage, startPolling, stopPolling])
+  }, [url, enabled, matchId, enablePollingFallback, setConnectionStatus, setSocket, handleWebSocketMessage, startPolling, stopPolling])
 
   const disconnect = useCallback(() => {
     stopPolling()
