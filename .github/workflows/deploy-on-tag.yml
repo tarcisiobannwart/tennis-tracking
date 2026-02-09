@@ -38,14 +38,23 @@ jobs:
           git fetch --all --tags
           git checkout $IMAGE_TAG
 
+          # Verificar .env
+          if [ -f .env ]; then
+            echo ".env encontrado, usando variaveis de ambiente do servidor"
+            ENV_FILE_FLAG="--env-file .env"
+          else
+            echo "AVISO: .env nao encontrado, usando defaults do compose"
+            ENV_FILE_FLAG=""
+          fi
+
           # Parar containers e remover orfaos
-          docker compose -f docker-compose.server.yml down --remove-orphans || true
+          docker compose -f docker-compose.server.yml \$ENV_FILE_FLAG down --remove-orphans || true
 
           # Remover containers conflitantes (de deploys anteriores)
           docker rm -f tennis-tracking-redis tennis-tracking-mediamtx 2>/dev/null || true
 
           # Rebuild e iniciar
-          docker compose -f docker-compose.server.yml up -d --build
+          docker compose -f docker-compose.server.yml \$ENV_FILE_FLAG up -d --build
 
           # Aguardar inicializacao
           echo "Aguardando servicos..."
@@ -56,11 +65,11 @@ jobs:
             echo "Backend health OK!"
           else
             echo "AVISO: Backend health check falhou, verificar logs"
-            docker compose -f docker-compose.server.yml logs --tail=50 backend
+            docker compose -f docker-compose.server.yml \$ENV_FILE_FLAG logs --tail=50 backend
           fi
 
           # Status dos containers
-          docker compose -f docker-compose.server.yml ps
+          docker compose -f docker-compose.server.yml \$ENV_FILE_FLAG ps
 
           echo "Deploy $IMAGE_TAG concluido!"
         ENDSSH
