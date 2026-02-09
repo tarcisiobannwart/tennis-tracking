@@ -42,7 +42,7 @@ export const BottomNav = ({ className, hideOnScroll = false }: BottomNavProps) =
       label: 'Nova Partida',
       icon: <Video className="w-5 h-5" />,
       onClick: () => {
-        navigate('/app/matches')
+        navigate('/app/match/new')
         setFabOpen(false)
       }
     },

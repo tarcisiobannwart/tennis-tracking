@@ -31,6 +31,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminSubscriptions from './pages/admin/AdminSubscriptions'
 import AdminLogs from './pages/admin/AdminLogs'
+import NewMatch from './pages/NewMatch'
 
 function App() {
   const { theme } = useThemeStore()
@@ -63,6 +64,7 @@ function App() {
         <Route path="/app" element={<Dashboard />} />
         <Route path="/app/live" element={<LiveAnalysis />} />
         <Route path="/app/matches" element={<Matches />} />
+        <Route path="/app/match/new" element={<NewMatch />} />
         <Route path="/app/match/:id" element={<MatchDetail />} />
         <Route path="/app/players" element={<Players />} />
         <Route path="/app/analytics" element={<Analytics />} />
